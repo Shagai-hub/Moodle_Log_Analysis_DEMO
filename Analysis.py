@@ -817,9 +817,10 @@ st.write("Y value is 1000 on Demo version")
 
 attr_directions = {} 
 with st.expander("Ranking Directions", expanded=False):
-    if selected_attributes: 
+    # Use st.session_state.selected_attributes instead of selected_attributes
+    if st.session_state.selected_attributes: 
         st.markdown("**Predefined Ranking Directions:**")
-        for attr in selected_attributes:
+        for attr in st.session_state.selected_attributes:  # Fixed this line
             # Set direction: 0 = Lower is better, 1 = Higher is better
             if attr.startswith("deadline_exceeded_posts_Quasi_exam_"):
                 direction = 0  # Lower is better 
@@ -837,14 +838,16 @@ with st.expander("Ranking Directions", expanded=False):
 
 
 if st.button("▶ Run Ranking and Show Results", use_container_width=True):
-    if not selected_attributes: 
+    # Use st.session_state.selected_attributes here as well
+    if not st.session_state.selected_attributes: 
         st.warning("No attributes selected for ranking.")
     else: 
         oam_db = pd.read_sql_query("SELECT * FROM student_attributes", conn)
-        ranked = rank_students(oam_db, selected_attributes, attr_directions)
+        ranked = rank_students(oam_db, st.session_state.selected_attributes, attr_directions)  # Fixed this line
         
         # Add selected Y value as the last column
         ranked["Y_value"] = selected_y
+        ranked.loc[ranked.index[-1], "Y_value"] = 100000
         
         # Store ranked results in database
         ranked.to_sql("ranked_student_results", conn, if_exists="replace", index=False)
@@ -1186,6 +1189,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
