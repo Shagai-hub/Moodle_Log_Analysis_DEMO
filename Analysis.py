@@ -573,7 +573,34 @@ def clear_all():
 
 # --- UI: info / expanders (use the same descriptions you had) ---
 with st.expander("ℹ️ Attribute Descriptions", expanded=True):
-    st.markdown("""...""")  # your descriptions
+    st.markdown("""
+    **Activity Metrics:**
+    - `total_posts`: Total number of posts made by user  
+    - `active_days`: Number of days user was active  
+    - `average_posts_per_day`: Average posts per active day  
+    - `max_streak`: Longest consecutive days of activity  
+    - `modification_count`: How many times a student modified posts  
+    - `avg_modified_time_minutes`: Average minutes until first modification  
+
+    **Engagement Metrics:**
+    - `total_replies_to_professor`: Direct replies to instructor  
+    - `unique_interactions`: Number of unique users interacted with  
+    - `unique_discussions`: Number of unique discussions participated in  
+    - `engagement_rate`: Overall engagement level  
+    - `avg_reply_time`: Average time to respond to discussions  
+    - `valid_response`: Whether exam answers were valid  
+
+    **Content Analysis:**
+    - `total_characters`: Total characters written  
+    - `total_words`: Total words written  
+    - `citation_count`: Number of external citations/links used  
+    - `topic_relevance_score`: Semantic relevance to discussion topic  
+    - `avg_AI_involvedMsg_score`: Average AI involvement score (1–10)  
+
+    **Exam Performance:**
+    - `deadline_exceeded_exam1/2/3`: Posts made after exam deadlines  
+    - `Pattern_followed_quasi_exam_i`: Adherence to exam posting patterns  
+    """)
 
 # --- checkboxes inside expanders ---
 with st.expander("📊 Activity Metrics", expanded=False):
@@ -1275,6 +1302,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
