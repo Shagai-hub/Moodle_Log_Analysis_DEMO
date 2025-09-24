@@ -9,5 +9,5 @@ transformers
 sentence-transformers
 scikit-learn
 openpyxl
-
+lxml
 
