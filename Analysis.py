@@ -19,7 +19,7 @@ import altair as alt
 st.title("Moodle Log Analyzer DEMO")
 
 DB_NAME = "logs.db"
-PROFESSORS = ["László Pitlik", "Mátyás Pitlik"]  # exclude these from OAM
+PROFESSORS = ["professor_1", "professor_2"]  # exclude these from OAM
 PARENT_IDS_PATTERN = [163486]  # used for pattern_followed (adjust if needed)
 
 # Deadlines (use next-day midnight for '24:00:00' semantics)
@@ -183,7 +183,7 @@ def active_days(df):
     res = df2.groupby(["userid", "userfullname"], as_index=False)["date_only"].nunique()
     res = res.rename(columns={"date_only": "active_days"})
     return res
-def total_replies_to_professor(df, df_all, prof_name="László Pitlik"):
+def total_replies_to_professor(df, df_all, prof_name="professor_1"):
     # Use df_all (which includes professors) to find professor post IDs#
     prof_ids = df_all[df_all["userfullname"] == prof_name]["id"].unique().tolist()
     if len(prof_ids) == 0:
@@ -223,14 +223,14 @@ def unique_discussions(df):
     res = df2.groupby(["userid", "userfullname"], as_index=False)["thread_root"].nunique().rename(columns={"thread_root": "unique_discussions"})
     return res
 def engagement_rate(df, df_all):
-    prof_total = len(df_all[df_all["userfullname"] == "László Pitlik"])
+    prof_total = len(df_all[df_all["userfullname"] == "professor_1"])
     if prof_total == 0:
         prof_total = 1
     replies = total_replies_to_professor(df, df_all)
     replies["engagement_rate"] = replies["total_replies_to_professor"] / prof_total
     return replies[["userid","userfullname","engagement_rate"]]
 def avg_reply_time(df, df_all):
-    prof_ids = df_all[df_all["userfullname"] == "László Pitlik"]["id"].unique().tolist()
+    prof_ids = df_all[df_all["userfullname"] == "professor_1"]["id"].unique().tolist()
     if len(prof_ids) == 0:
         # Return 0 for all users instead of empty DataFrame
         all_users = df[["userid", "userfullname"]].drop_duplicates()
@@ -319,7 +319,7 @@ def pattern_followed(df):
     res = dfp.groupby(["userid","userfullname"], as_index=False)["is_pattern"].sum().rename(columns={"is_pattern":"Pattern_followed_quasi_exam_i"})
     return res
 # Hooks for ML-based attributes (you will provide code)
-def compute_topic_relevance(df, df_all, professor_name="László Pitlik"):
+def compute_topic_relevance(df, df_all, professor_name="professor_1"):
     """
     Compute topic relevance scores for each user based on similarity between
     their replies and the professor's original posts.
@@ -1208,3 +1208,4 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
