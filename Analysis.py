@@ -692,7 +692,7 @@ if st.button("Compute selected attributes"):
         
         # Use st.session_state.selected_attributes instead of selected_attributes
         selected_attributes = st.session_state.selected_attributes
-        st.info("Computing selected attributes...")
+        st.info("Computing selected attributes, please wait :)...")
         
         progress = st.progress(0)
         for i, attr in enumerate(selected_attributes):  # Fixed this line
@@ -1304,6 +1304,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
