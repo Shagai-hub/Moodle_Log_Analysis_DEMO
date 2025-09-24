@@ -631,6 +631,8 @@ with st.expander("💬 Engagement Metrics", expanded=False):
 
 with st.expander("📝 Content Analysis", expanded=False):
     st.markdown("*Analyzes content quality, length, and relevance*")
+    st.warning("⚠️ Computing these attributes may take some time. Please be patient.")
+    
     for attr in content_attrs:
         if attr in available_attributes:
             key = attr_key_map[attr]
@@ -1302,6 +1304,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
