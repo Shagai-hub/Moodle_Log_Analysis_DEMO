@@ -662,12 +662,12 @@ if st.button("Compute selected attributes"):
         oam = students.copy()
         
         # Use st.session_state.selected_attributes instead of selected_attributes
-        selected_attrs = st.session_state.selected_attributes
-        st.info(f"Computing {len(selected_attrs)} attribute(s) for {len(students)} students...")
+        selected_attributes = st.session_state.selected_attributes
+        st.info(f"Computing {len(selected_attributes)} attribute(s) for {len(students)} students...")
         
         progress = st.progress(0)
-        for i, attr in enumerate(selected_attrs):  # Fixed this line
-            progress.progress(int((i/len(selected_attrs))*100))
+        for i, attr in enumerate(selected_attributes):  # Fixed this line
+            progress.progress(int((i/len(selected_attributes))*100))
             try:
                 func = ATTRIBUTE_FUNCS[attr]
                 if attr in ["total_replies_to_professor", "avg_reply_time", "engagement_rate", "topic_relevance_score"]:
@@ -1186,6 +1186,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
