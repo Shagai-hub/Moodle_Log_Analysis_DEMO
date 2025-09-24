@@ -9,12 +9,5 @@ transformers
 sentence-transformers
 scikit-learn
 openpyxl
-bs4
-io
-time 
-re 
-requests
-os
-datetime
 
 
