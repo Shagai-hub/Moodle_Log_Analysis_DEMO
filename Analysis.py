@@ -43,7 +43,7 @@ def to_dt(series):
 # Connect or create DB
 conn = sqlite3.connect(DB_NAME, check_same_thread=False)
 
-st.header("📥 Upload Discussion Data")
+st.header("1.📥 Upload Discussion Data")
 
 uploaded_file = st.file_uploader(
     "Upload your discussion data file (CSV or XLSX):", 
@@ -157,7 +157,7 @@ if uploaded_file:
 
 
 # ---------- OAM Analyzer ----------
-st.header("Select attributes to compute")
+st.header("2.Select attributes to compute")
 
 if uploaded_file and current_table_name:
     st.header("🎯 Analysis")
@@ -907,7 +907,7 @@ def invert_ranking(matrix_df):
     
     return inverted_df
 
-st.subheader("Ranking")
+st.subheader("3.Ranking")
 
 # Add Y value selection
 selected_y = 1000
@@ -964,7 +964,7 @@ if st.button("▶ Run Ranking and Show Results", use_container_width=True):
         )
 
 # COCO Analysis Section 
-st.subheader("COCO Analysis")
+st.subheader("4.COCO Analysis")
 try:
     ranked_db = pd.read_sql_query("SELECT * FROM ranked_student_results", conn)
     has_ranked_data = True
@@ -1094,7 +1094,7 @@ if st.button("Run COCO Analysis", use_container_width=True):
 
 
 # Validation Section
-st.subheader("Validation")
+st.subheader("5.Validation")
 try:
     ranked_db = pd.read_sql_query("SELECT * FROM ranked_student_results", conn)
     coco_table4 = pd.read_sql_query("SELECT * FROM table_4", conn)
@@ -1304,6 +1304,7 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
 
