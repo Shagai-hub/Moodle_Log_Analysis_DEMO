@@ -541,7 +541,7 @@ exam_attrs = [
 ]
 
 available_attributes = list(ATTRIBUTE_FUNCS.keys())
-
+selected_attributes = []
 # --- initialize session state (only once) ---
 if "selected_attributes" not in st.session_state:
     st.session_state.selected_attributes = []
@@ -1183,5 +1183,6 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
 
