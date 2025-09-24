@@ -540,128 +540,103 @@ exam_attrs = [
     "Pattern_followed_quasi_exam_i"
 ]
 
-available_attributes = list(ATTRIBUTE_FUNCS.keys()) 
-selected_attributes = []
+available_attributes = list(ATTRIBUTE_FUNCS.keys())
 
-# Initialize session state for selections
+# --- initialize session state (only once) ---
 if "selected_attributes" not in st.session_state:
     st.session_state.selected_attributes = []
 
-selected_attributes = st.session_state.selected_attributes
+# --- map attributes -> widget keys (so we can programmatically toggle widgets) ---
+attr_key_map = {}
+for attr in activity_attrs:
+    attr_key_map[attr] = f"activity_{attr}"
+for attr in engagement_attrs:
+    attr_key_map[attr] = f"engagement_{attr}"
+for attr in content_attrs:
+    attr_key_map[attr] = f"content_{attr}"
+for attr in exam_attrs:
+    attr_key_map[attr] = f"exam_{attr}"
 
+# Helper callbacks for buttons
+def select_all():
+    st.session_state.selected_attributes = available_attributes.copy()
+    # set each widget key to True if it's a known checkbox key
+    for attr in available_attributes:
+        key = attr_key_map.get(attr)
+        if key is not None:
+            st.session_state[key] = True
+
+def clear_all():
+    st.session_state.selected_attributes = []
+    # set known checkbox keys to False
+    for key in attr_key_map.values():
+        st.session_state[key] = False
+
+# --- UI: info / expanders (use the same descriptions you had) ---
 with st.expander("ℹ️ Attribute Descriptions", expanded=True):
-    st.markdown("""
-    **Activity Metrics:**
-    - `total_posts`: Total number of posts made by user  
-    - `active_days`: Number of days user was active  
-    - `average_posts_per_day`: Average posts per active day  
-    - `max_streak`: Longest consecutive days of activity  
-    - `modification_count`: How many times a student modified posts  
-    - `avg_modified_time_minutes`: Average minutes until first modification  
+    st.markdown("""...""")  # your descriptions
 
-    **Engagement Metrics:**
-    - `total_replies_to_professor`: Direct replies to instructor  
-    - `unique_interactions`: Number of unique users interacted with  
-    - `unique_discussions`: Number of unique discussions participated in  
-    - `engagement_rate`: Overall engagement level  
-    - `avg_reply_time`: Average time to respond to discussions  
-    - `valid_response`: Whether exam answers were valid  
-
-    **Content Analysis:**
-    - `total_characters`: Total characters written  
-    - `total_words`: Total words written  
-    - `citation_count`: Number of external citations/links used  
-    - `topic_relevance_score`: Semantic relevance to discussion topic  
-    - `avg_AI_involvedMsg_score`: Average AI involvement score (1–10)  
-
-    **Exam Performance:**
-    - `deadline_exceeded_exam1/2/3`: Posts made after exam deadlines  
-    - `Pattern_followed_quasi_exam_i`: Adherence to exam posting patterns  
-    """)
-
-
-# ---------------- EXPANDERS ----------------
+# --- checkboxes inside expanders ---
 with st.expander("📊 Activity Metrics", expanded=False):
     st.markdown("*Measures posting frequency, consistency, and engagement patterns*")
     for attr in activity_attrs:
         if attr in available_attributes:
-            if st.checkbox(
-                attr.replace("_", " ").title(),
-                key=f"activity_{attr}",
-                value=attr in selected_attributes
-            ):
-                if attr not in selected_attributes:
-                    selected_attributes.append(attr)
-            else:
-                if attr in selected_attributes:
-                    selected_attributes.remove(attr)
+            key = attr_key_map[attr]
+            # prefer current widget state if exists; otherwise fallback to list membership
+            initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
+            checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+            # update selected_attributes list based on widget state change
+            if checked and attr not in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.append(attr)
+            if not checked and attr in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.remove(attr)
 
 with st.expander("💬 Engagement Metrics", expanded=False):
     st.markdown("*Measures interaction quality and response patterns*")
     for attr in engagement_attrs:
         if attr in available_attributes:
-            if st.checkbox(
-                attr.replace("_", " ").title(),
-                key=f"engagement_{attr}",
-                value=attr in selected_attributes
-            ):
-                if attr not in selected_attributes:
-                    selected_attributes.append(attr)
-            else:
-                if attr in selected_attributes:
-                    selected_attributes.remove(attr)
+            key = attr_key_map[attr]
+            initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
+            checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+            if checked and attr not in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.append(attr)
+            if not checked and attr in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.remove(attr)
 
 with st.expander("📝 Content Analysis", expanded=False):
     st.markdown("*Analyzes content quality, length, and relevance*")
     for attr in content_attrs:
         if attr in available_attributes:
-            if st.checkbox(
-                attr.replace("_", " ").title(),
-                key=f"content_{attr}",
-                value=attr in selected_attributes
-            ):
-                if attr not in selected_attributes:
-                    selected_attributes.append(attr)
-            else:
-                if attr in selected_attributes:
-                    selected_attributes.remove(attr)
+            key = attr_key_map[attr]
+            initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
+            checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+            if checked and attr not in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.append(attr)
+            if not checked and attr in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.remove(attr)
 
 with st.expander("📋 Exam Performance", expanded=False):
     st.markdown("*Tracks exam-related posting behavior and deadline compliance*")
     for attr in exam_attrs:
         if attr in available_attributes:
-            if st.checkbox(
-                attr.replace("_", " ").title(),
-                key=f"exam_{attr}",
-                value=attr in selected_attributes
-            ):
-                if attr not in selected_attributes:
-                    selected_attributes.append(attr)
-            else:
-                if attr in selected_attributes:
-                    selected_attributes.remove(attr)
+            key = attr_key_map[attr]
+            initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
+            checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+            if checked and attr not in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.append(attr)
+            if not checked and attr in st.session_state.selected_attributes:
+                st.session_state.selected_attributes.remove(attr)
 
 st.markdown("---")
 
-# Initialize session state for demonstration
-if "selected_attributes" not in st.session_state:
-    st.session_state.selected_attributes = []
-available_attributes = list(ATTRIBUTE_FUNCS.keys())
-selected_attributes = st.session_state.selected_attributes
-
-# Define two columns for the buttons
+# Buttons using callbacks
 col1, col2 = st.columns(2)
-
 with col1:
-    if st.button("✅ Select All", use_container_width=True):
-        st.session_state.selected_attributes = available_attributes.copy()
-        st.rerun()
-
+    st.button("✅ Select All", on_click=select_all, use_container_width=True)
 with col2:
-    if st.button("❌ Clear All", use_container_width=True):
-        st.session_state.selected_attributes = []
-        st.rerun()
+    st.button("❌ Clear All", on_click=clear_all, use_container_width=True)
 
+# display count
 st.markdown(
     f"""
     <div style="
@@ -674,7 +649,7 @@ st.markdown(
         font-size:22px;
         border:1px solid #ddd;
     ">
-    📊 Selected<br>{len(selected_attributes)}
+    📊 Selected<br>{len(st.session_state.selected_attributes)}
     </div>
     """,
     unsafe_allow_html=True
@@ -1208,4 +1183,5 @@ if has_validation_data and st.button("Run Validation", use_container_width=True)
     except Exception as e:
         st.error(f"An error occurred during validation: {e}")
 conn.close()
+
 
