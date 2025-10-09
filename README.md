@@ -6,17 +6,17 @@ This is a DEMONSTRATION VERSION of the Moodle Log Analyzer. Operate with sample 
 This demo Streamlit application processes Moodle discussion forum exports to compute various student engagement attributes, rank students based on their performance as well as on the direction-rules/codes defined by the particular users, and perform antidiscriminative optimization based on similarity analysis using COCO(component-based object comparison for objectivity) analysis. It's particularly useful for educational researchers and instructors who want to analyze student participation patterns in online discussions in an objective way.
 
 ---Demo Version---
-Fixed Y-value (1000) for antidiscrimination analysis
-Sample professor names ("professor_1", "professor_2") pre-configured
-Limited to predefined exam patterns and deadlines
-Maximum dataset size restrictions may apply
-Some advanced ML features may operate with reduced accuracy
+-Fixed Y-value (1000) for antidiscrimination analysis
+-Sample professor names ("professor_1", "professor_2") pre-configured
+-Limited to predefined exam patterns and deadlines
+-Maximum dataset size restrictions may apply
+-Some advanced ML features may operate with reduced accuracy
 
 Features
 ---Data Processing---
-Upload CSV or Excel files from Moodle discussion forums
-Automatic data validation and cleaning
-SQLite database storage for persistent data
+-Upload CSV or Excel files from Moodle discussion forums
+-Automatic data validation and cleaning
+-SQLite database storage for persistent data
 
 ---attribute Analysis---
 Compute 19 different engagement metrics across four categories:
@@ -48,10 +48,10 @@ Compute 19 different engagement metrics across four categories:
 19.deadline_exceeded_posts_Quasi_exam_III
 
 ---Advanced Analytics---
-Student ranking based on selected attributes
-COCO (component-based object comparison for objectivity) analysis for multi-dimensional optimization
-Validation through function-symmetry-based evaluation
-Interactive visualizations
+-Student ranking based on selected attributes
+-COCO (component-based object comparison for objectivity) analysis for multi-dimensional optimization
+-Validation through function-symmetry-based evaluation
+-Interactive visualizations
 
 
 This VERSION is provided for demonstration purposes only.
