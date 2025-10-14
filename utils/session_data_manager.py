@@ -7,14 +7,20 @@ class SessionDataManager:
         self.init_session_state()
     
     def init_session_state(self):
-        # Initialize all data storage
+        """Initialize all data storage"""
         if 'raw_data' not in st.session_state:
             st.session_state.raw_data = None
         if 'student_attributes' not in st.session_state:
             st.session_state.student_attributes = None
+        if 'ranked_results' not in st.session_state:
+            st.session_state.ranked_results = None
+        if 'coco_results' not in st.session_state:
+            st.session_state.coco_results = {}
+        if 'validation_results' not in st.session_state:
+            st.session_state.validation_results = None
+        if 'analysis_history' not in st.session_state:
+            st.session_state.analysis_history = []
     
-   # Add to your existing SessionDataManager class
-
     def store_raw_data(self, df, source_info=None):
         """Store raw data in session state"""
         st.session_state.raw_data = {
@@ -36,6 +42,10 @@ class SessionDataManager:
         """Get raw data metadata"""
         return st.session_state.raw_data
     
+    def get_analysis_history(self):
+        """Get the analysis history"""
+        return st.session_state.analysis_history
+    
     def _add_to_history(self, action, details):
         """Track analysis steps"""
         if 'analysis_history' not in st.session_state:
@@ -46,5 +56,22 @@ class SessionDataManager:
             'action': action,
             'details': str(details)
         })
-        
-        # Add similar methods for other data types
+    
+    # Add methods for other data types you'll need
+    def store_student_attributes(self, df):
+        st.session_state.student_attributes = df
+        self._add_to_history("Student attributes computed", f"Shape: {df.shape}")
+    
+    def get_student_attributes(self):
+        return st.session_state.student_attributes
+    
+    def store_ranked_results(self, df):
+        st.session_state.ranked_results = df
+        self._add_to_history("Ranking completed", f"Shape: {df.shape}")
+    
+    def get_ranked_results(self):
+        return st.session_state.ranked_results
+    
+    def clear_session(self):
+        """Clear all session data"""
+        self.init_session_state()  # Reset to initial state
