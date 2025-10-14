@@ -16,3 +16,6 @@ st.set_page_config(
 
 st.title("🎓 Moodle Log Analyzer DEMO")
 st.markdown("Navigate using the sidebar to access different analysis features.")
+
+if st.button("Go to Data Upload"):
+    st.switch_page("pages/1_📊_Data_Upload.py")
