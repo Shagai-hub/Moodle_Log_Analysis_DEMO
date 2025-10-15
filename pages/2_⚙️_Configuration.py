@@ -17,18 +17,6 @@ def main():
     st.title("⚙️ Configuration Settings")
     
     # Configuration summary
-    st.subheader("📊 Current Configuration")
-    summary = config.get_config_summary()
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Professors", summary['professors_count'])
-    with col2:
-        st.metric("Exams", summary['exams_count'])
-    with col3:
-        st.metric("Pattern IDs", summary['pattern_ids_count'])
-    with col4:
-        st.metric("Y Value", summary['y_value'])
     
     # Main configuration interface
     st.subheader("🛠️ Configure Analysis Parameters")
@@ -159,6 +147,19 @@ def main():
     # Configuration preview
     with st.expander("🔍 Configuration Preview", expanded=False):
         st.json(config.to_dict())
+        
+        st.subheader("📊 Current Configuration")
+    summary = config.get_config_summary()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Professors", summary['professors_count'])
+    with col2:
+        st.metric("Exams", summary['exams_count'])
+    with col3:
+        st.metric("Pattern IDs", summary['pattern_ids_count'])
+    with col4:
+        st.metric("Y Value", summary['y_value'])
 
 if __name__ == "__main__":
     main()
