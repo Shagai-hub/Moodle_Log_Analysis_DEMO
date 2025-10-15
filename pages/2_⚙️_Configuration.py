@@ -19,7 +19,7 @@ def main():
     # Configuration summary
     
     # Main configuration interface
-    st.subheader("🛠️ Configure Analysis Parameters")
+    st.subheader("Configure Analysis Parameters")
     
     tab1, tab2, tab3 = st.tabs(["👨‍🏫 Professors & Exams", "📊 Analysis Settings", "💾 Export/Import"])
     
@@ -150,16 +150,6 @@ def main():
         
         st.subheader("📊 Current Configuration")
     summary = config.get_config_summary()
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Professors", summary['professors_count'])
-    with col2:
-        st.metric("Exams", summary['exams_count'])
-    with col3:
-        st.metric("Pattern IDs", summary['pattern_ids_count'])
-    with col4:
-        st.metric("Y Value", summary['y_value'])
 
 if __name__ == "__main__":
     main()
