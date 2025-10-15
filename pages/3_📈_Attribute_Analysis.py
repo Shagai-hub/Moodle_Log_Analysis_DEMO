@@ -30,7 +30,6 @@ def main():
     # Use configuration from ConfigManager
     PROFESSORS = config.professors
     DEADLINES = config.deadlines
-    PARENT_IDS_PATTERN = config.parent_ids_pattern
     
     # Prepare data (exclude professors)
     df_all = raw_data.copy()
@@ -175,21 +174,28 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
             func = ATTRIBUTE_FUNCS[attr]
             
             # Handle functions that need additional parameters
-            if attr in ["total_replies_to_professor", "avg_reply_time", "engagement_rate", "topic_relevance_score"]:
+            if attr == "total_replies_to_professor":
                 # Use first professor from config
                 prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
                 result = func(df, df_all, prof_name)
+            elif attr == "topic_relevance_score":
+                # Use first professor from config
+                prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
+                result = func(df, df_all, prof_name)
+            elif attr in ["engagement_rate", "avg_reply_time"]:
+                # These functions now use config internally, so only need 2 arguments
+                result = func(df, df_all)
             elif attr.startswith("deadline_exceeded_posts_"):
                 # Use deadlines from config
                 exam_name = attr.replace("deadline_exceeded_posts_", "").replace("_", " ")
                 if exam_name in DEADLINES:
-                    result = func(df)  # The lambda already uses DEADLINES
+                    result = func(df)
                 else:
                     st.warning(f"Deadline for {exam_name} not found in configuration")
                     continue
             elif attr == "Pattern_followed_quasi_exam_i":
                 # Use parent IDs from config
-                result = func(df)  # The function already uses PARENT_IDS_PATTERN
+                result = func(df)
             else:
                 result = func(df)
             
