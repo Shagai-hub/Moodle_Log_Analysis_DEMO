@@ -123,7 +123,7 @@ def parse_coco_html(resp_or_html):
         # Save full HTML for debugging
         st.session_state.last_coco_html = html
     
-    return tables
+    return tables, html
 
 def save_coco_debug_html(conn, html, resp=None):
     """Save debug HTML to database for troubleshooting"""

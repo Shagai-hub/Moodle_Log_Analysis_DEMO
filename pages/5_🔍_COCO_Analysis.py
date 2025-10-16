@@ -3,7 +3,7 @@ import pandas as pd
 import time
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
-from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix
+from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix, last_coco_html
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -211,6 +211,17 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
     
     # Export options
     display_export_options(tables, data_manager)
+
+    if 'last_coco_html' in st.session_state:
+            with st.expander("🔎 Raw COCO HTML (from last run)", expanded=False):
+                st.text_area("Raw COCO HTML", st.session_state.last_coco_html, height=600, key="raw_coco_html")
+                st.download_button(
+                    "⬇ Download last COCO HTML",
+                    st.session_state.last_coco_html,
+                    "coco_last_response.html",
+                    "text/html",
+                    use_container_width=True
+                )
 
 def get_table_description(table_name, df, stair_value=None):
     """Get description for COCO result tables based on content"""
