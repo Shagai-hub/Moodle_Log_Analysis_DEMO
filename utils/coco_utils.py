@@ -65,12 +65,13 @@ def parse_coco_html(resp_or_html):
     
     table_dataframes = {}
     
-    # METHOD 2: Fallback to BeautifulSoup table extraction
+    # METHOD 1: BeautifulSoup table extraction
     tables = soup.find_all('table')
     if tables:
         st.info(f"🔍 Found {len(tables)} table tags, parsing individually...")
         
         for i, table in enumerate(tables):
+            table_html = str(table)
             try:
                 # Try multiple parsing methods for each table
                 try:
@@ -91,6 +92,7 @@ def parse_coco_html(resp_or_html):
                 except Exception as e_manual:
                     print(f"Could not parse table {i}: {e} / {e_manual}")
                     continue
+            
             # Make columns unique & safe
             cols = list(df.columns)
             unique_cols = []
@@ -107,28 +109,29 @@ def parse_coco_html(resp_or_html):
                 unique_cols.append(clean)
             df.columns = unique_cols
             table_dataframes[f"table_{i}"] = df
-        else:
-            # No <table> tags found — try pd.read_html on full page (handles some malformed HTML)
-            try:
-                dfs = pd.read_html(StringIO(html))
-                for i, df in enumerate(dfs):
-                    # clean column names similar to above
-                    cols = list(df.columns)
-                    unique_cols = []
-                    for idx, col in enumerate(cols):
-                        base = str(col) if not pd.isna(col) else f"col_{idx}"
-                        clean = re.sub(r'[^A-Za-z0-9_]', '_', base.strip())
-                        if clean in unique_cols:
-                            suffix = 1
-                            while f"{clean}_{suffix}" in unique_cols:
-                                suffix += 1
-                            clean = f"{clean}_{suffix}"
-                        unique_cols.append(clean)
-                    df.columns = unique_cols
-                    table_dataframes[f"table_{i}"] = df
-            except Exception as e_full:
-                # nothing found — return empty dict (caller will handle debug saving)
-                print(f"pd.read_html on full page failed: {e_full}")
+    else:
+        # No <table> tags found — try pd.read_html on full page (handles some malformed HTML)
+        try:
+            dfs = pd.read_html(StringIO(html))
+            for i, df in enumerate(dfs):
+                # clean column names similar to above
+                cols = list(df.columns)
+                unique_cols = []
+                for idx, col in enumerate(cols):
+                    base = str(col) if not pd.isna(col) else f"col_{idx}"
+                    clean = re.sub(r'[^A-Za-z0-9_]', '_', base.strip())
+                    if clean in unique_cols:
+                        suffix = 1
+                        while f"{clean}_{suffix}" in unique_cols:
+                            suffix += 1
+                        clean = f"{clean}_{suffix}"
+                    unique_cols.append(clean)
+                df.columns = unique_cols
+                table_dataframes[f"table_{i}"] = df
+        except Exception as e_full:
+            # nothing found — return empty dict (caller will handle debug saving)
+            print(f"pd.read_html on full page failed: {e_full}")
+    
     return table_dataframes
 
 
