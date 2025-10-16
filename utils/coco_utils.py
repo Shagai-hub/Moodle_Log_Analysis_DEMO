@@ -223,8 +223,31 @@ def clean_coco_dataframe(df):
 
 def prepare_coco_matrix(ranked_df):
     """Prepare ranked data for COCO analysis"""
-    # Extract just the numeric values (without userid and userfullname)
-    matrix_df = ranked_df.drop(columns=["userid", "userfullname"], errors='ignore')
+    import streamlit as st
+    
+    # Extract just the numeric values needed for COCO
+    # Keep only the ranked attribute columns and Y_value, exclude summary columns
+    
+    # List all columns we want to EXCLUDE from COCO input
+    exclude_columns = ["userid", "userfullname", "Average_Rank", "Overall_Rank"]
+    
+    # Also exclude any original attribute columns (keep only _rank columns)
+    original_columns = [col for col in ranked_df.columns 
+                       if not col.endswith('_rank') 
+                       and col not in exclude_columns 
+                       and col != "Y_value"]
+    exclude_columns.extend(original_columns)
+    
+    # Create matrix without excluded columns
+    matrix_df = ranked_df.drop(columns=exclude_columns, errors='ignore')
+    
+    # Debug information
+    if 'show_coco_debug' in st.session_state and st.session_state.show_coco_debug:
+        st.write("🔍 **COCO Matrix Preparation Debug:**")
+        st.write(f"Original columns: {list(ranked_df.columns)}")
+        st.write(f"Excluded columns: {exclude_columns}")
+        st.write(f"Final COCO columns: {list(matrix_df.columns)}")
+        st.write(f"Matrix shape: {matrix_df.shape}")
     
     # Convert to string with tab separation
     matrix_lines = []
