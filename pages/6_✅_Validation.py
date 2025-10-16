@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
 from utils.coco_utils import send_coco_request, parse_coco_html, invert_ranking
 
