@@ -178,9 +178,9 @@ def perform_validation(original_table, inverted_table, ranked_data):
     """Perform the validation comparison between original and inverted results"""
     
     # Use the exact column names we know exist
-    delta_col_original = 'Delta/TÃ©ny'
-    delta_col_inverted = 'Delta/TÃ©ny'  # Same column name in inverted table
-    becsl_col = 'BecslÃ©s'
+    delta_col_original = 'Delta_T_ny'
+    delta_col_inverted = 'Delta_T_ny'  # Same column name in inverted table
+    becsl_col = 'Becsl_s'
     
     # Verify columns exist
     if delta_col_original not in original_table.columns:
@@ -304,7 +304,7 @@ def display_validation_results(validation_results, data_manager):
         .mark_bar()
         .encode(
             x=alt.X("Student:N", sort=None, title="Student", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("Score:Q", title="Final Score (BecslÃ©s)"),
+            y=alt.Y("Score:Q", title="Final Score (Becsl_s)"),
             color=alt.Color("Validation:N",
                           scale=alt.Scale(domain=["Valid", "Invalid"],
                                         range=["#00ff00", "#ff0000"]),
