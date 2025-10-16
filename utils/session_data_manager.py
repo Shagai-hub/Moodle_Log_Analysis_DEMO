@@ -73,14 +73,24 @@ class SessionDataManager:
         return st.session_state.ranked_results
     
     def store_coco_results(self, tables):
+        """Store COCO analysis results"""
         st.session_state.coco_results = tables
         self._add_to_history("COCO analysis completed", f"{len(tables)} tables generated")
-
+    
     def get_coco_results(self, table_name=None):
         """Get COCO analysis results"""
         if table_name:
             return st.session_state.coco_results.get(table_name)
         return st.session_state.coco_results
+    
+    def store_validation_results(self, df):
+        """Store validation results"""
+        st.session_state.validation_results = df
+        self._add_to_history("Validation completed", f"Results for {len(df)} students")
+    
+    def get_validation_results(self):
+        """Get validation results"""
+        return st.session_state.validation_results
     
     def clear_session(self):
         """Clear all session data"""
