@@ -1,3 +1,5 @@
+#coco_utils.py - utility functions for COCO interaction and inverting rankings 
+
 import requests
 import pandas as pd
 import streamlit as st

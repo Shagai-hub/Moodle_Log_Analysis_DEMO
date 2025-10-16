@@ -1,3 +1,4 @@
+#session_data_manager.py - manage session state for data storage and retrieval
 import pandas as pd
 import streamlit as st
 from datetime import datetime
