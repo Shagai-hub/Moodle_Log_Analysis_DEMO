@@ -200,7 +200,7 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
             "Table": name,
             "Rows": df.shape[0],
             "Columns": df.shape[1],
-            "Description": get_table_description(name, df)
+            "Description": get_table_description(name, df, stair_value)  # changed to pass stair_value
         })
     
     summary_df = pd.DataFrame(summary_data)
@@ -212,7 +212,7 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
     # Export options
     display_export_options(tables, data_manager)
 
-def get_table_description(table_name, df):
+def get_table_description(table_name, df, stair_value=None):
     """Get description for COCO result tables based on content"""
     # Try to infer table purpose from column names and content
     columns_lower = [str(col).lower() for col in df.columns]
@@ -225,7 +225,7 @@ def get_table_description(table_name, df):
         return "Weighted normalized matrix"
     elif any('normal' in col for col in columns_lower):
         return "Normalized decision matrix"
-    elif len(df) == stair_value:
+    elif stair_value is not None and len(df) == stair_value:  # guard against undefined
         return "Input data verification"
     else:
         return "Analysis results"
