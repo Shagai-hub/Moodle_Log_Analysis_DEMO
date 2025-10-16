@@ -38,7 +38,7 @@ def send_coco_request(matrix_data, job_name="StudentAnalysis", stair="", object_
 
 def parse_coco_html(resp_or_html):
     """
-    Parse the HTML response from COCO and extract all tables.
+    Parse the HTML response from COCO and extract ALL tables.
     Returns dict of { 'table_0': DataFrame, ... }.
     """
     try:
@@ -51,6 +51,7 @@ def parse_coco_html(resp_or_html):
         st.error(f"Could not decode HTML response: {e}")
         return {}
 
+    # Try multiple parsers
     soup = None
     for parser in ("lxml", "html5lib", "html.parser"):
         try:
@@ -58,90 +59,147 @@ def parse_coco_html(resp_or_html):
             break
         except Exception:
             continue
+    
     if soup is None:
         soup = BeautifulSoup(html, "html.parser")
-
-    tables = soup.find_all('table')
+    
     table_dataframes = {}
-
-    if tables:
-        for i, table in enumerate(tables):
-            table_html = str(table)
-            try:
-                try:
-                    df_list = pd.read_html(StringIO(table_html))
-                    df = df_list[0]
-                except Exception:
-                    df = pd.read_html(StringIO(table_html), header=None)[0]
-            except Exception as e:
-                try:
-                    rows = []
-                    for tr in table.find_all("tr"):
-                        cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-                        if cols:
-                            rows.append(cols)
-                    df = pd.DataFrame(rows)
-                except Exception:
-                    continue
-
-            cols = list(df.columns)
-            unique_cols = []
-            for idx, col in enumerate(cols):
-                base = str(col) if not pd.isna(col) else f"col_{idx}"
-                clean = re.sub(r'[^a-zA-Z0-9_]', '_', base.strip())
-                if clean in unique_cols:
-                    suffix = 1
-                    while f"{clean}_{suffix}" in unique_cols:
-                        suffix += 1
-                    clean = f"{clean}_{suffix}"
-                unique_cols.append(clean)
-            df.columns = unique_cols
-
-            table_dataframes[f"table_{i}"] = df
-
-    else:
-        try:
-            dfs = pd.read_html(StringIO(html))
-            for i, df in enumerate(dfs):
-                cols = list(df.columns)
-                unique_cols = []
-                for idx, col in enumerate(cols):
-                    base = str(col) if not pd.isna(col) else f"col_{idx}"
-                    clean = re.sub(r'[^a-zA-Z0-9_]', '_', base.strip())
-                    if clean in unique_cols:
-                        suffix = 1
-                        while f"{clean}_{suffix}" in unique_cols:
-                            suffix += 1
-                        clean = f"{clean}_{suffix}"
-                    unique_cols.append(clean)
-                df.columns = unique_cols
+    
+    # METHOD 1: Try pd.read_html on entire HTML first (most reliable)
+    try:
+        dfs = pd.read_html(StringIO(html))
+        for i, df in enumerate(dfs):
+            if not df.empty:
+                df = clean_dataframe_columns(df)
                 table_dataframes[f"table_{i}"] = df
-        except Exception:
-            pass
-
+        if table_dataframes:
+            st.info(f"✅ Found {len(table_dataframes)} tables using direct HTML parsing")
+            return table_dataframes
+    except Exception as e:
+        st.warning(f"Direct HTML parsing failed: {e}")
+    
+    # METHOD 2: Fallback to BeautifulSoup table extraction
+    tables = soup.find_all('table')
+    if tables:
+        st.info(f"🔍 Found {len(tables)} table tags, parsing individually...")
+        
+        for i, table in enumerate(tables):
+            try:
+                # Try multiple parsing methods for each table
+                df = parse_single_table(table, i)
+                if df is not None and not df.empty:
+                    df = clean_dataframe_columns(df)
+                    table_dataframes[f"table_{i}"] = df
+                    st.success(f"✅ Successfully parsed table_{i} ({df.shape[0]}x{df.shape[1]})")
+            except Exception as e:
+                st.warning(f"❌ Failed to parse table_{i}: {e}")
+                continue
+    
+    if not table_dataframes:
+        st.error("❌ No tables could be parsed from COCO response")
+        # Save debug info
+        save_coco_debug(html[:5000])  # First 5000 chars for debugging
+    
     return table_dataframes
 
-def clean_coco_dataframe(df):
-    """Clean and prepare COCO dataframe for display"""
+def parse_single_table(table, table_index):
+    """Parse a single table element using multiple methods"""
+    table_html = str(table)
+    
+    # Method 1: Try pd.read_html with header detection
+    try:
+        dfs = pd.read_html(StringIO(table_html))
+        if dfs:
+            return dfs[0]
+    except Exception as e1:
+        pass
+    
+    # Method 2: Try pd.read_html without headers
+    try:
+        dfs = pd.read_html(StringIO(table_html), header=None)
+        if dfs:
+            return dfs[0]
+    except Exception as e2:
+        pass
+    
+    # Method 3: Manual parsing as last resort
+    try:
+        rows = []
+        for tr in table.find_all("tr"):
+            cols = []
+            for td in tr.find_all(["td", "th"]):
+                # Get text and clean it
+                text = td.get_text(strip=True)
+                # Remove extra whitespace and newlines
+                text = re.sub(r'\s+', ' ', text)
+                cols.append(text)
+            if cols:  # Only add non-empty rows
+                rows.append(cols)
+        
+        if rows:
+            # Use first row as header if it looks like headers
+            if any(any(c.isalpha() for c in cell) for cell in rows[0]):
+                df = pd.DataFrame(rows[1:], columns=rows[0])
+            else:
+                df = pd.DataFrame(rows)
+            return df
+    except Exception as e3:
+        st.warning(f"Manual parsing failed for table_{table_index}: {e3}")
+    
+    return None
+
+def clean_dataframe_columns(df):
+    """Clean and standardize dataframe column names"""
     if df.empty:
         return df
     
-    # Check if first row should be headers
-    first_row = df.iloc[0]
-    if any(isinstance(val, str) and not val.replace('.', '').isdigit() for val in first_row):
-        df.columns = first_row
-        df = df.iloc[1:].reset_index(drop=True)
-    
-    # Clean column names
+    # Clean each column name
     clean_columns = []
     for idx, col in enumerate(df.columns):
-        if isinstance(col, str) and not col.startswith('Unnamed:'):
-            clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', col)
-            clean_columns.append(clean_col)
+        if isinstance(col, str):
+            # Remove special characters and normalize
+            clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', col.strip())
+            # Remove multiple underscores
+            clean_col = re.sub(r'_+', '_', clean_col)
+            # Remove leading/trailing underscores
+            clean_col = clean_col.strip('_')
+            # Ensure it's not empty
+            if not clean_col:
+                clean_col = f"column_{idx}"
         else:
-            clean_columns.append(f"column_{idx}")
+            clean_col = f"column_{idx}"
+        
+        # Ensure uniqueness
+        if clean_col in clean_columns:
+            suffix = 1
+            while f"{clean_col}_{suffix}" in clean_columns:
+                suffix += 1
+            clean_col = f"{clean_col}_{suffix}"
+        
+        clean_columns.append(clean_col)
     
     df.columns = clean_columns
+    return df
+
+def clean_coco_dataframe(df):
+    """Additional cleaning for COCO dataframes"""
+    if df.empty:
+        return df
+    
+    df = clean_dataframe_columns(df)
+    
+    # Try to identify and clean numeric columns
+    for col in df.columns:
+        # Skip if already numeric
+        if pd.api.types.is_numeric_dtype(df[col]):
+            continue
+        
+        # Try to convert to numeric, coerce errors to NaN
+        try:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        except:
+            pass
+    
     return df
 
 def prepare_coco_matrix(ranked_df):
@@ -171,3 +229,13 @@ def invert_ranking(matrix_df):
             inverted_df[col] = num_objects - inverted_df[col] + 1
     
     return inverted_df
+
+def save_coco_debug(html_snippet):
+    """Save debug information to session state"""
+    debug_info = {
+        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+        'html_snippet': html_snippet
+    }
+    if 'coco_debug' not in st.session_state:
+        st.session_state.coco_debug = []
+    st.session_state.coco_debug.append(debug_info)
