@@ -72,6 +72,16 @@ class SessionDataManager:
     def get_ranked_results(self):
         return st.session_state.ranked_results
     
+    def store_coco_results(self, tables):
+        st.session_state.coco_results = tables
+        self._add_to_history("COCO analysis completed", f"{len(tables)} tables generated")
+
+    def get_coco_results(self, table_name=None):
+        """Get COCO analysis results"""
+        if table_name:
+            return st.session_state.coco_results.get(table_name)
+        return st.session_state.coco_results
+    
     def clear_session(self):
         """Clear all session data"""
         self.init_session_state()  # Reset to initial state
