@@ -173,6 +173,60 @@ def invert_ranking(matrix_df):
     
     return inverted_df
 
+def clean_dataframe_columns(df):
+    """Clean and standardize dataframe column names"""
+    if df.empty:
+        return df
+    
+    # Clean each column name
+    clean_columns = []
+    for idx, col in enumerate(df.columns):
+        if isinstance(col, str):
+            # Remove special characters and normalize
+            clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', col.strip())
+            # Remove multiple underscores
+            clean_col = re.sub(r'_+', '_', clean_col)
+            # Remove leading/trailing underscores
+            clean_col = clean_col.strip('_')
+            # Ensure it's not empty
+            if not clean_col:
+                clean_col = f"column_{idx}"
+        else:
+            clean_col = f"column_{idx}"
+        
+        # Ensure uniqueness
+        if clean_col in clean_columns:
+            suffix = 1
+            while f"{clean_col}_{suffix}" in clean_columns:
+                suffix += 1
+            clean_col = f"{clean_col}_{suffix}"
+        
+        clean_columns.append(clean_col)
+    
+    df.columns = clean_columns
+    return df
+
+def clean_coco_dataframe(df):
+    """Additional cleaning for COCO dataframes"""
+    if df.empty:
+        return df
+    
+    df = clean_dataframe_columns(df)
+    
+    # Try to identify and clean numeric columns
+    for col in df.columns:
+        # Skip if already numeric
+        if pd.api.types.is_numeric_dtype(df[col]):
+            continue
+        
+        # Try to convert to numeric, coerce errors to NaN
+        try:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        except:
+            pass
+    
+    return df
+
 def prepare_coco_matrix(ranked_df):
     """Prepare ranked data for COCO analysis"""
     # Extract just the numeric values (without userid and userfullname)
