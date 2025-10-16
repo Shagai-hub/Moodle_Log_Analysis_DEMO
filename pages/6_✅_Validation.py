@@ -120,11 +120,10 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         status_text.text("Step 2: Converting to COCO format...")
         progress_bar.progress(40)
         
-        with st.expander("🔍 Exact Matrix Data Sent to COCO", expanded=True):
-            st.text_area("Matrix Data (Tab-Separated Format)", inverted_matrix_data, height=300)
-        
         inverted_matrix_data = prepare_coco_matrix(inverted_matrix_df)
         
+        with st.expander("🔍 Exact Matrix Data Sent to COCO", expanded=True):
+            st.text_area("Matrix Data (Tab-Separated Format)", inverted_matrix_data, height=300)
         # Step 3: Send to COCO
         status_text.text("Step 3: Sending inverted matrix to COCO...")
         progress_bar.progress(60)
