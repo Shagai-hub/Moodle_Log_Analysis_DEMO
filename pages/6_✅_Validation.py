@@ -203,6 +203,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
         original_delta = pd.to_numeric(original_table[delta_col], errors='coerce')
         inverted_delta = pd.to_numeric(inverted_table[delta_col], errors='coerce')
         original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
+        
         # Calculate validation: original_delta * inverted_delta <= 0 is valid
         validation_product = original_delta * inverted_delta
         is_valid = validation_product <= 0
@@ -216,29 +217,14 @@ def perform_validation(original_table, inverted_table, ranked_data):
         validation_results['Validation_Result'] = is_valid.map({True: 'Valid', False: 'Invalid'})
         validation_results['Is_Valid'] = is_valid
         
+        # Add ranking based on BecslÃ©s score
+        validation_results['Final_Rank'] = validation_results['Becsl_s'].rank(ascending=False, method='min').astype(int)
+        
         return validation_results
         
     except Exception as e:
         st.error(f"❌ Error in perform_validation: {str(e)}")
         return None
-    
-    # Calculate validation: original_delta * inverted_delta <= 0 is valid
-    validation_product = original_delta * inverted_delta
-    is_valid = validation_product <= 0
-    
-    # Create validation results
-    validation_results = ranked_data.copy()
-    validation_results['Becsl_s'] = original_becsl
-    validation_results['Original_Delta'] = original_delta
-    validation_results['Inverted_Delta'] = inverted_delta
-    validation_results['Validation_Product'] = validation_product
-    validation_results['Validation_Result'] = is_valid.map({True: 'Valid', False: 'Invalid'})
-    validation_results['Is_Valid'] = is_valid
-    
-    # Add ranking based on BecslÃ©s score
-    validation_results['Final_Rank'] = validation_results['Becsl_s'].rank(ascending=False, method='min').astype(int)
-    
-    return validation_results
 
 def display_validation_results(validation_results, data_manager):
     """Display validation results and charts"""
