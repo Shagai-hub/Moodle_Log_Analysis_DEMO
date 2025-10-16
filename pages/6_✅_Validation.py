@@ -155,12 +155,15 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
                 main_table, inverted_main_table, ranked_data
             )
             
-            if validation_results:
+            # FIX: Check if validation_results is not None and not empty
+            if validation_results is not None and not validation_results.empty:
                 # Store validation results
                 data_manager.store_validation_results(validation_results)
                 
                 # Display results
                 display_validation_results(validation_results, data_manager)
+            else:
+                st.error("❌ Validation failed to produce results")
         else:
             st.error("❌ table_4 not found in inverted COCO results")
             st.write("Available inverted tables:", list(inverted_tables.keys()))
@@ -173,49 +176,50 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         import traceback
         st.error(f"Detailed error: {traceback.format_exc()}")
         progress_bar.progress(0)
-
-def perform_validation(original_table, inverted_table, ranked_data):
-    """Perform the validation comparison between original and inverted results"""
-    
-    # Use the exact column names we know exist
-    delta_col_original = 'Delta_T_ny'
-    delta_col_inverted = 'Delta_T_ny'  # Same column name in inverted table
-    becsl_col = 'Becsl_s'
-    
-    # Verify columns exist
-    if delta_col_original not in original_table.columns:
-        st.error(f"❌ Column '{delta_col_original}' not found in original table")
-        st.write("Available columns:", list(original_table.columns))
-        return None
-    
-    if delta_col_inverted not in inverted_table.columns:
-        st.error(f"❌ Column '{delta_col_inverted}' not found in inverted table")
-        st.write("Available columns:", list(inverted_table.columns))
-        return None
-    
-    if becsl_col not in original_table.columns:
-        st.error(f"❌ Column '{becsl_col}' not found in original table")
-        st.write("Available columns:", list(original_table.columns))
-        return None
-    
-    st.success("✅ All required columns found in both tables!")
-    
-    # Convert to numeric - handle any potential formatting issues
-    try:
-        original_delta = pd.to_numeric(original_table[delta_col_original], errors='coerce')
-        inverted_delta = pd.to_numeric(inverted_table[delta_col_inverted], errors='coerce')
-        original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
         
-        # Check for any conversion issues
-        if original_delta.isna().any():
-            st.warning("⚠️ Some Delta values in original table could not be converted to numbers")
-        if inverted_delta.isna().any():
-            st.warning("⚠️ Some Delta values in inverted table could not be converted to numbers")
-        if original_becsl.isna().any():
-            st.warning("⚠️ Some BecslÃ©s values could not be converted to numbers")
+def perform_validation(original_table, inverted_table, ranked_data):
+    """Simple validation - just use the columns we know should be there"""
+    
+    try:
+        # The columns should now be properly named after clean_coco_dataframe
+        delta_col = 'Delta/TÃ©ny'  # Keep the original encoding for now
+        becsl_col = 'BecslÃ©s'     # Keep the original encoding for now
+        
+        # Check if columns exist
+        if delta_col not in original_table.columns or delta_col not in inverted_table.columns:
+            st.error(f"❌ Delta column '{delta_col}' not found")
+            st.write("Original table columns:", list(original_table.columns))
+            st.write("Inverted table columns:", list(inverted_table.columns))
+            return None
             
+        if becsl_col not in original_table.columns:
+            st.error(f"❌ Becsl column '{becsl_col}' not found") 
+            st.write("Original table columns:", list(original_table.columns))
+            return None
+        
+        st.success("✅ All required columns found!")
+        
+        # Convert to numeric
+        original_delta = pd.to_numeric(original_table[delta_col], errors='coerce')
+        inverted_delta = pd.to_numeric(inverted_table[delta_col], errors='coerce')
+        original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
+        # Calculate validation: original_delta * inverted_delta <= 0 is valid
+        validation_product = original_delta * inverted_delta
+        is_valid = validation_product <= 0
+        
+        # Create validation results
+        validation_results = ranked_data.copy()
+        validation_results['Becsl_s'] = original_becsl
+        validation_results['Original_Delta'] = original_delta
+        validation_results['Inverted_Delta'] = inverted_delta
+        validation_results['Validation_Product'] = validation_product
+        validation_results['Validation_Result'] = is_valid.map({True: 'Valid', False: 'Invalid'})
+        validation_results['Is_Valid'] = is_valid
+        
+        return validation_results
+        
     except Exception as e:
-        st.error(f"❌ Error converting columns to numeric: {e}")
+        st.error(f"❌ Error in perform_validation: {str(e)}")
         return None
     
     # Calculate validation: original_delta * inverted_delta <= 0 is valid
