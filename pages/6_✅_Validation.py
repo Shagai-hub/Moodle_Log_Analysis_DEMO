@@ -16,7 +16,7 @@ def main():
 
     # Load ranked data and COCO results
     ranked_data = data_manager.get_ranked_results()
-    coco_table4 = data_manager.get_coco_table("table_4")
+    coco_table4 = data_manager.get_coco_results("table_4")
 
     if ranked_data is None or coco_table4 is None:
         st.warning("📊 Please run COCO analysis first to enable validation.")
