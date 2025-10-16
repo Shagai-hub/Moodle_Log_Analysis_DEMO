@@ -30,6 +30,7 @@ def main():
     # Use configuration from ConfigManager
     PROFESSORS = config.professors
     DEADLINES = config.deadlines
+    PARENT_IDS_PATTERN = config.parent_ids_pattern
     
     # Prepare data (exclude professors)
     df_all = raw_data.copy()
@@ -186,12 +187,22 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
                 # These functions now use config internally, so only need 2 arguments
                 result = func(df, df_all)
             elif attr.startswith("deadline_exceeded_posts_"):
-                # Use deadlines from config
-                exam_name = attr.replace("deadline_exceeded_posts_", "").replace("_", " ")
-                if exam_name in DEADLINES:
-                    result = func(df)
+                # Map attribute names to exact exam names in configuration
+                exam_mapping = {
+                    "deadline_exceeded_posts_Quasi_exam_I": "Quasi Exam I",
+                    "deadline_exceeded_posts_Quasi_exam_II": "Quasi Exam II", 
+                    "deadline_exceeded_posts_Quasi_exam_III": "Quasi Exam III"
+                }
+                
+                if attr in exam_mapping:
+                    exam_name = exam_mapping[attr]
+                    if exam_name in DEADLINES:
+                        result = func(df)
+                    else:
+                        st.warning(f"Deadline for {exam_name} not found in configuration")
+                        continue
                 else:
-                    st.warning(f"Deadline for {exam_name} not found in configuration")
+                    st.warning(f"No mapping found for attribute: {attr}")
                     continue
             elif attr == "Pattern_followed_quasi_exam_i":
                 # Use parent IDs from config
