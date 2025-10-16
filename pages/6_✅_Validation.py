@@ -186,8 +186,7 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         progress_bar.progress(0)
         
 def perform_validation(original_table, inverted_table, ranked_data):
-    """Simple validation - just use the columns we know should be there"""
-    
+    """Validate COCO analysis results by comparing original and inverted deltas."""
     try:
         # The columns should now be properly named after clean_coco_dataframe
         delta_col = 'Delta_T_ny'  # Keep the original encoding for now
@@ -207,10 +206,21 @@ def perform_validation(original_table, inverted_table, ranked_data):
         
         st.success("✅ All required columns found!")
         
-        # Convert to numeric
+        # Convert to numeric and handle invalid values
         original_delta = pd.to_numeric(original_table[delta_col], errors='coerce')
         inverted_delta = pd.to_numeric(inverted_table[delta_col], errors='coerce')
         original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
+        
+        # Ensure no NaN values in deltas
+        if original_delta.isna().any() or inverted_delta.isna().any():
+            st.warning("⚠️ Some delta values could not be converted to numeric. These rows will be excluded from validation.")
+        
+        # Filter out rows with NaN values
+        valid_indices = original_delta.notna() & inverted_delta.notna()
+        original_delta = original_delta[valid_indices]
+        inverted_delta = inverted_delta[valid_indices]
+        ranked_data = ranked_data.loc[valid_indices]
+        original_becsl = original_becsl[valid_indices]
         
         # Calculate validation: original_delta * inverted_delta <= 0 is valid
         validation_product = original_delta * inverted_delta
@@ -225,7 +235,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
         validation_results['Validation_Result'] = is_valid.map({True: 'Valid', False: 'Invalid'})
         validation_results['Is_Valid'] = is_valid
         
-        # Add ranking based on BecslÃ©s score
+        # Add ranking based on Becsl_s score
         validation_results['Final_Rank'] = validation_results['Becsl_s'].rank(ascending=False, method='min').astype(int)
         
         return validation_results
