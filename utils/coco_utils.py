@@ -73,21 +73,64 @@ def parse_coco_html(resp_or_html):
         for i, table in enumerate(tables):
             try:
                 # Try multiple parsing methods for each table
-                df = parse_single_table(table, i)
-                if df is not None and not df.empty:
-                    df = clean_dataframe_columns(df)
-                    table_dataframes[f"table_{i}"] = df
-                    st.success(f"✅ Successfully parsed table_{i} ({df.shape[0]}x{df.shape[1]})")
+                try:
+                    df_list = pd.read_html(StringIO(table_html))
+                    df = df_list[0]
+                except Exception as e_read:
+                    # fallback: try header=None
+                    df = pd.read_html(StringIO(table_html), header=None)[0]
             except Exception as e:
-                st.warning(f"❌ Failed to parse table_{i}: {e}")
-                continue
-    
-    if not table_dataframes:
-        st.error("❌ No tables could be parsed from COCO response")
-        # Save debug info
-        save_coco_debug(html[:5000])  # First 5000 chars for debugging
-    
+                # Last-resort parse: manual row/td extraction via BeautifulSoup
+                try:
+                    rows = []
+                    for tr in table.find_all("tr"):
+                        cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
+                        if cols:
+                            rows.append(cols)
+                    df = pd.DataFrame(rows)
+                except Exception as e_manual:
+                    print(f"Could not parse table {i}: {e} / {e_manual}")
+                    continue
+            # Make columns unique & safe
+            cols = list(df.columns)
+            unique_cols = []
+            for idx, col in enumerate(cols):
+                base = str(col) if not pd.isna(col) else f"col_{idx}"
+                # collapse whitespace and replace special chars
+                clean = re.sub(r'[^A-Za-z0-9_]', '_', base.strip())
+                # ensure uniqueness
+                if clean in unique_cols:
+                    suffix = 1
+                    while f"{clean}_{suffix}" in unique_cols:
+                        suffix += 1
+                    clean = f"{clean}_{suffix}"
+                unique_cols.append(clean)
+            df.columns = unique_cols
+            table_dataframes[f"table_{i}"] = df
+        else:
+            # No <table> tags found — try pd.read_html on full page (handles some malformed HTML)
+            try:
+                dfs = pd.read_html(StringIO(html))
+                for i, df in enumerate(dfs):
+                    # clean column names similar to above
+                    cols = list(df.columns)
+                    unique_cols = []
+                    for idx, col in enumerate(cols):
+                        base = str(col) if not pd.isna(col) else f"col_{idx}"
+                        clean = re.sub(r'[^A-Za-z0-9_]', '_', base.strip())
+                        if clean in unique_cols:
+                            suffix = 1
+                            while f"{clean}_{suffix}" in unique_cols:
+                                suffix += 1
+                            clean = f"{clean}_{suffix}"
+                        unique_cols.append(clean)
+                    df.columns = unique_cols
+                    table_dataframes[f"table_{i}"] = df
+            except Exception as e_full:
+                # nothing found — return empty dict (caller will handle debug saving)
+                print(f"pd.read_html on full page failed: {e_full}")
     return table_dataframes
+
 
 def parse_single_table(table, table_index):
     """Parse a single table element using multiple methods"""
