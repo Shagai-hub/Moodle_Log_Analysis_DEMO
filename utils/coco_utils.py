@@ -248,6 +248,10 @@ def clean_coco_dataframe(df):
         df.columns = df.iloc[0]
         df = df.iloc[1:].reset_index(drop=True)
     
+    # Remove the first column if it contains row identifiers (e.g., "O1", "O2", etc.)
+    if df.columns[0] == df.iloc[:, 0].name or all(isinstance(cell, str) and cell.startswith("O") for cell in df.iloc[:, 0]):
+        df = df.drop(df.columns[0], axis=1)
+    
     # Clean the column names with proper encoding
     df = clean_dataframe_columns(df)
     
