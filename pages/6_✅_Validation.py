@@ -182,8 +182,8 @@ def perform_validation(original_table, inverted_table, ranked_data):
     
     try:
         # The columns should now be properly named after clean_coco_dataframe
-        delta_col = 'Delta/TÃ©ny'  # Keep the original encoding for now
-        becsl_col = 'BecslÃ©s'     # Keep the original encoding for now
+        delta_col = 'Delta_T_ny'  # Keep the original encoding for now
+        becsl_col = 'Becsl_s'     # Keep the original encoding for now
         
         # Check if columns exist
         if delta_col not in original_table.columns or delta_col not in inverted_table.columns:
