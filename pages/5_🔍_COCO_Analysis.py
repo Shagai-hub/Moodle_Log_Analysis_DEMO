@@ -46,7 +46,8 @@ def main():
     with col2:
         st.subheader("📊 Data Summary")
         st.metric("Students", len(ranked_data))
-        st.metric("Attributes", len([col for col in ranked_data.columns if col.endswith('_rank')]))
+        num_attributes = len([col for col in ranked_data.columns if col not in ["userid", "userfullname", "Y_value"]])
+        st.metric("Attributes", num_attributes)
         st.metric("Y Value", ranked_data["Y_value"].iloc[0] if "Y_value" in ranked_data.columns else "N/A")
     
     # Data preview
@@ -67,6 +68,10 @@ def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
     with st.spinner("Preparing data for COCO analysis..."):
         matrix_data = prepare_coco_matrix(ranked_data)
     
+    # Display matrix preview for debugging
+    with st.expander("🔍 Matrix Data Preview", expanded=False):
+        st.text_area("COCO Input Matrix (first 500 chars):", matrix_data[:500], height=150)
+    
     # Send request to COCO service
     st.info("🌐 Sending request to COCO service...")
     
@@ -83,7 +88,8 @@ def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
             stair=str(stair_value),
             object_names="",
             attribute_names="",
-            keep_files=False
+            keep_files=False,
+            timeout=180  # Increased timeout
         )
         
         status_text.text("Processing COCO response...")
@@ -91,7 +97,7 @@ def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
         
         st.success(f"✅ COCO service responded (Status: {resp.status_code})")
         
-        # Parse the response
+        # Parse the response with improved parsing
         status_text.text("Parsing analysis results...")
         progress_bar.progress(80)
         
@@ -122,19 +128,23 @@ def handle_coco_error(resp):
     except Exception:
         raw_html = resp.text if hasattr(resp, 'text') else "<no html>"
     
-    # Save debug information to session
-    debug_info = {
-        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
-        'status_code': getattr(resp, "status_code", None),
-        'html_snippet': raw_html[:2000]
-    }
+    # Save full HTML for debugging
+    st.session_state.last_coco_html = raw_html
     
     with st.expander("🔧 Debug Information", expanded=False):
         st.write("**Response Details:**")
-        st.json(debug_info)
+        st.write(f"Status Code: {getattr(resp, 'status_code', 'N/A')}")
+        st.write(f"URL: {getattr(resp, 'url', 'N/A')}")
         
         st.write("**Response Snippet:**")
-        st.code(raw_html[:1000], language='html')
+        st.code(raw_html[:2000], language='html')
+        
+        # Show debug info from session state
+        if 'coco_debug' in st.session_state:
+            st.write("**Parsing Debug Info:**")
+            for debug in st.session_state.coco_debug[-3:]:  # Show last 3 debug entries
+                st.write(f"Time: {debug['timestamp']}")
+                st.code(debug['html_snippet'][:1000], language='html')
     
     st.info("💡 This might be a temporary service issue. Please try again in a few moments.")
 
@@ -156,7 +166,7 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
             "Table": name,
             "Rows": df.shape[0],
             "Columns": df.shape[1],
-            "Description": get_table_description(name)
+            "Description": get_table_description(name, df)
         })
     
     summary_df = pd.DataFrame(summary_data)
@@ -168,55 +178,82 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
     # Export options
     display_export_options(tables, data_manager)
 
-def get_table_description(table_name):
-    """Get description for COCO result tables"""
-    descriptions = {
-        "table_0": "Input data verification",
-        "table_1": "Normalized decision matrix", 
-        "table_2": "Weighted normalized matrix",
-        "table_3": "Ideal and negative-ideal solutions",
-        "table_4": "Distance measures and final scores",
-        "table_5": "Ranking results"
-    }
-    return descriptions.get(table_name, "Analysis results")
+def get_table_description(table_name, df):
+    """Get description for COCO result tables based on content"""
+    # Try to infer table purpose from column names and content
+    columns_lower = [str(col).lower() for col in df.columns]
+    
+    if any('distance' in col for col in columns_lower) and any('ideal' in col for col in columns_lower):
+        return "Distance measures and final scores"
+    elif any('rank' in col for col in columns_lower):
+        return "Ranking results"
+    elif any('weight' in col for col in columns_lower):
+        return "Weighted normalized matrix"
+    elif any('normal' in col for col in columns_lower):
+        return "Normalized decision matrix"
+    elif len(df) == stair_value:
+        return "Input data verification"
+    else:
+        return "Analysis results"
 
 def display_key_tables(tables):
     """Display the most important COCO result tables"""
     
-    # Table 4 - Usually contains the final scores (Becsl_s)
-    if 'table_4' in tables:
-        st.subheader("🎯 Final Scores (Becsl_s)")
-        table_4 = clean_coco_dataframe(tables['table_4'])
-        
-        # Try to find the score column
-        score_columns = [col for col in table_4.columns if 'becsl' in col.lower() or 'score' in col.lower() or 'value' in col.lower()]
-        
-        if score_columns:
-            display_df = table_4.copy()
-            if 'object' in display_df.columns or 'obj' in display_df.columns:
-                # Sort by score (assuming higher is better)
-                score_col = score_columns[0]
-                if pd.api.types.is_numeric_dtype(display_df[score_col]):
-                    display_df = display_df.sort_values(score_col, ascending=False)
-            
-            st.dataframe(display_df, use_container_width=True)
-            
-            # Show top performers
-            if len(display_df) > 0 and score_columns:
-                top_5 = display_df.head(5)
-                st.subheader("🏆 Top Performers (COCO Scores)")
-                for idx, row in top_5.iterrows():
-                    score_val = row[score_columns[0]]
-                    obj_name = row.get('object', row.get('obj', f"Object {idx+1}"))
-                    st.write(f"**{idx+1}.** {obj_name} - Score: {score_val:.4f}")
-        else:
-            st.dataframe(table_4, use_container_width=True)
+    # Try to identify the score table by content
+    score_table = None
+    ranking_table = None
     
-    # Table 5 - Usually contains rankings
-    if 'table_5' in tables:
+    for name, df in tables.items():
+        cols_lower = [str(col).lower() for col in df.columns]
+        # Look for typical COCO output columns
+        if any('becsl' in col for col in cols_lower) or any('score' in col for col in cols_lower):
+            score_table = (name, df)
+        elif any('rank' in col for col in cols_lower):
+            ranking_table = (name, df)
+    
+    # Display scores table
+    if score_table:
+        name, df = score_table
+        st.subheader("🎯 Final Scores")
+        display_df = clean_coco_dataframe(df)
+        
+        # Try to identify score column
+        score_cols = [col for col in display_df.columns if any(keyword in col.lower() for keyword in ['becsl', 'score', 'value'])]
+        
+        if score_cols:
+            score_col = score_cols[0]
+            if pd.api.types.is_numeric_dtype(display_df[score_col]):
+                display_df = display_df.sort_values(score_col, ascending=False)
+                
+                # Show top performers
+                st.subheader("🏆 Top Performers")
+                top_5 = display_df.head(5)
+                for idx, (_, row) in enumerate(top_5.iterrows(), 1):
+                    score_val = row[score_col]
+                    # Try to get object identifier
+                    obj_cols = [col for col in display_df.columns if any(keyword in col.lower() for keyword in ['object', 'obj', 'name'])]
+                    if obj_cols:
+                        obj_name = row[obj_cols[0]]
+                    else:
+                        obj_name = f"Object {idx}"
+                    st.write(f"**{idx}.** {obj_name} - Score: {score_val:.4f}")
+        
+        st.dataframe(display_df, use_container_width=True)
+    
+    # Display rankings table
+    if ranking_table:
+        name, df = ranking_table
         st.subheader("📈 Final Rankings")
-        table_5 = clean_coco_dataframe(tables['table_5'])
-        st.dataframe(table_5, use_container_width=True)
+        display_df = clean_coco_dataframe(df)
+        st.dataframe(display_df, use_container_width=True)
+    
+    # Display all tables in expanders for completeness
+    with st.expander("🔍 All Result Tables", expanded=False):
+        for name, df in tables.items():
+            if (score_table and name == score_table[0]) or (ranking_table and name == ranking_table[0]):
+                continue  # Skip already displayed tables
+            st.subheader(f"📄 {name}")
+            st.dataframe(clean_coco_dataframe(df), use_container_width=True)
 
 def display_export_options(tables, data_manager):
     """Display options to export COCO results"""
@@ -227,10 +264,25 @@ def display_export_options(tables, data_manager):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Export all tables as ZIP
-        if st.button("📦 Download All Results (ZIP)", use_container_width=True):
-            # This would require creating a ZIP file - for now we'll do individual CSVs
-            st.info("Individual CSV downloads available below")
+        # Export all tables as CSV
+        if st.button("📦 Download All Results (CSV)", use_container_width=True):
+            # Create a ZIP file with all tables
+            import io
+            import zipfile
+            
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                for table_name, df in tables.items():
+                    csv_data = df.to_csv(index=False)
+                    zip_file.writestr(f"{table_name}.csv", csv_data)
+            
+            st.download_button(
+                "⬇ Download ZIP",
+                zip_buffer.getvalue(),
+                "coco_results.zip",
+                "application/zip",
+                use_container_width=True
+            )
     
     with col2:
         # Proceed to validation
