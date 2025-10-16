@@ -65,19 +65,6 @@ def parse_coco_html(resp_or_html):
     
     table_dataframes = {}
     
-    # METHOD 1: Try pd.read_html on entire HTML first (most reliable)
-    try:
-        dfs = pd.read_html(StringIO(html))
-        for i, df in enumerate(dfs):
-            if not df.empty:
-                df = clean_dataframe_columns(df)
-                table_dataframes[f"table_{i}"] = df
-        if table_dataframes:
-            st.info(f"✅ Found {len(table_dataframes)} tables using direct HTML parsing")
-            return table_dataframes
-    except Exception as e:
-        st.warning(f"Direct HTML parsing failed: {e}")
-    
     # METHOD 2: Fallback to BeautifulSoup table extraction
     tables = soup.find_all('table')
     if tables:
