@@ -140,12 +140,18 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         status_text.text("Step 4: Parsing inverted COCO results...")
         progress_bar.progress(80)
         
+        
         inverted_tables = parse_coco_html(resp)
         
         if not inverted_tables:
             st.error("❌ No results received from inverted COCO analysis")
             return
         
+        with st.expander("🔍 Parsed Inverted Tables", expanded=True):
+            for table_name, table_data in inverted_tables.items():
+                st.write(f"**Table: {table_name}**")
+                st.dataframe(table_data.head(), use_container_width=True)
+                
         # Step 5: Perform validation
         status_text.text("Step 5: Performing validation...")
         progress_bar.progress(90)
