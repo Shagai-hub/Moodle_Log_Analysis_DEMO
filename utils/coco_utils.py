@@ -63,18 +63,6 @@ def parse_coco_html(resp_or_html):
     # Try multiple parsing strategies
     tables = {}
     
-    # Strategy 1: Direct pandas read_html (often works best with COCO)
-    try:
-        dfs = pd.read_html(StringIO(html), flavor='html5lib')
-        for i, df in enumerate(dfs):
-            if not df.empty:
-                tables[f"table_{i}"] = clean_coco_dataframe(df)
-        if tables:
-            st.info(f"Strategy 1 (pandas read_html) found {len(tables)} tables")
-            return tables
-    except Exception as e:
-        st.warning(f"Strategy 1 failed: {e}")
-    
     # Strategy 2: BeautifulSoup with more robust table detection
     try:
         soup = BeautifulSoup(html, 'html.parser')
@@ -195,30 +183,9 @@ def clean_dataframe_columns(df):
     return df
 
 def clean_coco_dataframe(df):
-    """Additional cleaning for COCO dataframes with header promotion"""
-    if df.empty:
-        return df
-    
-    # Check if first row should be promoted to header (common in COCO output)
-    if len(df) > 1:
-        first_row = df.iloc[0]
-        # If first row contains string values and looks like header names
-        if (first_row.apply(lambda x: isinstance(x, str) and 
-                           any(keyword in str(x).lower() for keyword in ['object', 'attribute', 'weight', 'value', 'distance']))).any():
-            # Use first row as header
-            df.columns = [str(col).strip() for col in first_row]
-            df = df.iloc[1:].reset_index(drop=True)
-    
-    df = clean_dataframe_columns(df)
-    
-    # Convert numeric columns
-    for col in df.columns:
-        if not pd.api.types.is_numeric_dtype(df[col]):
-            try:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-            except:
-                pass
-    
+    """No cleaning applied - return raw COCO output"""
+    # Return the dataframe exactly as parsed from COCO
+    # No column cleaning, no type conversion, no empty row removal
     return df
 
 def prepare_coco_matrix(ranked_df):
