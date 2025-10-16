@@ -38,14 +38,14 @@ def send_coco_request(matrix_data, job_name="MyTest", stair="", object_names="",
 def parse_coco_html(resp_or_html):
     """
     Parse the HTML response from COCO and extract all tables robustly.
-    This improved version handles the actual COCO response format better.
+    This version properly handles the header row issue.
     """
     # Prepare html string
     try:
         if hasattr(resp_or_html, "content") and hasattr(resp_or_html, "status_code"):
             # requests.Response
             raw_bytes = resp_or_html.content
-            # site uses ISO-8859-2; explicitly decode with replace to avoid crashes
+            # Use ISO-8859-2 encoding as specified
             html = raw_bytes.decode('iso-8859-2', errors='replace')
         else:
             html = str(resp_or_html)
@@ -53,34 +53,58 @@ def parse_coco_html(resp_or_html):
         st.error(f"Could not decode HTML response: {e}")
         return {}
     
-    # Save debug HTML for inspection
-    debug_info = {
-        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
-        'html_snippet': html[:2000]
-    }
-    if 'coco_debug' not in st.session_state:
-        st.session_state.coco_debug = []
-    st.session_state.coco_debug.append(debug_info)
-    
-    # Try multiple parsing strategies
     tables = {}
     
-    # Strategy 2: BeautifulSoup with more robust table detection
     try:
         soup = BeautifulSoup(html, 'html.parser')
-        
-        # Look for tables with specific COCO characteristics
         potential_tables = soup.find_all('table')
         
         for i, table in enumerate(potential_tables):
             try:
                 # Extract table HTML and parse with pandas
                 table_html = str(table)
-                df_list = pd.read_html(StringIO(table_html))
-                if df_list:
-                    df = df_list[0]
-                    if not df.empty and len(df) > 1:  # Filter out empty/small tables
-                        tables[f"table_{i}"] = clean_coco_dataframe(df)
+                
+                # Try multiple header strategies
+                df_found = None
+                
+                # Strategy 1: Try with header=0 (first row as header)
+                try:
+                    df_list = pd.read_html(StringIO(table_html), header=0)
+                    if df_list:
+                        df = df_list[0]
+                        # Check if this looks like a proper table (not just numbers as headers)
+                        first_col = str(df.columns[0]) if len(df.columns) > 0 else ""
+                        if not first_col.isdigit() and 'unnamed' not in first_col.lower():
+                            df_found = df
+                except:
+                    pass
+                
+                # Strategy 2: Try with header=1 (second row as header) if first failed
+                if df_found is None:
+                    try:
+                        df_list = pd.read_html(StringIO(table_html), header=1)
+                        if df_list:
+                            df = df_list[0]
+                            first_col = str(df.columns[0]) if len(df.columns) > 0 else ""
+                            if not first_col.isdigit() and 'unnamed' not in first_col.lower():
+                                df_found = df
+                    except:
+                        pass
+                
+                # Strategy 3: No header, we'll handle it manually
+                if df_found is None:
+                    try:
+                        df_list = pd.read_html(StringIO(table_html), header=None)
+                        if df_list:
+                            df_found = df_list[0]
+                    except:
+                        pass
+                
+                if df_found is not None and not df_found.empty:
+                    # Clean the dataframe
+                    cleaned_df = clean_coco_dataframe(df_found)
+                    tables[f"table_{i}"] = cleaned_df
+                    
             except Exception as e:
                 # Fallback to manual parsing
                 try:
@@ -89,36 +113,27 @@ def parse_coco_html(resp_or_html):
                         cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
                         if cols:
                             rows.append(cols)
-                    if len(rows) > 1:  # Only add if we have data rows
-                        df = pd.DataFrame(rows)
+                    
+                    if len(rows) > 1:
+                        # Try to detect if first row is header
+                        first_row = rows[0]
+                        has_text_headers = any(any(c.isalpha() for c in str(cell)) for cell in first_row)
+                        
+                        if has_text_headers and len(rows) > 1:
+                            # Use first row as header
+                            df = pd.DataFrame(rows[1:], columns=first_row)
+                        else:
+                            df = pd.DataFrame(rows)
+                        
                         tables[f"table_{i}"] = clean_coco_dataframe(df)
                 except Exception as e_manual:
                     continue
         
         if tables:
-            st.info(f"Strategy 2 (BeautifulSoup) found {len(tables)} tables")
+            st.info(f"Found {len(tables)} tables")
             return tables
     except Exception as e:
-        st.warning(f"Strategy 2 failed: {e}")
-    
-    # Strategy 3: Look for pre elements that might contain table data
-    try:
-        soup = BeautifulSoup(html, 'html.parser')
-        pre_tags = soup.find_all('pre')
-        
-        for i, pre in enumerate(pre_tags):
-            pre_text = pre.get_text()
-            # Check if this looks like tabular data
-            if '\t' in pre_text or any(len(line.split()) > 2 for line in pre_text.split('\n')[:5]):
-                try:
-                    # Try to parse as space/tab separated data
-                    df = pd.read_csv(StringIO(pre_text), sep='\s+', engine='python')
-                    if not df.empty:
-                        tables[f"table_{i}"] = clean_coco_dataframe(df)
-                except:
-                    pass
-    except Exception as e:
-        st.warning(f"Strategy 3 failed: {e}")
+        st.warning(f"Table parsing failed: {e}")
     
     if not tables:
         st.error("No tables could be parsed from COCO response")
@@ -151,28 +166,59 @@ def invert_ranking(matrix_df):
     num_objects = len(matrix_df)
     inverted_df = matrix_df.copy()
     
-    for col in inverted_df.columns[:-1]:
-        if inverted_df[col].dtype in [np.int64, np.float64]:
-            inverted_df[col] = num_objects - inverted_df[col] + 1
+    # Identify numeric columns (excluding user identifiers and Y_value)
+    exclude_columns = ["userid", "userfullname", "Y_value", "Average_Rank", "Overall_Rank"]
+    numeric_columns = []
+    
+    for col in inverted_df.columns:
+        if col not in exclude_columns and pd.api.types.is_numeric_dtype(inverted_df[col]):
+            numeric_columns.append(col)
+    
+    for col in numeric_columns:
+        inverted_df[col] = num_objects - inverted_df[col] + 1
     
     return inverted_df
 
 def clean_dataframe_columns(df):
-    """Clean and standardize dataframe column names"""
+    """Clean and standardize dataframe column names with proper encoding"""
     if df.empty:
         return df
     
     clean_columns = []
     for idx, col in enumerate(df.columns):
         if isinstance(col, str):
-            clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', col.strip())
-            clean_col = re.sub(r'_+', '_', clean_col)
-            clean_col = clean_col.strip('_')
-            if not clean_col:
-                clean_col = f"column_{idx}"
+            # First, try to fix the encoding issue
+            try:
+                # The column names are likely ISO-8859-2 encoded but being interpreted as something else
+                # Try to encode as latin1 and decode as utf-8, or vice versa
+                try:
+                    # If the string shows encoding issues like "BecslÃ©s", it's UTF-8 misinterpreted as Latin1
+                    fixed_col = col.encode('latin1').decode('utf-8')
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    try:
+                        # Try the reverse
+                        fixed_col = col.encode('utf-8').decode('latin1')
+                    except (UnicodeEncodeError, UnicodeDecodeError):
+                        fixed_col = col
+                
+                # Now clean for SQL compatibility
+                clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', fixed_col.strip())
+                clean_col = re.sub(r'_+', '_', clean_col)
+                clean_col = clean_col.strip('_')
+                
+                if not clean_col:
+                    clean_col = f"column_{idx}"
+            except:
+                # Fallback to basic cleaning
+                clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', str(col).strip())
+                clean_col = re.sub(r'_+', '_', clean_col)
+                clean_col = clean_col.strip('_')
+                if not clean_col:
+                    clean_col = f"column_{idx}"
         else:
             clean_col = f"column_{idx}"
         
+        # Ensure unique column names
         if clean_col in clean_columns:
             suffix = 1
             while f"{clean_col}_{suffix}" in clean_columns:
@@ -185,9 +231,26 @@ def clean_dataframe_columns(df):
     return df
 
 def clean_coco_dataframe(df):
-    """No cleaning applied - return raw COCO output"""
-    # Return the dataframe exactly as parsed from COCO
-    # No column cleaning, no type conversion, no empty row removal
+    """Clean COCO dataframe by properly handling headers and encoding"""
+    if df.empty:
+        return df
+    
+    # Check if the first row contains what looks like column headers
+    first_row = df.iloc[0].tolist()
+    
+    # Look for COCO-specific headers in the first row
+    has_coco_headers = any('COCO' in str(cell) for cell in first_row) or \
+                      any('Becsl' in str(cell) for cell in first_row) or \
+                      any('Delta' in str(cell) for cell in first_row)
+    
+    if has_coco_headers:
+        # Use the first row as column names and remove it from data
+        df.columns = df.iloc[0]
+        df = df.iloc[1:].reset_index(drop=True)
+    
+    # Clean the column names with proper encoding
+    df = clean_dataframe_columns(df)
+    
     return df
 
 def prepare_coco_matrix(ranked_df):

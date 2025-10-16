@@ -59,19 +59,19 @@ def main():
             
             # Check for required columns
             st.write("**Required Column Check:**")
-            delta_found = 'Delta/TÃ©ny' in main_table.columns
-            becsl_found = 'BecslÃ©s' in main_table.columns
+            delta_found = 'Delta/Tény' in main_table.columns
+            becsl_found = 'Becslés' in main_table.columns
             
             if delta_found:
-                st.success("✅ Found 'Delta/TÃ©ny' column")
+                st.success("✅ Found 'Delta/Tény' column")
             else:
-                st.error("❌ Missing 'Delta/TÃ©ny' column")
+                st.error("❌ Missing 'Delta/Tény' column")
                 st.write("Available columns:", list(main_table.columns))
                 
             if becsl_found:
-                st.success("✅ Found 'BecslÃ©s' column")
+                st.success("✅ Found 'Becslés' column")
             else:
-                st.error("❌ Missing 'BecslÃ©s' column")
+                st.error("❌ Missing 'Becslés' column")
                 st.write("Available columns:", list(main_table.columns))
         
         # Only enable validation if required columns exist
