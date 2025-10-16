@@ -164,7 +164,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     students = df[["userid", "userfullname"]].drop_duplicates().sort_values("userfullname").reset_index(drop=True)
     oam_combined = students.copy()
     
-    st.info("Computing selected attributes, please wait...")
+    st.spinner("⏳ Computing selected attributes, please wait...")
     
     # Compute all selected attributes
     progress_bar = st.progress(0)
