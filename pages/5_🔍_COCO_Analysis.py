@@ -3,7 +3,7 @@ import pandas as pd
 import time
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
-from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix, last_coco_html
+from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
