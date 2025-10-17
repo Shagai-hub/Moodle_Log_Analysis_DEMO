@@ -32,13 +32,12 @@ with st.container():
     <div class='card'>
       <div class='logo'><div class='dot'></div><div style='font-weight:700'>Moodle Visual</div></div>
       <div class='title'>Ready to upload your Moodle logs</div>
-      <div class='lead'>This page is purely visual. No data will be shown here. Proceed to the Data Upload page to import logs and run analyses.</div>
     </div>
     """, unsafe_allow_html=True)
 
 # Centered button — the only interactive element on this page.
 cols = st.columns([1, 2, 1])
-with cols[1]:
+with cols[2]:
     if st.button("📤 Go to Data Upload", key="goto_upload", help="Navigate to the data upload page"):
         # Update this target if your pages folder or filename differs.
         st.switch_page("pages/1_📊_Data_Upload.py")
