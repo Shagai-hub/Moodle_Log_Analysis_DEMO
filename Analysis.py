@@ -155,3 +155,6 @@ st.markdown("""
 ---
 **Developer note:** This file intentionally avoids pandas/plotly and any data-handling. To re-enable data-driven components, import your data and mount them inside the preview container.
 """)
+
+if st.button("📊 Data Upload", use_container_width=True, type="primary"):
+        st.switch_page("pages/1_📊_Data_Upload.py")
