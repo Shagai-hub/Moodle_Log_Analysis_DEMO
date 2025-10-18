@@ -36,22 +36,31 @@ def main():
     
     st.success(f"✅ Ready to rank {len(student_attributes)} students using {len(selected_attributes)} attributes")
     
+    # Use Y-value from configuration
+    y_value = config.analysis_settings.get('y_value', 1000)
+    
     # Simple configuration section
     st.header("⚙️ Ranking Configuration")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Y-value configuration
+        # Y-value display (read-only from configuration)
         st.subheader("🎯 Reference Value (Y)")
-        y_value = st.number_input(
-            "Set Y value for COCO analysis:",
-            min_value=0,
-            max_value=100000,
-            value=config.analysis_settings.get('y_value', 1000),
-            step=100,
-            help="Typically set to 1000 for normal analysis"
-        )
+        st.info(f"**Y Value:** {y_value}")
+        st.caption("💡 Configure Y value in the Configuration page")
+        
+        # Optional: Allow temporary override for this session
+        use_custom_y = st.checkbox("Use custom Y value for this session", value=False)
+        if use_custom_y:
+            y_value = st.number_input(
+                "Custom Y value:",
+                min_value=0,
+                max_value=100000,
+                value=y_value,
+                step=100,
+                help="Temporary override - won't save to configuration"
+            )
     
     with col2:
         st.subheader("📊 Summary")
@@ -97,6 +106,15 @@ def main():
             
             # Display results
             display_ranking_results(ranked_df, selected_attributes, data_manager, y_value)
+    
+    # Show navigation button if ranking has been computed
+    if data_manager.get_ranked_results() is not None:
+        st.markdown("---")
+        col1, col2 = st.columns([1, 1])
+        with col2:
+            if st.button("🔍 Proceed to COCO Analysis", use_container_width=True, 
+                        help="Navigate to COCO Analysis page with ranked data"):
+                st.switch_page("pages/5_🔍_COCO_Analysis.py")
 
 def rank_students(df_oam, selected_attrs, attr_directions, y_value):
     """Rank students based on selected attributes and directions"""
@@ -216,12 +234,6 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
             "text/csv",
             use_container_width=True
         )
-    
-    with col2:
-        # Proceed to COCO analysis
-        if st.button("🔍 Proceed to COCO Analysis", use_container_width=True):
-            st.session_state.proceed_to_coco = True
-            st.rerun()
 
 if __name__ == "__main__":
     main()
