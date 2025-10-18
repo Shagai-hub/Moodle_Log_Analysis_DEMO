@@ -140,7 +140,7 @@ def render_attribute_selection_ui():
             text-align: center;
             padding: 6px;
             margin-top: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             background-color: #262730;
             color: #ffffff;
             border-radius: 10px;
