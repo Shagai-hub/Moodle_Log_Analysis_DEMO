@@ -40,10 +40,20 @@ def main():
     st.header("⚙️ Ranking Configuration")
     
     col1, col2 = st.columns(2)
-    config = st.session_state.config
-    y_value = config.get_setting("y_value", default=1000)
     
     with col1:
+        # Y-value configuration
+        st.subheader("🎯 Reference Value (Y)")
+        y_value = st.number_input(
+            "Set Y value for COCO analysis:",
+            min_value=0,
+            max_value=100000,
+            value=config.analysis_settings.get('y_value', 1000),
+            step=100,
+            help="Typically set to 1000 for normal analysis"
+        )
+    
+    with col2:
         st.subheader("📊 Summary")
         st.metric("Students", len(student_attributes))
         st.metric("Attributes", len(selected_attributes))
