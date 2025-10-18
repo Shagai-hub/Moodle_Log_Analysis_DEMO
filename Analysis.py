@@ -13,5 +13,6 @@ st.set_page_config(
     layout="wide"
 )
 st.title("🎓 Moodle Log Analyzer DEMO")
-if st.button("📤 Go to Data Upload", key="goto_upload", help="Navigate to the data upload page"):
+st.markdown("To start analyzing your Moodle logs, please upload your data first on the data upload page.")
+if st.button("Go to Data Upload", key="goto_upload", help="Navigate to the data upload page"):
     st.switch_page("pages/1_📊_Data_Upload.py")
