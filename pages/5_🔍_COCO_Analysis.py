@@ -222,7 +222,6 @@ def display_key_tables(tables):
     # Display scores table
     if score_table:
         name, df = score_table
-        st.subheader("🎯 Final Scores")
         display_df = clean_coco_dataframe(df)
         
         # Try to identify score column
@@ -232,28 +231,8 @@ def display_key_tables(tables):
             score_col = score_cols[0]
             if pd.api.types.is_numeric_dtype(display_df[score_col]):
                 display_df = display_df.sort_values(score_col, ascending=False)
-                
-                # Show top performers
-                st.subheader("🏆 Top Performers")
-                top_5 = display_df.head(5)
-                for idx, (_, row) in enumerate(top_5.iterrows(), 1):
-                    score_val = row[score_col]
-                    # Try to get object identifier
-                    obj_cols = [col for col in display_df.columns if any(keyword in col.lower() for keyword in ['object', 'obj', 'name'])]
-                    if obj_cols:
-                        obj_name = row[obj_cols[0]]
-                    else:
-                        obj_name = f"Object {idx}"
-                    st.write(f"**{idx}.** {obj_name} - Score: {score_val:.4f}")
-        
-        st.dataframe(display_df, use_container_width=True)
+            
     
-    # Display rankings table
-    if ranking_table:
-        name, df = ranking_table
-        st.subheader("📈 Final Rankings")
-        display_df = clean_coco_dataframe(df)
-        st.dataframe(display_df, use_container_width=True)
     
     # Display all tables in expanders for completeness
     with st.expander("🔍 All Result Tables", expanded=False):
