@@ -137,7 +137,7 @@ def render_attribute_selection_ui():
             f"""
             <div style="
                 text-align: center;
-                padding: 12px;
+                padding: 2px;
                 background-color: #262730;
                 color: #ffffff;
                 border-radius: 10px;
