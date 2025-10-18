@@ -157,6 +157,52 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
     # Display table summary
     st.subheader("📋 Result Tables")
     
+    summary_data = []
+    for name, df in tables.items():
+        summary_data.append({
+            "Table": name,
+            "Rows": df.shape[0],
+            "Columns": df.shape[1],
+            "Description": get_table_description(name, df, stair_value)  # changed to pass stair_value
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+    
+    # Display key tables
+    display_key_tables(tables)
+    
+    # Export options
+    display_export_options(tables, data_manager)
+
+    if 'last_coco_html' in st.session_state:
+            with st.expander("🔎 Raw COCO HTML (from last run)", expanded=False):
+                st.text_area("Raw COCO HTML", st.session_state.last_coco_html, height=600, key="raw_coco_html")
+                st.download_button(
+                    "⬇ Download last COCO HTML",
+                    st.session_state.last_coco_html,
+                    "coco_last_response.html",
+                    "text/html",
+                    use_container_width=True
+                )
+
+def get_table_description(table_name, df, stair_value=None):
+    """Get description for COCO result tables based on content"""
+    # Try to infer table purpose from column names and content
+    columns_lower = [str(col).lower() for col in df.columns]
+    
+    if any('distance' in col for col in columns_lower) and any('ideal' in col for col in columns_lower):
+        return "Distance measures and final scores"
+    elif any('rank' in col for col in columns_lower):
+        return "Ranking results"
+    elif any('weight' in col for col in columns_lower):
+        return "Weighted normalized matrix"
+    elif any('normal' in col for col in columns_lower):
+        return "Normalized decision matrix"
+    elif stair_value is not None and len(df) == stair_value:  # guard against undefined
+        return "Input data verification"
+    else:
+        return "Analysis results"
 
 def display_key_tables(tables):
     """Display the most important COCO result tables"""
