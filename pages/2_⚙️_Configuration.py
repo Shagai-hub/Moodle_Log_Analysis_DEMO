@@ -98,14 +98,8 @@ def main():
         st.markdown("### Configuration Management")
         
         col1, col2 = st.columns(2)
-        
         with col1:
-            st.markdown("#### Save/Load")
-            if st.button("💾 Save Current Configuration", use_container_width=True):
-                config.save_to_session()
-                data_manager._add_to_history("Configuration updated", f"{summary['exams_count']} exams, {summary['professors_count']} professors")
-                st.success("Configuration saved to session!")
-            
+
             # Export configuration as JSON
             import json
             config_dict = config.to_dict()
