@@ -250,8 +250,6 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     # Store in session state
     data_manager.store_student_attributes(oam_combined)
     
-    st.success(f"✅ Computed {len(attr_cols)} attributes for {len(oam_combined)} students!")
-    
     # Display in hybrid layout
     display_hybrid_layout(oam_combined, data_manager)
 
@@ -373,7 +371,7 @@ def display_category_table(category_table, title, description):
         col1, col2 = st.columns(2)
         
         with col2:
-            if st.button("Proceed to ranking", key="goto_ranking", help="Navigate to the ranking page"):
+            if st.button("Proceed to ranking", help="Navigate to the ranking page"):
                st.switch_page("pages/4_🏆_Ranking.py")
          
     else:
