@@ -25,7 +25,7 @@ def main():
         return
     
     st.title("📈 Attribute Analysis")
-    st.markdown("Compute and analyze student engagement attributes across different categories.")
+    st.markdown("Compute and analyze student attributes. Select desired attributes and generate the Object Attribute Matrix (OAM).")
     
     # Use configuration from ConfigManager
     PROFESSORS = config.professors
@@ -38,7 +38,7 @@ def main():
     df = df_all[~df_all["userfullname"].isin(PROFESSORS)].copy()
     
     st.write(f"📊 Analyzing dataset with **{len(df)}** student posts")
-    st.write(f"👨‍🏫 Excluding professors: {', '.join(PROFESSORS)}")
+    st.write(f"👨‍🏫 Professors: {', '.join(PROFESSORS)}")
     
     # Attribute selection UI (similar to your current code)
     render_attribute_selection_ui()
@@ -78,7 +78,7 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
     
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=True):
+    with st.expander("ℹ️ Attribute Descriptions", expanded=False):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  
