@@ -46,6 +46,15 @@ def main():
     # Compute attributes when requested
     if st.button("🚀 Compute Selected Attributes", use_container_width=True):
         compute_and_display_attributes(df, df_all, data_manager, config)
+    
+    # Show navigation button if attributes have been computed
+    if data_manager.get_student_attributes() is not None:
+        st.markdown("---")
+        col1, col2 = st.columns([1, 1])
+        with col2:
+            if st.button("🏆 Proceed to Ranking", use_container_width=True, 
+                        help="Navigate to the ranking page with computed attributes"):
+                st.switch_page("pages/4_🏆_Ranking.py")
 
 def render_attribute_selection_ui():
     """Render the attribute selection interface"""
@@ -123,7 +132,8 @@ def render_attribute_selection_ui():
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
-# Selection controls
+
+    # Selection controls
     st.markdown("---")
     
     # --- Row 1: Action Buttons ---
@@ -152,8 +162,6 @@ def render_attribute_selection_ui():
         """,
         unsafe_allow_html=True
     )
-
-
 
 def update_selected_attributes(attr, checked):
     """Update the selected attributes list based on checkbox state"""
@@ -302,9 +310,6 @@ def display_hybrid_layout(oam_combined, data_manager):
                 "text/csv",
                 use_container_width=True
             )
-        with col2:
-            st.button("🎯 Proceed to Ranking", use_container_width=True, 
-                     on_click=lambda: st.session_state.update({"proceed_to_ranking": True}))
 
 def create_category_table(oam_combined, category_attrs, category_name):
     """Create a table for a specific category"""
