@@ -39,9 +39,7 @@ def main():
     # Use Y-value from configuration
     y_value = config.analysis_settings.get('y_value', 1000)
     
-    # Simple configuration section
-    st.header("⚙️ Ranking Configuration")
-    
+    # Simple configuration section 
     col1, col2 = st.columns(2)
     
     with col1:

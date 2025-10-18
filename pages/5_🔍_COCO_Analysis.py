@@ -27,9 +27,7 @@ def main():
         return
     
     st.success(f"✅ Ready to analyze {len(ranked_data)} ranked students")
-    
-    # Configuration section
-    st.header("⚙️ COCO Configuration")
+
     
     col1, col2 = st.columns(2)
     
@@ -48,8 +46,6 @@ def main():
     with col2:
         st.subheader("📊 Data Summary")
         st.metric("Students", len(ranked_data))
-        num_attributes = len([col for col in ranked_data.columns if col not in ["userid", "userfullname", "Y_value"]])
-        st.metric("Attributes", num_attributes)
         st.metric("Y Value", ranked_data["Y_value"].iloc[0] if "Y_value" in ranked_data.columns else "N/A")
     
     # Data preview
@@ -59,40 +55,7 @@ def main():
     
     # Run COCO analysis
     st.markdown("---")
-    
-    with st.expander("🔍 Preview Ranked Data", expanded=False):
-        st.dataframe(ranked_data.head(10), use_container_width=True)
-        st.caption(f"Full dataset: {ranked_data.shape[0]} rows × {ranked_data.shape[1]} columns")
 
-    # NEW: Debug section to see what's being sent to COCO
-    with st.expander("🐛 DEBUG: See COCO Input Data", expanded=False):
-        st.subheader("Matrix Data Being Sent to COCO")
-        
-        # Show the actual matrix that will be sent (without user info)
-        matrix_preview_df = ranked_data.drop(columns=["userid", "userfullname"], errors='ignore')
-        st.write("**Numeric Matrix (without user columns):**")
-        st.dataframe(matrix_preview_df, use_container_width=True)
-        
-        # Show the raw text format that COCO will receive
-        matrix_data = prepare_coco_matrix(ranked_data)
-        st.write("**Raw Text Format Sent to COCO:**")
-        st.text_area("COCO Matrix Input", matrix_data, height=300, key="coco_matrix_debug")
-        
-        # Show statistics
-        st.write("**Matrix Statistics:**")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Rows", len(matrix_preview_df))
-        with col2:
-            st.metric("Columns", len(matrix_preview_df.columns))
-        with col3:
-            st.metric("Total Values", len(matrix_preview_df) * len(matrix_preview_df.columns))
-        
-        # Show column details
-        st.write("**Column Details:**")
-        for i, col in enumerate(matrix_preview_df.columns):
-            st.write(f"- **{col}**: dtype={matrix_preview_df[col].dtype}, "
-                    f"min={matrix_preview_df[col].min()}, max={matrix_preview_df[col].max()}")
     
     if st.button("🚀 Run COCO Analysis", type="primary", use_container_width=True):
         run_coco_analysis(ranked_data, job_name, stair_value, data_manager)
