@@ -78,7 +78,7 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
     
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=False):
+    with st.expander("ℹ️ Attribute Descriptions", expanded=True):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  
@@ -90,7 +90,7 @@ def render_attribute_selection_ui():
     col1, col2 = st.columns(2)
     
     with col1:
-        with st.expander("📊 Activity Metrics", expanded=True):
+        with st.expander("📊 Activity Metrics", expanded=False):
             for attr in activity_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -135,13 +135,21 @@ def render_attribute_selection_ui():
     with col3:
         st.markdown(
             f"""
-            <div style="text-align: center; padding: 10px; background-color: #f0f2f6; border-radius: 10px;">
+            <div style="
+                text-align: center;
+                padding: 12px;
+                background-color: #262730;
+                color: #ffffff;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            ">
                 <strong>📊 Selected</strong><br>
-                <span style="font-size: 24px;">{len(st.session_state.selected_attributes)}</span>
+                <span style="font-size: 24px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
             </div>
             """,
             unsafe_allow_html=True
         )
+
 
 def update_selected_attributes(attr, checked):
     """Update the selected attributes list based on checkbox state"""
