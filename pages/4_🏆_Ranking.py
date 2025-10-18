@@ -222,18 +222,15 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     st.markdown("---")
     st.subheader("💾 Export")
     
-    col1 = st.columns(1)
-    
-    with col1:
         # Download ranked data
-        csv_data = ranked_df.to_csv(index=False)
-        st.download_button(
-            "📥 Download Ranking Data (CSV)",
-            csv_data,
-            f"student_ranking_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
-            "text/csv",
-            use_container_width=True
-        )
+    csv_data = ranked_df.to_csv(index=False)
+    st.download_button(
+        "📥 Download Ranking Data (CSV)",
+        csv_data,
+        f"student_ranking_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+        "text/csv",
+        use_container_width=True
+    )
 
 if __name__ == "__main__":
     main()
