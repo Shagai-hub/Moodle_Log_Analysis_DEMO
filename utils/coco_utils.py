@@ -130,7 +130,6 @@ def parse_coco_html(resp_or_html):
                     continue
         
         if tables:
-            st.info(f"Found {len(tables)} tables")
             return tables
     except Exception as e:
         st.warning(f"Table parsing failed: {e}")
