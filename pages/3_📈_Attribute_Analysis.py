@@ -144,7 +144,7 @@ def render_attribute_selection_ui():
                 box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             ">
                 <strong>📊 Selected</strong><br>
-                <span style="font-size: 24px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
+                <span style="font-size: 12px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
             </div>
             """,
             unsafe_allow_html=True
