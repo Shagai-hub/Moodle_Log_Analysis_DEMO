@@ -123,32 +123,35 @@ def render_attribute_selection_ui():
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
-    
-    # Selection controls
+# Selection controls
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
     
+    # --- Row 1: Action Buttons ---
+    col1, col2 = st.columns([1, 1])
     with col1:
         st.button("✅ Select All", on_click=select_all, use_container_width=True)
     with col2:
         st.button("❌ Clear All", on_click=clear_all, use_container_width=True)
-    with col3:
-        st.markdown(
-            f"""
-            <div style="
-                text-align: center;
-                padding: 2px;
-                background-color: #262730;
-                color: #ffffff;
-                border-radius: 10px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            ">
-                <strong>📊 Selected</strong><br>
-                <span style="font-size: 12px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    
+    # --- Row 2: Selection Indicator ---
+    st.markdown(
+        f"""
+        <div style="
+            text-align: center;
+            padding: 6px;
+            margin-top: 10px;
+            background-color: #262730;
+            color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        ">
+            <strong>📊 Selected</strong><br>
+            <span style="font-size: 18px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 
 def update_selected_attributes(attr, checked):
