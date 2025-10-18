@@ -220,9 +220,9 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     
     # Export options
     st.markdown("---")
-    st.subheader("💾 Export Options")
+    st.subheader("💾 Export")
     
-    col1, col2 = st.columns(2)
+    col1 = st.columns(1)
     
     with col1:
         # Download ranked data
