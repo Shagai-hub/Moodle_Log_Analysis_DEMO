@@ -94,7 +94,25 @@ def render_attribute_selection_ui():
         **Content Analysis:** Content quality, length, and relevance  
         **Exam Performance:** Exam-related posting behavior and deadline compliance  
         """)
-    
+        
+    st.markdown(
+        f"""
+        <div style="
+            text-align: center;
+            padding: 6px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            background-color: #262730;
+            color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        ">
+            <strong>📊 Selected</strong><br>
+            <span style="font-size: 18px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     # Category expanders for attribute selection
     col1, col2 = st.columns(2)
     
@@ -142,26 +160,7 @@ def render_attribute_selection_ui():
         st.button("✅ Select All", on_click=select_all, use_container_width=True)
     with col2:
         st.button("❌ Clear All", on_click=clear_all, use_container_width=True)
-    
-    # --- Row 2: Selection Indicator ---
-    st.markdown(
-        f"""
-        <div style="
-            text-align: center;
-            padding: 6px;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            background-color: #262730;
-            color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        ">
-            <strong>📊 Selected</strong><br>
-            <span style="font-size: 18px; font-weight: bold;">{len(st.session_state.selected_attributes)}</span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
 
 def update_selected_attributes(attr, checked):
     """Update the selected attributes list based on checkbox state"""
