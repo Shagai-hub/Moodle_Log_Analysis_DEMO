@@ -26,13 +26,12 @@ def main():
     with tab1:
         # Professor configuration
         st.markdown("### Professor Settings")
-        st.markdown("Professors will be excluded from student analysis")
         
         prof_input = st.text_area(
             "Professor names (one per line)", 
             value="\n".join(config.professors),
             height=150,
-            help="Enter one professor name per line. These users will be excluded from student analysis."
+            help="Enter one professor name per line. These names will be used to identify professor-related activities in the logs."
         )
         config.professors = [p.strip() for p in prof_input.split('\n') if p.strip()]
         
@@ -86,13 +85,7 @@ def main():
                 st.error("Please enter valid integer IDs")
         
         with col2:
-            st.markdown("#### ML Settings")
-            config.analysis_settings['enable_ml_attributes'] = st.checkbox(
-                "Enable ML-based attributes", 
-                value=config.analysis_settings['enable_ml_attributes'],
-                help="Compute topic relevance and AI detection (requires more processing time)"
-            )
-            
+            st.markdown("#### COCO Analysis Settings")
             config.analysis_settings['y_value'] = st.number_input(
                 "Y value for COCO analysis",
                 value=config.analysis_settings['y_value'],
@@ -100,7 +93,7 @@ def main():
                 max_value=100000,
                 help="Reference value used in ranking and COCO analysis"
             )
-    
+            
     with tab3:
         st.markdown("### Configuration Management")
         
