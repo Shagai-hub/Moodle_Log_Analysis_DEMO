@@ -91,7 +91,7 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
     
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=True, key="attr_desc_expander"):
+    with st.expander("ℹ️ Attribute Descriptions", expanded=True):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  
@@ -122,7 +122,7 @@ def render_attribute_selection_ui():
     col1, col2 = st.columns(2)
     
     with col1:
-        with st.expander("📊 Activity Metrics", expanded=False, key="activity_expander"):
+        with st.expander("📊 Activity Metrics", expanded=False):
             for attr in activity_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -130,7 +130,7 @@ def render_attribute_selection_ui():
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
         
-        with st.expander("💬 Engagement Metrics", expanded=False, key="engagement_expander"):
+        with st.expander("💬 Engagement Metrics", expanded=False):
             for attr in engagement_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -139,7 +139,7 @@ def render_attribute_selection_ui():
                     update_selected_attributes(attr, checked)
     
     with col2:
-        with st.expander("📝 Content Analysis", expanded=False, key="content_expander"):
+        with st.expander("📝 Content Analysis", expanded=False):
             st.warning("⚠️ ML-based attributes may take longer to compute", key="ml_warning")
             for attr in content_attrs:
                 if attr in available_attributes:
@@ -148,7 +148,7 @@ def render_attribute_selection_ui():
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
         
-        with st.expander("📋 Exam Performance", expanded=False, key="exam_expander"):
+        with st.expander("📋 Exam Performance", expanded=False):
             for attr in exam_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -301,7 +301,7 @@ def display_hybrid_layout(oam_combined, data_manager):
         display_graph_section(oam_combined)
     
     # Combined OAM for COCO (expandable)
-    with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False, key="coco_expander"):
+    with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False):
         st.markdown("**Full OAM with all attributes - Use this for COCO analysis**")
         st.dataframe(oam_combined, use_container_width=True)
         
@@ -359,7 +359,7 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
     st.dataframe(stats_df, use_container_width=True, hide_index=True, key="stats_df")
     
     # Data preview
-    with st.expander("🔍 Quick Data Preview", expanded=False, key="data_preview_expander"):
+    with st.expander("🔍 Quick Data Preview", expanded=False):
         st.dataframe(oam_combined.head(10), use_container_width=True, key="data_preview_df")
 
 def display_category_table(category_table, title, description):
@@ -680,7 +680,7 @@ def display_correlation_heatmap(oam_combined, attribute_cols):
     st.plotly_chart(fig, use_container_width=True, key="correlation_heatmap")
     
     # Interpretation
-    with st.expander("💡 Correlation Interpretation Guide", key="correlation_guide_expander"):
+    with st.expander("💡 Correlation Interpretation Guide"):
         st.markdown("""
         **Correlation Values Meaning:**
         - **+1.0**: Perfect positive correlation
