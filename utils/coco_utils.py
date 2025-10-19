@@ -174,8 +174,9 @@ def invert_ranking(matrix_df):
             numeric_columns.append(col)
     
     for col in numeric_columns:
-        inverted_df[col] = num_objects - inverted_df[col] + 1
-    
+        if inverted_df[col].dtype in [np.int64, np.float64]:
+            inverted_df[col] = num_objects - inverted_df[col] + 1
+
     return inverted_df
 
 def clean_dataframe_columns(df):
