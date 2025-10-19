@@ -331,13 +331,8 @@ def display_validation_results(validation_results, data_manager):
         )
     
     with col2:
-        if st.button("🔄 Run Another Analysis", use_container_width=True):
-            # Clear relevant session state to start over
-            keys_to_clear = ['proceed_to_validation', 'selected_attributes']
-            for key in keys_to_clear:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.rerun()
+        if st.button("🤖 AI Insights", use_container_width=True, type="secondary"):
+            st.switch_page("pages/7_🤖_AI_Insights.py")
 
 if __name__ == "__main__":
     main()
