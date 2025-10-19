@@ -94,12 +94,7 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         matrix_df = ranked_data.drop(columns=["userid", "userfullname"], errors='ignore')
         inverted_matrix_df = invert_ranking(matrix_df)
         
-        # Debug info
-        with st.expander("🔍 Inverted Matrix Preview", expanded=False):
-            st.write("**Original Matrix:**")
-            st.dataframe(matrix_df.head(), use_container_width=True)
-            st.write("**Inverted Matrix:**")
-            st.dataframe(inverted_matrix_df.head(), use_container_width=True)
+    
         
         # Step 2: Convert to COCO format
         status_text.text("Step 2: Converting to COCO format...")
@@ -107,8 +102,6 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         
         inverted_matrix_data = prepare_coco_matrix(inverted_matrix_df)
         
-        with st.expander("🔍 Exact Matrix Data Sent to COCO", expanded=True):
-            st.text_area("Matrix Data (Tab-Separated Format)", inverted_matrix_data, height=300)
         # Step 3: Send to COCO
         status_text.text("Step 3: Sending inverted matrix to COCO...")
         progress_bar.progress(60)
@@ -132,10 +125,6 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
             st.error("❌ No results received from inverted COCO analysis")
             return
         
-        with st.expander("🔍 Parsed Inverted Tables", expanded=True):
-            for table_name, table_data in inverted_tables.items():
-                st.write(f"**Table: {table_name}**")
-                st.dataframe(table_data.head(), use_container_width=True)
                 
         # Step 5: Perform validation
         status_text.text("Step 5: Performing validation...")
