@@ -500,7 +500,7 @@ def display_student_comparison(oam_combined, attribute_cols):
         selected_attributes = st.multiselect(
             "Select Attributes for Comparison",
             options=attribute_cols,
-            default=attribute_cols[:3] if len(attribute_cols) >= 3 else attribute_cols
+            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols
         )
     
     if selected_students and selected_attributes:
