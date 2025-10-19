@@ -174,8 +174,8 @@ def perform_validation(original_table, inverted_table, ranked_data):
     """Validate COCO analysis results by comparing original and inverted deltas."""
     try:
         # The columns should now be properly named after clean_coco_dataframe
-        delta_col = 'Delta_T_ny'  # Keep the original encoding for now
-        becsl_col = 'Becsl_s'     # Keep the original encoding for now
+        delta_col = 'Delta/Tény'  # Keep the original encoding for now
+        becsl_col = 'Becslés'     # Keep the original encoding for now
         
         # Check if columns exist
         if delta_col not in original_table.columns or delta_col not in inverted_table.columns:
@@ -213,7 +213,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
         
         # Create validation results
         validation_results = ranked_data.copy()
-        validation_results['Becsl_s'] = original_becsl
+        validation_results['Becslés'] = original_becsl
         validation_results['Original_Delta'] = original_delta
         validation_results['Inverted_Delta'] = inverted_delta
         validation_results['Validation_Product'] = validation_product
