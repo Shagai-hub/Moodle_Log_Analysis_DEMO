@@ -339,12 +339,6 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
         st.metric("Total Students", len(oam_combined))
     with col2:
         st.metric("Total Attributes", len(oam_combined.columns) - 2)
-    with col3:
-        activity_count = len(activity_table.columns) - 2
-        st.metric("Activity Metrics", activity_count)
-    with col4:
-        engagement_count = len(engagement_table.columns) - 2
-        st.metric("Engagement Metrics", engagement_count)
     
     # Quick stats
     st.subheader("📋 Attribute Summary by Category")
@@ -352,10 +346,10 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
     stats_data = {
         "Category": ["Activity", "Engagement", "Content", "Exam"],
         "Attributes": [
-            len(activity_table.columns) - 2,
-            len(engagement_table.columns) - 2,
-            len(content_table.columns) - 2,
-            len(exam_table.columns) - 2
+            len(activity_table.columns),
+            len(engagement_table.columns),
+            len(content_table.columns),
+            len(exam_table.columns)
         ]
     }
     stats_df = pd.DataFrame(stats_data)
