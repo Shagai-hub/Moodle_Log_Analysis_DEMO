@@ -178,13 +178,13 @@ def perform_validation(original_table, inverted_table, ranked_data):
         becsl_col = 'Becslés'     # Keep the original encoding for now
         
         # Check if columns exist
-        if delta_col not in original_table.columns or delta_col not in inverted_table.columns:
+        if delta_col not in original_table.columns[1] or delta_col not in inverted_table.columns:
             st.error(f"❌ Delta column '{delta_col}' not found")
             st.write("Original table columns:", list(original_table.columns))
             st.write("Inverted table columns:", list(inverted_table.columns))
             return None
             
-        if becsl_col not in original_table.columns:
+        if becsl_col not in original_table.columns[1]:
             st.error(f"❌ Becsl column '{becsl_col}' not found") 
             st.write("Original table columns:", list(original_table.columns))
             return None
