@@ -221,7 +221,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
         validation_results['Is_Valid'] = is_valid
         
         # Add ranking based on Becsl_s score
-        validation_results['Final_Rank'] = validation_results['Becsl_s'].rank(ascending=False, method='min').astype(int)
+        validation_results['Final_Rank'] = validation_results['Becslés'].rank(ascending=False, method='min').astype(int)
         
         return validation_results
         
@@ -252,10 +252,10 @@ def display_validation_results(validation_results, data_manager):
     
     # Show top performers
     st.subheader("🏆 Top 10 Performers")
-    top_10 = validation_results.nlargest(10, 'Becsl_s')[['userfullname', 'Becsl_s', 'Final_Rank', 'Validation_Result']]
+    top_10 = validation_results.nlargest(10, 'Becslés')[['userfullname', 'Becslés', 'Final_Rank', 'Validation_Result']]
     top_10_display = top_10.rename(columns={
         "userfullname": "Student Name",
-        "Becsl_s": "Final Score", 
+        "Becslés": "Final Score", 
         "Final_Rank": "Rank",
         "Validation_Result": "Validation"
     })
@@ -264,12 +264,12 @@ def display_validation_results(validation_results, data_manager):
     # Display full results table
     st.subheader("📋 Detailed Validation Results")
     
-    display_columns = ["userfullname", "Final_Rank", "Becsl_s", "Validation_Result", "Original_Delta", "Inverted_Delta"]
+    display_columns = ["userfullname", "Final_Rank", "Becslés", "Validation_Result", "Original_Delta", "Inverted_Delta"]
     display_df = validation_results[display_columns].copy()
     display_df = display_df.rename(columns={
         "userfullname": "Student Name",
         "Final_Rank": "Rank",
-        "Becsl_s": "Final Score",
+        "Becslés": "Final Score",
         "Validation_Result": "Validation",
         "Original_Delta": "Original Delta",
         "Inverted_Delta": "Inverted Delta"
@@ -283,10 +283,10 @@ def display_validation_results(validation_results, data_manager):
     st.subheader("📈 Validation Visualization")
     
     # Create bar chart
-    chart_df = validation_results[["userfullname", "Becsl_s", "Validation_Result", "Final_Rank"]].copy()
+    chart_df = validation_results[["userfullname", "Becslés", "Validation_Result", "Final_Rank"]].copy()
     chart_df = chart_df.rename(columns={
         "userfullname": "Student",
-        "Becsl_s": "Score",
+        "Becslés": "Score",
         "Validation_Result": "Validation",
         "Final_Rank": "Rank"
     })
@@ -317,11 +317,11 @@ def display_validation_results(validation_results, data_manager):
     invalid_cases = validation_results[~validation_results['Is_Valid']]
     if not invalid_cases.empty:
         st.subheader("⚠️ Cases Needing Review (Invalid Validation)")
-        invalid_display = invalid_cases[["userfullname", "Final_Rank", "Becsl_s", "Original_Delta", "Inverted_Delta", "Validation_Product"]]
+        invalid_display = invalid_cases[["userfullname", "Final_Rank", "Becslés", "Original_Delta", "Inverted_Delta", "Validation_Product"]]
         invalid_display = invalid_display.rename(columns={
             "userfullname": "Student Name",
             "Final_Rank": "Rank",
-            "Becsl_s": "Final Score",
+            "Becslés": "Final Score",
             "Original_Delta": "Original Delta", 
             "Inverted_Delta": "Inverted Delta",
             "Validation_Product": "Product"
@@ -331,8 +331,8 @@ def display_validation_results(validation_results, data_manager):
         # Analysis of invalid cases
         st.write("**Analysis of Invalid Cases:**")
         st.write(f"- Number of invalid cases: {len(invalid_cases)}")
-        st.write(f"- Average score of invalid cases: {invalid_cases['Becsl_s'].mean():.3f}")
-        st.write(f"- Range of scores in invalid cases: {invalid_cases['Becsl_s'].min():.3f} to {invalid_cases['Becsl_s'].max():.3f}")
+        st.write(f"- Average score of invalid cases: {invalid_cases['Becslés'].mean():.3f}")
+        st.write(f"- Range of scores in invalid cases: {invalid_cases['Becslés'].min():.3f} to {invalid_cases['Becslés'].max():.3f}")
     
     # Export options
     st.markdown("---")
