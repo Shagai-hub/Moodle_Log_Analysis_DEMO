@@ -218,13 +218,13 @@ def deadline_exceeded_posts_generic(df, exam_name):
     return result
 
 def deadline_exceeded_posts_Quasi_exam_I(df):
-    return deadline_exceeded_posts_generic(df, "Quasi Exam I")
+    return deadline_exceeded_posts_generic(df, "Quasi_exam_I")
 
 def deadline_exceeded_posts_Quasi_exam_II(df):
-    return deadline_exceeded_posts_generic(df, "Quasi Exam II")
+    return deadline_exceeded_posts_generic(df, "Quasi_exam_II")
 
 def deadline_exceeded_posts_Quasi_exam_III(df):
-    return deadline_exceeded_posts_generic(df, "Quasi Exam III")
+    return deadline_exceeded_posts_generic(df, "Quasi_exam_III")
 
 def compute_topic_relevance(df, df_all, professor_name=None):
     """
