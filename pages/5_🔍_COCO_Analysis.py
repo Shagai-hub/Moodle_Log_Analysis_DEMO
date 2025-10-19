@@ -147,9 +147,8 @@ def handle_coco_error(resp):
     st.info("💡 This might be a temporary service issue. Please try again in a few moments.")
 
 def display_coco_results(tables, data_manager, job_name, stair_value):
-    """Display COCO analysis results"""
     
-    st.header("📊 COCO Analysis Results")
+    st.header("📊 COCO Analysis Result")
     
     # Store results in session
     data_manager.store_coco_results(tables)
@@ -232,7 +231,7 @@ def display_export_options(tables, data_manager):
     """Display options to export COCO results"""
     
     st.markdown("---")
-    st.header("💾 Export Results")
+    st.header("💾 Export Results & Result Validation")
     
     col1, col2 = st.columns(2)
     
@@ -262,26 +261,6 @@ def display_export_options(tables, data_manager):
         if st.button("✅ Proceed to Validation", use_container_width=True):
             st.session_state.proceed_to_validation = True
             st.rerun()
-    
-    # Individual table downloads
-    st.subheader("📥 Download Individual Tables")
-    
-    for table_name, df in tables.items():
-        clean_df = clean_coco_dataframe(df)
-        csv_data = clean_df.to_csv(index=False)
-        
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(f"**{table_name}** - {df.shape[0]} rows × {df.shape[1]} columns")
-        with col2:
-            st.download_button(
-                f"Download {table_name}",
-                csv_data,
-                f"{table_name}_results.csv",
-                "text/csv",
-                key=f"download_{table_name}",
-                use_container_width=True
-            )
 
 if __name__ == "__main__":
     main()
