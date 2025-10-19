@@ -235,22 +235,6 @@ def clean_coco_dataframe(df):
     if df.empty:
         return df
     
-    # Check if the first row contains what looks like column headers
-    first_row = df.iloc[0].tolist()
-    
-    # Look for COCO-specific headers in the first row
-    has_coco_headers = any('COCO' in str(cell) for cell in first_row) or \
-                      any('Becsl' in str(cell) for cell in first_row) or \
-                      any('Delta' in str(cell) for cell in first_row)
-    
-    if has_coco_headers:
-        # Use the first row as column names and remove it from data
-        df.columns = df.iloc[0]
-        df = df.iloc[1:].reset_index(drop=True)
-    
-    # Remove the first column if it contains row identifiers (e.g., "O1", "O2", etc.)
-    if df.columns[0] == df.iloc[:, 0].name or all(isinstance(cell, str) and cell.startswith("O") for cell in df.iloc[:, 0]):
-        df = df.drop(df.columns[0], axis=1)
     
     # Clean the column names with proper encoding
     df = clean_dataframe_columns(df)
