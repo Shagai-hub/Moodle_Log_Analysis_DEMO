@@ -1,5 +1,9 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.attribute_calculations import (
@@ -46,6 +50,10 @@ def main():
     # Compute attributes when requested
     if st.button("🚀 Compute Selected Attributes", use_container_width=True):
         compute_and_display_attributes(df, df_all, data_manager, config)
+    
+    # Show graph section if attributes have been computed
+    if data_manager.get_student_attributes() is not None:
+        display_graph_section(data_manager.get_student_attributes())
     
     # Show navigation button if attributes have been computed
     if data_manager.get_student_attributes() is not None:
@@ -270,12 +278,13 @@ def display_hybrid_layout(oam_combined, data_manager):
     exam_table = create_category_table(oam_combined, exam_attrs, "Exam")
     
     # Tabbed interface
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Overview", 
         "🚀 Activity", 
         "💬 Engagement", 
         "📝 Content", 
-        "📋 Exams"
+        "📋 Exams",
+        "📈 Graphs & Visualizations"  # New Graph Tab
     ])
     
     with tab1:
@@ -292,6 +301,9 @@ def display_hybrid_layout(oam_combined, data_manager):
     
     with tab5:
         display_category_table(exam_table, "Exam Performance", "Tracks exam-related behavior and deadlines")
+    
+    with tab6:  # New Graph Tab
+        display_graph_section(oam_combined)
     
     # Combined OAM for COCO (expandable)
     with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False):
@@ -374,6 +386,397 @@ def display_category_table(category_table, title, description):
         )
     else:
         st.info(f"No {title.lower()} attributes selected or computed.")
+
+def display_graph_section(oam_combined):
+    """Display comprehensive graph section for attributes and students"""
+    st.header("📈 Attribute & Student Visualizations")
+    
+    # Check if we have attributes to visualize
+    fixed_cols = ["userid", "userfullname"]
+    attribute_cols = [col for col in oam_combined.columns if col not in fixed_cols]
+    
+    if not attribute_cols:
+        st.warning("No attributes available for visualization. Please compute attributes first.")
+        return
+    
+    # Visualization type selection
+    viz_type = st.selectbox(
+        "Select Visualization Type",
+        [
+            "📊 Attribute Distribution Analysis",
+            "👥 Student Performance Comparison", 
+            "🔥 Top Performers by Attribute",
+            "📈 Student Attribute Profile",
+            "🌐 Correlation Heatmap",
+            "📋 Category-wise Analysis"
+        ]
+    )
+    
+    if viz_type == "📊 Attribute Distribution Analysis":
+        display_attribute_distribution(oam_combined, attribute_cols)
+    
+    elif viz_type == "👥 Student Performance Comparison":
+        display_student_comparison(oam_combined, attribute_cols)
+    
+    elif viz_type == "🔥 Top Performers by Attribute":
+        display_top_performers(oam_combined, attribute_cols)
+    
+    elif viz_type == "📈 Student Attribute Profile":
+        display_student_profile(oam_combined, attribute_cols)
+    
+    elif viz_type == "🌐 Correlation Heatmap":
+        display_correlation_heatmap(oam_combined, attribute_cols)
+    
+    elif viz_type == "📋 Category-wise Analysis":
+        display_category_analysis(oam_combined)
+
+def display_attribute_distribution(oam_combined, attribute_cols):
+    """Display distribution analysis for individual attributes"""
+    st.subheader("📊 Attribute Distribution Analysis")
+    
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        selected_attribute = st.selectbox(
+            "Select Attribute to Analyze",
+            attribute_cols,
+            key="attr_dist_select"
+        )
+        
+        # Statistics
+        if selected_attribute:
+            attr_data = oam_combined[selected_attribute]
+            stats = {
+                "Mean": attr_data.mean(),
+                "Median": attr_data.median(),
+                "Std Dev": attr_data.std(),
+                "Min": attr_data.min(),
+                "Max": attr_data.max()
+            }
+            
+            st.metric("Average", f"{stats['Mean']:.2f}")
+            st.metric("Median", f"{stats['Median']:.2f}")
+            st.metric("Std Deviation", f"{stats['Std Dev']:.2f}")
+    
+    with col2:
+        if selected_attribute:
+            # Create distribution plot
+            fig = px.histogram(
+                oam_combined,
+                x=selected_attribute,
+                title=f"Distribution of {selected_attribute.replace('_', ' ').title()}",
+                nbins=20,
+                color_discrete_sequence=['#3366CC']
+            )
+            fig.update_layout(
+                xaxis_title=selected_attribute.replace('_', ' ').title(),
+                yaxis_title="Number of Students",
+                showlegend=False
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Box plot for outlier detection
+            fig_box = px.box(
+                oam_combined,
+                y=selected_attribute,
+                title=f"Box Plot - {selected_attribute.replace('_', ' ').title()}"
+            )
+            st.plotly_chart(fig_box, use_container_width=True)
+
+def display_student_comparison(oam_combined, attribute_cols):
+    """Display comparison of students across multiple attributes"""
+    st.subheader("👥 Student Performance Comparison")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        selected_students = st.multiselect(
+            "Select Students to Compare",
+            options=oam_combined["userfullname"].tolist(),
+            default=oam_combined["userfullname"].head(5).tolist()
+        )
+    
+    with col2:
+        selected_attributes = st.multiselect(
+            "Select Attributes for Comparison",
+            options=attribute_cols,
+            default=attribute_cols[:3] if len(attribute_cols) >= 3 else attribute_cols
+        )
+    
+    if selected_students and selected_attributes:
+        # Filter data for selected students
+        comparison_data = oam_combined[oam_combined["userfullname"].isin(selected_students)]
+        
+        # Create radar chart for comparison
+        if len(selected_attributes) >= 3:
+            fig_radar = create_radar_chart(comparison_data, selected_students, selected_attributes)
+            st.plotly_chart(fig_radar, use_container_width=True)
+        
+        # Bar chart comparison
+        fig_bar = create_attribute_comparison_bar(comparison_data, selected_students, selected_attributes)
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+def create_radar_chart(comparison_data, students, attributes):
+    """Create a radar chart for student comparison"""
+    fig = go.Figure()
+    
+    # Normalize data for radar chart
+    normalized_data = comparison_data.copy()
+    for attr in attributes:
+        max_val = normalized_data[attr].max()
+        if max_val > 0:
+            normalized_data[attr] = normalized_data[attr] / max_val
+    
+    for student in students:
+        student_data = normalized_data[normalized_data["userfullname"] == student]
+        values = student_data[attributes].iloc[0].tolist()
+        values.append(values[0])  # Close the radar
+        
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=attributes + [attributes[0]],
+            fill='toself',
+            name=student
+        ))
+    
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1]
+            )),
+        showlegend=True,
+        title="Student Comparison Radar Chart"
+    )
+    
+    return fig
+
+def create_attribute_comparison_bar(comparison_data, students, attributes):
+    """Create bar chart comparing students across attributes"""
+    # Melt data for plotting
+    melt_data = comparison_data.melt(
+        id_vars=["userfullname"],
+        value_vars=attributes,
+        var_name="Attribute",
+        value_name="Value"
+    )
+    
+    fig = px.bar(
+        melt_data,
+        x="userfullname",
+        y="Value",
+        color="Attribute",
+        barmode="group",
+        title="Student Attribute Comparison"
+    )
+    
+    fig.update_layout(
+        xaxis_title="Students",
+        yaxis_title="Attribute Value",
+        showlegend=True
+    )
+    
+    return fig
+
+def display_top_performers(oam_combined, attribute_cols):
+    """Display top performers for each attribute"""
+    st.subheader("🔥 Top Performers by Attribute")
+    
+    selected_attribute = st.selectbox(
+        "Select Attribute for Ranking",
+        attribute_cols,
+        key="top_perf_select"
+    )
+    
+    top_n = st.slider("Number of Top Students to Show", 5, 20, 10)
+    
+    if selected_attribute:
+        # Get top performers
+        top_students = oam_combined.nlargest(top_n, selected_attribute)[["userfullname", selected_attribute]]
+        
+        # Create horizontal bar chart
+        fig = px.bar(
+            top_students,
+            y="userfullname",
+            x=selected_attribute,
+            orientation='h',
+            title=f"Top {top_n} Students - {selected_attribute.replace('_', ' ').title()}",
+            color=selected_attribute,
+            color_continuous_scale='Viridis'
+        )
+        
+        fig.update_layout(
+            yaxis_title="Student",
+            xaxis_title=selected_attribute.replace('_', ' ').title(),
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Display table
+        st.dataframe(top_students, use_container_width=True)
+
+def display_student_profile(oam_combined, attribute_cols):
+    """Display individual student attribute profile"""
+    st.subheader("📈 Student Attribute Profile")
+    
+    selected_student = st.selectbox(
+        "Select Student",
+        options=oam_combined["userfullname"].tolist()
+    )
+    
+    if selected_student:
+        student_data = oam_combined[oam_combined["userfullname"] == selected_student].iloc[0]
+        
+        # Create gauge charts for key metrics
+        st.markdown(f"### 📊 Performance Profile: {selected_student}")
+        
+        # Select top 6 attributes for display
+        display_attrs = attribute_cols[:6] if len(attribute_cols) >= 6 else attribute_cols
+        
+        # Create gauge subplots
+        cols = st.columns(3)
+        for i, attr in enumerate(display_attrs):
+            with cols[i % 3]:
+                value = student_data[attr]
+                max_val = oam_combined[attr].max()
+                
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = value,
+                    title = {'text': attr.replace('_', ' ').title()},
+                    gauge = {
+                        'axis': {'range': [0, max_val]},
+                        'bar': {'color': "darkblue"},
+                        'steps': [
+                            {'range': [0, max_val/3], 'color': "lightgray"},
+                            {'range': [max_val/3, 2*max_val/3], 'color': "gray"}
+                        ]
+                    }
+                ))
+                fig.update_layout(height=200, margin=dict(l=10, r=10, t=50, b=10))
+                st.plotly_chart(fig, use_container_width=True)
+        
+        # Overall performance bar chart
+        fig_bar = px.bar(
+            x=display_attrs,
+            y=[student_data[attr] for attr in display_attrs],
+            title=f"Attribute Scores - {selected_student}",
+            labels={'x': 'Attributes', 'y': 'Score'},
+            color=[student_data[attr] for attr in display_attrs],
+            color_continuous_scale='Blues'
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+def display_correlation_heatmap(oam_combined, attribute_cols):
+    """Display correlation heatmap between attributes"""
+    st.subheader("🌐 Attribute Correlation Heatmap")
+    
+    if len(attribute_cols) < 2:
+        st.warning("Need at least 2 attributes for correlation analysis")
+        return
+    
+    # Calculate correlation matrix
+    corr_matrix = oam_combined[attribute_cols].corr()
+    
+    # Create heatmap
+    fig = px.imshow(
+        corr_matrix,
+        text_auto=True,
+        aspect="auto",
+        color_continuous_scale="RdBu_r",
+        title="Attribute Correlation Heatmap"
+    )
+    
+    fig.update_layout(
+        xaxis_title="Attributes",
+        yaxis_title="Attributes",
+        height=600
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Interpretation
+    with st.expander("💡 Correlation Interpretation Guide"):
+        st.markdown("""
+        **Correlation Values Meaning:**
+        - **+1.0**: Perfect positive correlation
+        - **+0.7 to +1.0**: Strong positive correlation  
+        - **+0.3 to +0.7**: Moderate positive correlation
+        - **-0.3 to +0.3**: Weak or no correlation
+        - **-0.7 to -0.3**: Moderate negative correlation
+        - **-1.0 to -0.7**: Strong negative correlation
+        - **-1.0**: Perfect negative correlation
+        """)
+
+def display_category_analysis(oam_combined):
+    """Display analysis by attribute categories"""
+    st.subheader("📋 Category-wise Attribute Analysis")
+    
+    # Categorize attributes
+    activity_cols = [col for col in oam_combined.columns if col in activity_attrs]
+    engagement_cols = [col for col in oam_combined.columns if col in engagement_attrs]
+    content_cols = [col for col in oam_combined.columns if col in content_attrs]
+    exam_cols = [col for col in oam_combined.columns if col in exam_attrs]
+    
+    categories = {
+        "Activity": activity_cols,
+        "Engagement": engagement_cols,
+        "Content": content_cols,
+        "Exam": exam_cols
+    }
+    
+    # Remove empty categories
+    categories = {k: v for k, v in categories.items() if v}
+    
+    if not categories:
+        st.warning("No categorized attributes available")
+        return
+    
+    selected_category = st.selectbox("Select Category", list(categories.keys()))
+    
+    if selected_category and categories[selected_category]:
+        category_cols = categories[selected_category]
+        
+        # Calculate category averages
+        category_avg = oam_combined[category_cols].mean()
+        
+        # Create bar chart of category averages
+        fig = px.bar(
+            x=category_cols,
+            y=category_avg.values,
+            title=f"{selected_category} Category - Average Scores",
+            labels={'x': 'Attributes', 'y': 'Average Score'},
+            color=category_avg.values,
+            color_continuous_scale='Greens'
+        )
+        
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Show top performers in this category
+        st.subheader(f"🏆 Top Performers - {selected_category} Category")
+        
+        # Calculate category total score
+        if category_cols:
+            oam_combined[f'{selected_category.lower()}_total'] = oam_combined[category_cols].sum(axis=1)
+            top_students = oam_combined.nlargest(10, f'{selected_category.lower()}_total')[['userfullname', f'{selected_category.lower()}_total']]
+            
+            fig_top = px.bar(
+                top_students,
+                y='userfullname',
+                x=f'{selected_category.lower()}_total',
+                orientation='h',
+                title=f"Top 10 Students - {selected_category} Category",
+                color=f'{selected_category.lower()}_total',
+                color_continuous_scale='Plasma'
+            )
+            
+            st.plotly_chart(fig_top, use_container_width=True)
 
 if __name__ == "__main__":
     main()

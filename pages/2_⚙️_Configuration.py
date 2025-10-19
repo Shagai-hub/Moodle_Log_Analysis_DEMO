@@ -143,7 +143,7 @@ def main():
     
     col1, col2 = st.columns([1, 1])
     with col2:
-       if st.button("Go to Analisys", use_container_width=True, key="go_to_analysis"):
+       if st.button("📈Go to Analisys", use_container_width=True, key="go_to_analysis"):
         try:
             st.switch_page("pages/3_📈_Attribute_Analysis.py")
         except Exception:
