@@ -235,27 +235,23 @@ def display_export_options(tables, data_manager):
     st.markdown("---")
     st.header("💾 Export Results & Result Validation")
     
-    col1, col2 = st.columns(2)
+    # Export all tables as CSV - directly use download_button
+    import io
+    import zipfile
     
-    with col1:
-        # Export all tables as CSV - directly use download_button
-        import io
-        import zipfile
-        
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-            for table_name, df in tables.items():
-                csv_data = df.to_csv(index=False)
-                zip_file.writestr(f"{table_name}.csv", csv_data)
-        
-        st.download_button(
-            "📦 Download All Results (ZIP)",
-            zip_buffer.getvalue(),
-            "coco_results.zip",
-            "application/zip",
-            use_container_width=True
-        )
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for table_name, df in tables.items():
+            csv_data = df.to_csv(index=False)
+            zip_file.writestr(f"{table_name}.csv", csv_data)
     
+    st.download_button(
+        "📦 Download All Results (ZIP)",
+        zip_buffer.getvalue(),
+        "coco_results.zip",
+        "application/zip",
+        use_container_width=True
+    )
     
 if __name__ == "__main__":
     main()
