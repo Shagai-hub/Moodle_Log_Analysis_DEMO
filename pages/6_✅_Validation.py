@@ -39,27 +39,6 @@ def main():
             st.dataframe(main_table.head(10), use_container_width=True)
             st.caption(f"Table shape: {main_table.shape[0]} rows × {main_table.shape[1]} columns")
             
-            # Check for required columns
-            st.write("**Required Column Check:**")
-            delta_found = 'Delta_T_ny' in main_table.columns
-            becsl_found = 'Becsl_s' in main_table.columns
-            
-            if delta_found:
-                st.success("✅ Found 'Delta_T_ny' column")
-            else:
-                st.error("❌ Missing 'Delta_T_ny' column")
-                st.write("Available columns:", list(main_table.columns))
-                
-            if becsl_found:
-                st.success("✅ Found 'Becsl_s' column")
-            else:
-                st.error("❌ Missing 'Becsl_s' column")
-                st.write("Available columns:", list(main_table.columns))
-        
-        # Only enable validation if required columns exist
-        if delta_found and becsl_found:
-            st.success("🎯 All required columns found! Ready for validation.")
-            
             # Run validation
             st.markdown("---")
             if st.button("🚀 Run Validation Analysis", type="primary", use_container_width=True):
