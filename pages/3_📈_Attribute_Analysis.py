@@ -346,10 +346,10 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
     stats_data = {
         "Category": ["Activity", "Engagement", "Content", "Exam"],
         "Attributes": [
-            len(activity_table.columns),
-            len(engagement_table.columns),
-            len(content_table.columns),
-            len(exam_table.columns)
+            len(activity_table.columns) - 2,
+            len(engagement_table.columns)- 2,
+            len(content_table.columns)- 2,
+            len(exam_table.columns)- 2
         ]
     }
     stats_df = pd.DataFrame(stats_data)
