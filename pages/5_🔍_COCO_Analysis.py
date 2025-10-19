@@ -1,5 +1,3 @@
-#coco analysis page
-
 import streamlit as st
 import pandas as pd
 import time
@@ -234,25 +232,23 @@ def display_export_options(tables, data_manager):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Export all tables as CSV
-        if st.button("📦 Download All Results (CSV)", use_container_width=True):
-            # Create a ZIP file with all tables
-            import io
-            import zipfile
-            
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                for table_name, df in tables.items():
-                    csv_data = df.to_csv(index=False)
-                    zip_file.writestr(f"{table_name}.csv", csv_data)
-            
-            st.download_button(
-                "⬇ Download ZIP",
-                zip_buffer.getvalue(),
-                "coco_results.zip",
-                "application/zip",
-                use_container_width=True
-            )
+        # Export all tables as CSV - directly use download_button
+        import io
+        import zipfile
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            for table_name, df in tables.items():
+                csv_data = df.to_csv(index=False)
+                zip_file.writestr(f"{table_name}.csv", csv_data)
+        
+        st.download_button(
+            "📦 Download All Results (ZIP)",
+            zip_buffer.getvalue(),
+            "coco_results.zip",
+            "application/zip",
+            use_container_width=True
+        )
     
     with col2:
         # Proceed to validation
