@@ -51,6 +51,11 @@ def main():
     if st.button("🚀 Compute Selected Attributes", use_container_width=True, key="compute_attributes_btn"):
         compute_and_display_attributes(df, df_all, data_manager, config)
     
+    # Show visualization section if attributes have been computed
+    if data_manager.get_student_attributes() is not None:
+        st.markdown("---")
+        display_graph_section(data_manager.get_student_attributes())
+    
     # Show navigation button if attributes have been computed
     if data_manager.get_student_attributes() is not None:
         st.markdown("---")
@@ -313,10 +318,6 @@ def display_hybrid_layout(oam_combined, data_manager):
                 use_container_width=True,
                 key="download_full_oam_btn"
             )
-    
-    # VISUALIZATION SECTION - MOVED TO BOTTOM (separate from tabs)
-    st.markdown("---")
-    display_graph_section(oam_combined)
 
 def create_category_table(oam_combined, category_attrs, category_name):
     """Create a table for a specific category"""
@@ -410,23 +411,27 @@ def display_graph_section(oam_combined):
         key="viz_type_select"
     )
     
-    if viz_type == "📊 Attribute Distribution Analysis":
-        display_attribute_distribution(oam_combined, attribute_cols)
+    # Use a container to isolate the visualization from the main flow
+    viz_container = st.container()
     
-    elif viz_type == "👥 Student Performance Comparison":
-        display_student_comparison(oam_combined, attribute_cols)
-    
-    elif viz_type == "🔥 Top Performers by Attribute":
-        display_top_performers(oam_combined, attribute_cols)
-    
-    elif viz_type == "📈 Student Attribute Profile":
-        display_student_profile(oam_combined, attribute_cols)
-    
-    elif viz_type == "🌐 Correlation Heatmap":
-        display_correlation_heatmap(oam_combined, attribute_cols)
-    
-    elif viz_type == "📋 Category-wise Analysis":
-        display_category_analysis(oam_combined)
+    with viz_container:
+        if viz_type == "📊 Attribute Distribution Analysis":
+            display_attribute_distribution(oam_combined, attribute_cols)
+        
+        elif viz_type == "👥 Student Performance Comparison":
+            display_student_comparison(oam_combined, attribute_cols)
+        
+        elif viz_type == "🔥 Top Performers by Attribute":
+            display_top_performers(oam_combined, attribute_cols)
+        
+        elif viz_type == "📈 Student Attribute Profile":
+            display_student_profile(oam_combined, attribute_cols)
+        
+        elif viz_type == "🌐 Correlation Heatmap":
+            display_correlation_heatmap(oam_combined, attribute_cols)
+        
+        elif viz_type == "📋 Category-wise Analysis":
+            display_category_analysis(oam_combined)
 
 def display_attribute_distribution(oam_combined, attribute_cols):
     """Display distribution analysis for individual attributes"""
