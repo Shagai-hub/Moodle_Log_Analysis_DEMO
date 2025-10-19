@@ -171,63 +171,32 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
         progress_bar.progress(0)
         
 def perform_validation(original_table, inverted_table, ranked_data):
-    """Validate COCO analysis results by comparing original and inverted deltas.
-
-    Changes:
-    - Count how many table objects were provided (non-None).
-    - Use the very last column as the delta column.
-    - Use the 4th-last column as the 'Becslés' column.
-    """
+    """Validate COCO analysis results by comparing original and inverted deltas."""
     try:
-        # Count how many tables were provided (not None)
-        tables = {"original_table": original_table, "inverted_table": inverted_table, "ranked_data": ranked_data}
-        table_count = sum(1 for t in tables.values() if t is not None)
-        st.info(f"Found {table_count} table(s) provided: {', '.join([k for k,v in tables.items() if v is not None])}")
-
-        # Basic existence checks
-        if original_table is None or inverted_table is None:
-            st.error("❌ Both original_table and inverted_table must be provided.")
+        # The columns should now be properly named after clean_coco_dataframe
+        delta_col = 'Delta/Tény'  # Keep the original encoding for now
+        becsl_col = 'Becslés'     # Keep the original encoding for now
+        
+        # Check if columns exist
+        if delta_col not in original_table.columns[1] or delta_col not in inverted_table.columns:
+            st.error(f"❌ Delta column '{delta_col}' not found")
+            st.write("Original table columns:", list(original_table.columns))
+            st.write("Inverted table columns:", list(inverted_table.columns))
             return None
-
-        # Ensure original table has at least 4 columns (so 4th-last exists)
-        orig_cols = list(original_table.columns)
-        inv_cols = list(inverted_table.columns)
-
-        if len(orig_cols) < 4:
-            st.error("❌ Original table must have at least 4 columns so the 4th-last column can be used as 'Becslés'.")
-            st.write("Original table columns:", orig_cols)
+            
+        if becsl_col not in original_table.columns[1]:
+            st.error(f"❌ Becsl column '{becsl_col}' not found") 
+            st.write("Original table columns:", list(original_table.columns))
             return None
-
-        if len(inv_cols) < 1:
-            st.error("❌ Inverted table has no columns.")
-            st.write("Inverted table columns:", inv_cols)
-            return None
-
-        # Determine columns by position
-        delta_col = orig_cols[-1]    # very last column
-        becsl_col = orig_cols[-4]    # 4th-last column
-
-        # Check presence in both tables as required
-        if delta_col not in orig_cols or delta_col not in inv_cols:
-            st.error(f"❌ Delta column '{delta_col}' not found in both tables.")
-            st.write("Original table columns:", orig_cols)
-            st.write("Inverted table columns:", inv_cols)
-            return None
-
-        if becsl_col not in orig_cols:
-            st.error(f"❌ Becslés column '{becsl_col}' not found in original table.")
-            st.write("Original table columns:", orig_cols)
-            return None
-
+        
         st.success("✅ All required columns found!")
-        st.write(f"Using delta column: '{delta_col}' and becslés column: '{becsl_col}'")
-
+        
         # Convert to numeric and handle invalid values
         original_delta = pd.to_numeric(original_table[delta_col], errors='coerce')
         inverted_delta = pd.to_numeric(inverted_table[delta_col], errors='coerce')
         original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
-
-        # Ensure no NaN values in deltas (warn and filter)
+        
+        # Ensure no NaN values in deltas
         if original_delta.isna().any() or inverted_delta.isna().any():
             st.warning("⚠️ Some delta values could not be converted to numeric. These rows will be excluded from validation.")
         
