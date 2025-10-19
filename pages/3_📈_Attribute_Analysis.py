@@ -409,7 +409,8 @@ def display_graph_section(oam_combined):
             "📈 Student Attribute Profile",
             "🌐 Correlation Heatmap",
             "📋 Category-wise Analysis"
-        ]
+        ],
+        key="viz_type_select"  # UNIQUE KEY ADDED
     )
     
     if viz_type == "📊 Attribute Distribution Analysis":
@@ -440,7 +441,7 @@ def display_attribute_distribution(oam_combined, attribute_cols):
         selected_attribute = st.selectbox(
             "Select Attribute to Analyze",
             attribute_cols,
-            key="attr_dist_select"
+            key="attr_dist_select"  # UNIQUE KEY ADDED
         )
         
         # Statistics
@@ -493,14 +494,16 @@ def display_student_comparison(oam_combined, attribute_cols):
         selected_students = st.multiselect(
             "Select Students to Compare",
             options=oam_combined["userfullname"].tolist(),
-            default=oam_combined["userfullname"].head(5).tolist()
+            default=oam_combined["userfullname"].head(5).tolist(),
+            key="student_comparison_select"  # UNIQUE KEY ADDED
         )
     
     with col2:
         selected_attributes = st.multiselect(
             "Select Attributes for Comparison",
             options=attribute_cols,
-            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols
+            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols,
+            key="attribute_comparison_select"  # UNIQUE KEY ADDED
         )
     
     if selected_students and selected_attributes:
@@ -585,10 +588,10 @@ def display_top_performers(oam_combined, attribute_cols):
     selected_attribute = st.selectbox(
         "Select Attribute for Ranking",
         attribute_cols,
-        key="top_perf_select"
+        key="top_perf_select"  # UNIQUE KEY ADDED
     )
     
-    top_n = st.slider("Number of Top Students to Show", 5, 20, 10)
+    top_n = st.slider("Number of Top Students to Show", 5, 20, 10, key="top_n_slider")  # UNIQUE KEY ADDED
     
     if selected_attribute:
         # Get top performers
@@ -619,7 +622,11 @@ def display_top_performers(oam_combined, attribute_cols):
 def display_student_profile(oam_combined, attribute_cols):
     st.subheader("👤 Student Profile")
     
-    selected_student = st.selectbox("Select Student", oam_combined["userfullname"].tolist())
+    selected_student = st.selectbox(
+        "Select Student", 
+        oam_combined["userfullname"].tolist(),
+        key="student_profile_select"  # UNIQUE KEY ADDED
+    )
     
     if selected_student:
         student_data = oam_combined[oam_combined["userfullname"] == selected_student].iloc[0]
@@ -643,7 +650,7 @@ def display_student_profile(oam_combined, attribute_cols):
         above_avg = sum(1 for attr in attribute_cols 
                        if student_data[attr] > oam_combined[attr].mean())
         
-        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)-3} attributes are above class average")
+        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average")
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
@@ -710,7 +717,11 @@ def display_category_analysis(oam_combined):
         st.warning("No categorized attributes available")
         return
     
-    selected_category = st.selectbox("Select Category", list(categories.keys()))
+    selected_category = st.selectbox(
+        "Select Category", 
+        list(categories.keys()),
+        key="category_analysis_select"  # UNIQUE KEY ADDED
+    )
     
     if selected_category and categories[selected_category]:
         category_cols = categories[selected_category]
