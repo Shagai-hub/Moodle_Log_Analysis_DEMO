@@ -385,7 +385,7 @@ def display_category_table(category_table, title, description):
             key=f"download_{category_name}_btn"
         )
     else:
-        st.info(f"No {title.lower()} attributes selected or computed.", key=f"{title.lower()}_info")
+        st.info(f"No {title.lower()} attributes selected or computed.")
 
 def display_graph_section(oam_combined):
     """Display comprehensive graph section for attributes and students"""
@@ -655,8 +655,7 @@ def display_student_profile(oam_combined, attribute_cols):
         above_avg = sum(1 for attr in attribute_cols 
                        if student_data[attr] > oam_combined[attr].mean())
         
-        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average", 
-                key="student_summary_info")
+        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average")
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
