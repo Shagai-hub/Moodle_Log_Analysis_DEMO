@@ -58,11 +58,13 @@ def main():
     if st.button("🚀 Run COCO Analysis", type="primary", use_container_width=True):
         run_coco_analysis(ranked_data, job_name, stair_value, data_manager)
 
-    col1, col2 = st.columns([1, 1])
-    with col2:
-        if st.button("🔍 Proceed to COCO Analysis", use_container_width=True, 
-                    help="Navigate to COCO Analysis page with ranked data"):
-            st.switch_page("pages/5_🔍_COCO_Analysis.py")
+    if data_manager.get_coco_results() is not None:
+        st.markdown("---")
+        col1, col2 = st.columns([1, 1])
+        with col2:
+            if st.button("🏆 Result Validation", use_container_width=True, 
+                        help="Navigate to the validation page", key="proceed_to_validation_btn"):
+                st.switch_page("pages/6_✅_Validation.py")
 
 def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
     """Execute COCO analysis and display results"""
