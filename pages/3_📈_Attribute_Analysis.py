@@ -272,14 +272,13 @@ def display_hybrid_layout(oam_combined, data_manager):
     content_table = create_category_table(oam_combined, content_attrs, "Content")
     exam_table = create_category_table(oam_combined, exam_attrs, "Exam")
     
-    # Tabbed interface - FIXED: Removed duplicate graph tab and kept all tabs visible
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    # Tabbed interface - REMOVED visualization tab
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 Overview", 
         "🚀 Activity", 
         "💬 Engagement", 
         "📝 Content", 
-        "📋 Exams",
-        "📈 Visualizations"  # Single visualization tab
+        "📋 Exams"
     ])
     
     with tab1:
@@ -296,9 +295,6 @@ def display_hybrid_layout(oam_combined, data_manager):
     
     with tab5:
         display_category_table(exam_table, "Exam Performance", "Tracks exam-related behavior and deadlines")
-    
-    with tab6:  # Only visualization tab
-        display_graph_section(oam_combined)
     
     # Combined OAM for COCO (expandable)
     with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False):
@@ -317,6 +313,10 @@ def display_hybrid_layout(oam_combined, data_manager):
                 use_container_width=True,
                 key="download_full_oam_btn"
             )
+    
+    # VISUALIZATION SECTION - MOVED TO BOTTOM (separate from tabs)
+    st.markdown("---")
+    display_graph_section(oam_combined)
 
 def create_category_table(oam_combined, category_attrs, category_name):
     """Create a table for a specific category"""
