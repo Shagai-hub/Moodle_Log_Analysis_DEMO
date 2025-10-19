@@ -75,6 +75,11 @@ def main():
         st.error("❌ table_4 not found in COCO results")
         st.write("Available tables:", list(coco_results.keys()))
         st.info("Please run COCO analysis again to generate the required table_4.")
+        
+        
+    st.markdown("---")
+    if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
+            st.switch_page("pages/7_🤖_AI_Insights.py")
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
     """Run the complete validation analysis"""
@@ -329,10 +334,7 @@ def display_validation_results(validation_results, data_manager):
             "text/csv",
             use_container_width=True
         )
-    
-    with col2:
-        if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
-            st.switch_page("pages/7_🤖_AI_Insights.py")
+
 
 if __name__ == "__main__":
     main()
