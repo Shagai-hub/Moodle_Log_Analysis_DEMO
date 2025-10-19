@@ -69,7 +69,7 @@ def parse_coco_html(resp_or_html):
                 
                 # Strategy 1: Try with header=0 (first row as header)
                 try:
-                    df_list = pd.read_html(StringIO(table_html), header=-1)
+                    df_list = pd.read_html(StringIO(table_html), header=0)
                     if df_list:
                         df = df_list[0]
                         # Check if this looks like a proper table (not just numbers as headers)
@@ -78,18 +78,6 @@ def parse_coco_html(resp_or_html):
                             df_found = df
                 except:
                     pass
-                
-                # Strategy 2: Try with header=1 (second row as header) if first failed
-                if df_found is None:
-                    try:
-                        df_list = pd.read_html(StringIO(table_html), header=1)
-                        if df_list:
-                            df = df_list[0]
-                            first_col = str(df.columns[0]) if len(df.columns) > 0 else ""
-                            if not first_col.isdigit() and 'unnamed' not in first_col.lower():
-                                df_found = df
-                    except:
-                        pass
                 
                 if df_found is not None and not df_found.empty:
                     # Clean the dataframe
