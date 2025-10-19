@@ -222,8 +222,6 @@ def display_key_tables(tables):
     # Display all tables in expanders for completeness
     with st.expander("🔍 All Result Tables", expanded=False):
         for name, df in tables.items():
-            if (score_table and name == score_table[0]) or (ranking_table and name == ranking_table[0]):
-                continue  # Skip already displayed tables
             st.subheader(f"📄 {name}")
             st.dataframe(clean_coco_dataframe(df), use_container_width=True)
 
