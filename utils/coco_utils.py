@@ -69,7 +69,7 @@ def parse_coco_html(resp_or_html):
                 
                 # Strategy 1: Try with header=0 (first row as header)
                 try:
-                    df_list = pd.read_html(StringIO(table_html), header=1)
+                    df_list = pd.read_html(StringIO(table_html), header=-1)
                     if df_list:
                         df = df_list[0]
                         # Check if this looks like a proper table (not just numbers as headers)
