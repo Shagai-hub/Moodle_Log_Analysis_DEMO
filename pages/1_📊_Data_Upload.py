@@ -52,7 +52,7 @@ def main():
             
             col1, col2 = st.columns([1, 1])
             with col2:
-                if st.form_submit_button("🔍 Proceed to COCO Analysis", use_container_width=True, 
+                if st.button("🔍 Proceed to COCO Analysis", use_container_width=True, 
                             help="Navigate to COCO Analysis page with ranked data"):
                     st.switch_page("pages/5_🔍_COCO_Analysis.py")
 
