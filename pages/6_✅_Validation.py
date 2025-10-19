@@ -239,16 +239,6 @@ def display_validation_results(validation_results, data_manager):
         status = "✅ PASS" if validity_percentage >= 80 else "⚠️ REVIEW" if validity_percentage >= 50 else "❌ FAIL"
         st.metric("Validation Status", status)
     
-    # Show top performers
-    st.subheader("🏆 Top 10 Performers")
-    top_10 = validation_results.nlargest(10, 'Becslés')[['userfullname', 'Becslés', 'Final_Rank', 'Validation_Result']]
-    top_10_display = top_10.rename(columns={
-        "userfullname": "Student Name",
-        "Becslés": "Final Score", 
-        "Final_Rank": "Rank",
-        "Validation_Result": "Validation"
-    })
-    st.dataframe(top_10_display, use_container_width=True)
     
     # Display full results table
     st.subheader("📋 Detailed Validation Results")
