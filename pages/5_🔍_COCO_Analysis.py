@@ -154,20 +154,6 @@ def display_coco_results(tables, data_manager, job_name, stair_value):
     # Store results in session
     data_manager.store_coco_results(tables)
     
-    # Display table summary
-    st.subheader("📋 Result Tables")
-    
-    summary_data = []
-    for name, df in tables.items():
-        summary_data.append({
-            "Table": name,
-            "Rows": df.shape[0],
-            "Columns": df.shape[1],
-            "Description": get_table_description(name, df, stair_value)  # changed to pass stair_value
-        })
-    
-    summary_df = pd.DataFrame(summary_data)
-    st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # Display key tables
     display_key_tables(tables)
