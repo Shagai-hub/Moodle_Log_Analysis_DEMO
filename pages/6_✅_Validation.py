@@ -28,29 +28,11 @@ def main():
         return
     
     st.success(f"✅ Ready to validate {len(ranked_data)} students")
-    
-    # Display data summary
-    st.header("📊 Data Overview")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Students", len(ranked_data))
-    with col2:
-        st.metric("COCO Tables", len(coco_results))
-    with col3:
-        # Check if table_4 exists
-        if 'table_4' in coco_results:
-            st.metric("Main Table", "table_4 ✅")
-        else:
-            st.metric("Main Table", "Not Found ❌")
 
-    # Configuration section
-    st.header("⚙️ Validation Configuration")
     
     # Look for the specific table_4
     if 'table_4' in coco_results:
         main_table = coco_results['table_4']
-        st.success("✅ Found main results table: **table_4**")
         
         # Show table preview with specific column check
         with st.expander("🔍 Preview table_4 Results", expanded=True):
