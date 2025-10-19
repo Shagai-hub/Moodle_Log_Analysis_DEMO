@@ -399,7 +399,7 @@ def display_graph_section(oam_combined):
         st.warning("No attributes available for visualization. Please compute attributes first.")
         return
     
-    # Visualization type selection - UNIQUE KEY
+    # Visualization type selection
     viz_type = st.selectbox(
         "Select Visualization Type",
         [
@@ -409,8 +409,7 @@ def display_graph_section(oam_combined):
             "📈 Student Attribute Profile",
             "🌐 Correlation Heatmap",
             "📋 Category-wise Analysis"
-        ],
-        key="main_viz_type_select"  # UNIQUE KEY
+        ]
     )
     
     if viz_type == "📊 Attribute Distribution Analysis":
@@ -438,11 +437,10 @@ def display_attribute_distribution(oam_combined, attribute_cols):
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        # UNIQUE KEY for this selectbox
         selected_attribute = st.selectbox(
             "Select Attribute to Analyze",
             attribute_cols,
-            key="attr_distribution_select"
+            key="attr_dist_select"
         )
         
         # Statistics
@@ -492,21 +490,17 @@ def display_student_comparison(oam_combined, attribute_cols):
     col1, col2 = st.columns(2)
     
     with col1:
-        # UNIQUE KEY for this multiselect
         selected_students = st.multiselect(
             "Select Students to Compare",
             options=oam_combined["userfullname"].tolist(),
-            default=oam_combined["userfullname"].head(5).tolist(),
-            key="student_comparison_multiselect"
+            default=oam_combined["userfullname"].head(5).tolist()
         )
     
     with col2:
-        # UNIQUE KEY for this multiselect
         selected_attributes = st.multiselect(
             "Select Attributes for Comparison",
             options=attribute_cols,
-            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols,
-            key="attribute_comparison_multiselect"
+            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols
         )
     
     if selected_students and selected_attributes:
@@ -588,15 +582,13 @@ def display_top_performers(oam_combined, attribute_cols):
     """Display top performers for each attribute"""
     st.subheader("🔥 Top Performers by Attribute")
     
-    # UNIQUE KEY for this selectbox
     selected_attribute = st.selectbox(
         "Select Attribute for Ranking",
         attribute_cols,
-        key="top_performers_select"
+        key="top_perf_select"
     )
     
-    # UNIQUE KEY for this slider
-    top_n = st.slider("Number of Top Students to Show", 5, 20, 10, key="top_n_students_slider")
+    top_n = st.slider("Number of Top Students to Show", 5, 20, 10)
     
     if selected_attribute:
         # Get top performers
@@ -627,12 +619,7 @@ def display_top_performers(oam_combined, attribute_cols):
 def display_student_profile(oam_combined, attribute_cols):
     st.subheader("👤 Student Profile")
     
-    # UNIQUE KEY for this selectbox
-    selected_student = st.selectbox(
-        "Select Student", 
-        oam_combined["userfullname"].tolist(),
-        key="student_profile_select"
-    )
+    selected_student = st.selectbox("Select Student", oam_combined["userfullname"].tolist())
     
     if selected_student:
         student_data = oam_combined[oam_combined["userfullname"] == selected_student].iloc[0]
@@ -656,7 +643,7 @@ def display_student_profile(oam_combined, attribute_cols):
         above_avg = sum(1 for attr in attribute_cols 
                        if student_data[attr] > oam_combined[attr].mean())
         
-        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average")
+        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)-1} attributes are above class average")
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
@@ -723,12 +710,7 @@ def display_category_analysis(oam_combined):
         st.warning("No categorized attributes available")
         return
     
-    # UNIQUE KEY for this selectbox
-    selected_category = st.selectbox(
-        "Select Category", 
-        list(categories.keys()),
-        key="category_analysis_select"
-    )
+    selected_category = st.selectbox("Select Category", list(categories.keys()))
     
     if selected_category and categories[selected_category]:
         category_cols = categories[selected_category]
