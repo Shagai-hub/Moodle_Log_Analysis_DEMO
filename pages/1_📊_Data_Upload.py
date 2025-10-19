@@ -50,13 +50,15 @@ def main():
                 use_container_width=True
             )
             
-            col1, col2 = st.columns(2)
-            st.markdown("---")
-            if st.button("⚙️Configuration", use_container_width=True, key="go_to_config"):
+            col1, col2 = st.columns([1, 1])
+            with col2:
+               if st.button("⚙️Configuration", use_container_width=True, key="go_to_config"):
                 try:
                     st.switch_page("pages/2_⚙️_Configuration.py")
                 except Exception:
                     st.warning("Unable to auto-navigate. Please open '⚙️ Configuration' from the sidebar.")
+
+
 
 def process_uploaded_file(uploaded_file):
     """Process uploaded file and return cleaned DataFrame"""
