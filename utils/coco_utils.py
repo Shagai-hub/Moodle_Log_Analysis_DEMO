@@ -155,9 +155,6 @@ def save_coco_debug_html(conn, html, resp=None):
         print(f"Failed to save debug HTML to DB: {e}")
 
 def clean_column_name(name):
-    """Clean column names for SQL compatibility"""
-    if isinstance(name, str):
-        return re.sub(r'[^a-zA-Z0-9_]', '_', name)
     return f"column_{name}"
 
 def invert_ranking(matrix_df):
@@ -180,63 +177,12 @@ def invert_ranking(matrix_df):
     return inverted_df
 
 def clean_dataframe_columns(df):
-    """Clean and standardize dataframe column names with proper encoding"""
-    if df.empty:
-        return df
-    
-    clean_columns = []
-    for idx, col in enumerate(df.columns):
-        if isinstance(col, str):
-            # First, try to fix the encoding issue
-            try:
-                # The column names are likely ISO-8859-2 encoded but being interpreted as something else
-                # Try to encode as latin1 and decode as utf-8, or vice versa
-                try:
-                    # If the string shows encoding issues like "BecslÃ©s", it's UTF-8 misinterpreted as Latin1
-                    fixed_col = col.encode('latin1').decode('utf-8')
-                except (UnicodeEncodeError, UnicodeDecodeError):
-                    try:
-                        # Try the reverse
-                        fixed_col = col.encode('utf-8').decode('latin1')
-                    except (UnicodeEncodeError, UnicodeDecodeError):
-                        fixed_col = col
-                
-                # Now clean for SQL compatibility
-                clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', fixed_col.strip())
-                clean_col = re.sub(r'_+', '_', clean_col)
-                clean_col = clean_col.strip('_')
-                
-                if not clean_col:
-                    clean_col = f"column_{idx}"
-            except:
-                # Fallback to basic cleaning
-                clean_col = re.sub(r'[^a-zA-Z0-9_]', '_', str(col).strip())
-                clean_col = re.sub(r'_+', '_', clean_col)
-                clean_col = clean_col.strip('_')
-                if not clean_col:
-                    clean_col = f"column_{idx}"
-        else:
-            clean_col = f"column_{idx}"
-        
-        # Ensure unique column names
-        if clean_col in clean_columns:
-            suffix = 1
-            while f"{clean_col}_{suffix}" in clean_columns:
-                suffix += 1
-            clean_col = f"{clean_col}_{suffix}"
-        
-        clean_columns.append(clean_col)
-    
-    df.columns = clean_columns
     return df
 
 def clean_coco_dataframe(df):
     """Clean COCO dataframe by properly handling headers and encoding"""
     if df.empty:
         return df
-    
-    
-    # Clean the column names with proper encoding
     df = clean_dataframe_columns(df)
     
     return df
