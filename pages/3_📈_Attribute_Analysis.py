@@ -215,9 +215,9 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     
                 elif attr.startswith("deadline_exceeded_posts_"):
                     exam_mapping = {
-                        "deadline_exceeded_posts_Quasi_exam_I": "Quasi Exam I",
-                        "deadline_exceeded_posts_Quasi_exam_II": "Quasi Exam II",
-                        "deadline_exceeded_posts_Quasi_exam_III": "Quasi Exam III",
+                        "deadline_exceeded_posts_Quasi_Exam_I": "Quasi Exam I",
+                        "deadline_exceeded_posts_Quasi_Exam_II": "Quasi Exam II",
+                        "deadline_exceeded_posts_Quasi_Exam_III": "Quasi Exam III",
                     }
     
                     if attr in exam_mapping:
