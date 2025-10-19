@@ -406,7 +406,6 @@ def display_graph_section(oam_combined):
             "📊 Attribute Distribution Analysis",
             "👥 Student Performance Comparison", 
             "🔥 Top Performers by Attribute",
-            "📈 Student Attribute Profile",
             "🌐 Correlation Heatmap",
             "📋 Category-wise Analysis"
         ]
