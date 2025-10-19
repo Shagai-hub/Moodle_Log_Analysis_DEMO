@@ -333,15 +333,15 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Students", len(oam_combined), key="total_students_metric")
+        st.metric("Total Students", len(oam_combined))
     with col2:
-        st.metric("Total Attributes", len(oam_combined.columns) - 2, key="total_attrs_metric")
+        st.metric("Total Attributes", len(oam_combined.columns) - 2)
     with col3:
         activity_count = len(activity_table.columns) - 2
-        st.metric("Activity Metrics", activity_count, key="activity_metric")
+        st.metric("Activity Metrics", activity_count)
     with col4:
         engagement_count = len(engagement_table.columns) - 2
-        st.metric("Engagement Metrics", engagement_count, key="engagement_metric")
+        st.metric("Engagement Metrics", engagement_count)
     
     # Quick stats
     st.subheader("📋 Attribute Summary by Category")
@@ -452,9 +452,9 @@ def display_attribute_distribution(oam_combined, attribute_cols):
                 "Max": attr_data.max()
             }
             
-            st.metric("Average", f"{stats['Mean']:.2f}", key="avg_metric")
-            st.metric("Median", f"{stats['Median']:.2f}", key="median_metric")
-            st.metric("Std Deviation", f"{stats['Std Dev']:.2f}", key="std_metric")
+            st.metric("Average", f"{stats['Mean']:.2f}")
+            st.metric("Median", f"{stats['Median']:.2f}")
+            st.metric("Std Deviation", f"{stats['Std Dev']:.2f}")
     
     with col2:
         if selected_attribute:
