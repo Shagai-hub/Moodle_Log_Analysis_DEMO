@@ -58,6 +58,12 @@ def main():
     if st.button("🚀 Run COCO Analysis", type="primary", use_container_width=True):
         run_coco_analysis(ranked_data, job_name, stair_value, data_manager)
 
+    col1, col2 = st.columns([1, 1])
+    with col2:
+        if st.button("🔍 Proceed to COCO Analysis", use_container_width=True, 
+                    help="Navigate to COCO Analysis page with ranked data"):
+            st.switch_page("pages/5_🔍_COCO_Analysis.py")
+
 def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
     """Execute COCO analysis and display results"""
     
@@ -250,11 +256,6 @@ def display_export_options(tables, data_manager):
             use_container_width=True
         )
     
-    with col2:
-        # Proceed to validation
-        if st.button("✅ Proceed to Validation", use_container_width=True):
-            st.session_state.proceed_to_validation = True
-            st.rerun()
-
+    
 if __name__ == "__main__":
     main()
