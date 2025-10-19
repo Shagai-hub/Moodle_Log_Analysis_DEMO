@@ -331,7 +331,7 @@ def display_validation_results(validation_results, data_manager):
         )
     
     with col2:
-        if st.button("🤖 AI Insights", use_container_width=True, type="secondary"):
+        if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
             st.switch_page("pages/7_🤖_AI_Insights.py")
 
 if __name__ == "__main__":
