@@ -140,7 +140,7 @@ def render_attribute_selection_ui():
     
     with col2:
         with st.expander("📝 Content Analysis", expanded=False):
-            st.warning("⚠️ ML-based attributes may take longer to compute", key="ml_warning")
+            st.warning("⚠️ ML-based attributes may take longer to compute")
             for attr in content_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -393,7 +393,7 @@ def display_graph_section(oam_combined):
     attribute_cols = [col for col in oam_combined.columns if col not in fixed_cols]
     
     if not attribute_cols:
-        st.warning("No attributes available for visualization. Please compute attributes first.", key="no_attrs_warning")
+        st.warning("No attributes available for visualization. Please compute attributes first.")
         return
     
     # Visualization type selection with unique key
@@ -656,7 +656,7 @@ def display_correlation_heatmap(oam_combined, attribute_cols):
     st.subheader("🌐 Attribute Correlation Heatmap")
     
     if len(attribute_cols) < 2:
-        st.warning("Need at least 2 attributes for correlation analysis", key="correlation_warning")
+        st.warning("Need at least 2 attributes for correlation analysis")
         return
     
     # Calculate correlation matrix
@@ -713,7 +713,7 @@ def display_category_analysis(oam_combined):
     categories = {k: v for k, v in categories.items() if v}
     
     if not categories:
-        st.warning("No categorized attributes available", key="category_warning")
+        st.warning("No categorized attributes available")
         return
     
     selected_category = st.selectbox(
