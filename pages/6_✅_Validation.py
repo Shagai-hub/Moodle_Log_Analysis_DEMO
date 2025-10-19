@@ -78,8 +78,10 @@ def main():
         
         
     st.markdown("---")
-    if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
-            st.switch_page("pages/7_🤖_AI_Insights.py")
+    col1, col2 = st.columns([1, 1])
+    with col2:
+            if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
+              st.switch_page("pages/7_🤖_AI_Insights.py")
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
     """Run the complete validation analysis"""
