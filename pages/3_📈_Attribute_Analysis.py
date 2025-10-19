@@ -48,12 +48,8 @@ def main():
     render_attribute_selection_ui()
     
     # Compute attributes when requested
-    if st.button("🚀 Compute Selected Attributes", use_container_width=True):
+    if st.button("🚀 Compute Selected Attributes", use_container_width=True, key="compute_attributes_btn"):
         compute_and_display_attributes(df, df_all, data_manager, config)
-    
-    # Show graph section if attributes have been computed
-    if data_manager.get_student_attributes() is not None:
-        display_graph_section(data_manager.get_student_attributes())
     
     # Show navigation button if attributes have been computed
     if data_manager.get_student_attributes() is not None:
@@ -61,7 +57,7 @@ def main():
         col1, col2 = st.columns([1, 1])
         with col2:
             if st.button("🏆 Proceed to Ranking", use_container_width=True, 
-                        help="Navigate to the ranking page with computed attributes"):
+                        help="Navigate to the ranking page with computed attributes", key="proceed_to_ranking_btn"):
                 st.switch_page("pages/4_🏆_Ranking.py")
 
 def render_attribute_selection_ui():
@@ -70,16 +66,16 @@ def render_attribute_selection_ui():
     if "selected_attributes" not in st.session_state:
         st.session_state.selected_attributes = []
     
-    # Create attribute key mapping (same as your current code)
+    # Create attribute key mapping with unique keys
     attr_key_map = {}
-    for attr in activity_attrs:
-        attr_key_map[attr] = f"activity_{attr}"
-    for attr in engagement_attrs:
-        attr_key_map[attr] = f"engagement_{attr}"
-    for attr in content_attrs:
-        attr_key_map[attr] = f"content_{attr}"
-    for attr in exam_attrs:
-        attr_key_map[attr] = f"exam_{attr}"
+    for i, attr in enumerate(activity_attrs):
+        attr_key_map[attr] = f"activity_{attr}_{i}"
+    for i, attr in enumerate(engagement_attrs):
+        attr_key_map[attr] = f"engagement_{attr}_{i}"
+    for i, attr in enumerate(content_attrs):
+        attr_key_map[attr] = f"content_{attr}_{i}"
+    for i, attr in enumerate(exam_attrs):
+        attr_key_map[attr] = f"exam_{attr}_{i}"
     
     # Helper functions for select all/clear all
     def select_all():
@@ -95,7 +91,7 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
     
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=True):
+    with st.expander("ℹ️ Attribute Descriptions", expanded=True, key="attr_desc_expander"):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  
@@ -121,11 +117,12 @@ def render_attribute_selection_ui():
         """,
         unsafe_allow_html=True
     )
+    
     # Category expanders for attribute selection
     col1, col2 = st.columns(2)
     
     with col1:
-        with st.expander("📊 Activity Metrics", expanded=False):
+        with st.expander("📊 Activity Metrics", expanded=False, key="activity_expander"):
             for attr in activity_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -133,7 +130,7 @@ def render_attribute_selection_ui():
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
         
-        with st.expander("💬 Engagement Metrics", expanded=False):
+        with st.expander("💬 Engagement Metrics", expanded=False, key="engagement_expander"):
             for attr in engagement_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -142,8 +139,8 @@ def render_attribute_selection_ui():
                     update_selected_attributes(attr, checked)
     
     with col2:
-        with st.expander("📝 Content Analysis", expanded=False):
-            st.warning("⚠️ ML-based attributes may take longer to compute")
+        with st.expander("📝 Content Analysis", expanded=False, key="content_expander"):
+            st.warning("⚠️ ML-based attributes may take longer to compute", key="ml_warning")
             for attr in content_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -151,7 +148,7 @@ def render_attribute_selection_ui():
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
         
-        with st.expander("📋 Exam Performance", expanded=False):
+        with st.expander("📋 Exam Performance", expanded=False, key="exam_expander"):
             for attr in exam_attrs:
                 if attr in available_attributes:
                     key = attr_key_map[attr]
@@ -165,10 +162,9 @@ def render_attribute_selection_ui():
     # --- Row 1: Action Buttons ---
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.button("✅ Select All", on_click=select_all, use_container_width=True)
+        st.button("✅ Select All", on_click=select_all, use_container_width=True, key="select_all_btn")
     with col2:
-        st.button("❌ Clear All", on_click=clear_all, use_container_width=True)
-
+        st.button("❌ Clear All", on_click=clear_all, use_container_width=True, key="clear_all_btn")
 
 def update_selected_attributes(attr, checked):
     """Update the selected attributes list based on checkbox state"""
@@ -253,7 +249,6 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
 
     st.success("✅ All attributes have been computed successfully!")
 
-    
     # Fill NaN values and sort
     oam_combined = oam_combined.fillna(0)
     fixed_cols = ["userid", "userfullname"]
@@ -277,14 +272,14 @@ def display_hybrid_layout(oam_combined, data_manager):
     content_table = create_category_table(oam_combined, content_attrs, "Content")
     exam_table = create_category_table(oam_combined, exam_attrs, "Exam")
     
-    # Tabbed interface
+    # Tabbed interface - FIXED: Removed duplicate graph tab and kept all tabs visible
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Overview", 
         "🚀 Activity", 
         "💬 Engagement", 
         "📝 Content", 
         "📋 Exams",
-        "📈 Graphs & Visualizations"  # New Graph Tab
+        "📈 Visualizations"  # Single visualization tab
     ])
     
     with tab1:
@@ -302,11 +297,11 @@ def display_hybrid_layout(oam_combined, data_manager):
     with tab5:
         display_category_table(exam_table, "Exam Performance", "Tracks exam-related behavior and deadlines")
     
-    with tab6:  # New Graph Tab
+    with tab6:  # Only visualization tab
         display_graph_section(oam_combined)
     
     # Combined OAM for COCO (expandable)
-    with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False):
+    with st.expander("🔗 Combined Object Attribute Matrix (For COCO Analysis)", expanded=False, key="coco_expander"):
         st.markdown("**Full OAM with all attributes - Use this for COCO analysis**")
         st.dataframe(oam_combined, use_container_width=True)
         
@@ -319,7 +314,8 @@ def display_hybrid_layout(oam_combined, data_manager):
                 csv_data,
                 "full_oam_matrix.csv",
                 "text/csv",
-                use_container_width=True
+                use_container_width=True,
+                key="download_full_oam_btn"
             )
 
 def create_category_table(oam_combined, category_attrs, category_name):
@@ -337,15 +333,15 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Students", len(oam_combined))
+        st.metric("Total Students", len(oam_combined), key="total_students_metric")
     with col2:
-        st.metric("Total Attributes", len(oam_combined.columns) - 2)
+        st.metric("Total Attributes", len(oam_combined.columns) - 2, key="total_attrs_metric")
     with col3:
         activity_count = len(activity_table.columns) - 2
-        st.metric("Activity Metrics", activity_count)
+        st.metric("Activity Metrics", activity_count, key="activity_metric")
     with col4:
         engagement_count = len(engagement_table.columns) - 2
-        st.metric("Engagement Metrics", engagement_count)
+        st.metric("Engagement Metrics", engagement_count, key="engagement_metric")
     
     # Quick stats
     st.subheader("📋 Attribute Summary by Category")
@@ -360,11 +356,11 @@ def display_overview_dashboard(oam_combined, activity_table, engagement_table, c
         ]
     }
     stats_df = pd.DataFrame(stats_data)
-    st.dataframe(stats_df, use_container_width=True, hide_index=True)
+    st.dataframe(stats_df, use_container_width=True, hide_index=True, key="stats_df")
     
     # Data preview
-    with st.expander("🔍 Quick Data Preview", expanded=False):
-        st.dataframe(oam_combined.head(10), use_container_width=True)
+    with st.expander("🔍 Quick Data Preview", expanded=False, key="data_preview_expander"):
+        st.dataframe(oam_combined.head(10), use_container_width=True, key="data_preview_df")
 
 def display_category_table(category_table, title, description):
     """Display a category table with download option"""
@@ -372,7 +368,7 @@ def display_category_table(category_table, title, description):
     st.caption(description)
     
     if len(category_table.columns) > 2:  # More than just userid and userfullname
-        st.dataframe(category_table, use_container_width=True)
+        st.dataframe(category_table, use_container_width=True, key=f"{title.lower()}_df")
         
         # Download category-specific data
         csv_data = category_table.to_csv(index=False)
@@ -382,10 +378,11 @@ def display_category_table(category_table, title, description):
             csv_data,
             f"{category_name}_attributes.csv",
             "text/csv",
-            use_container_width=True
+            use_container_width=True,
+            key=f"download_{category_name}_btn"
         )
     else:
-        st.info(f"No {title.lower()} attributes selected or computed.")
+        st.info(f"No {title.lower()} attributes selected or computed.", key=f"{title.lower()}_info")
 
 def display_graph_section(oam_combined):
     """Display comprehensive graph section for attributes and students"""
@@ -396,10 +393,10 @@ def display_graph_section(oam_combined):
     attribute_cols = [col for col in oam_combined.columns if col not in fixed_cols]
     
     if not attribute_cols:
-        st.warning("No attributes available for visualization. Please compute attributes first.")
+        st.warning("No attributes available for visualization. Please compute attributes first.", key="no_attrs_warning")
         return
     
-    # Visualization type selection
+    # Visualization type selection with unique key
     viz_type = st.selectbox(
         "Select Visualization Type",
         [
@@ -409,7 +406,8 @@ def display_graph_section(oam_combined):
             "📈 Student Attribute Profile",
             "🌐 Correlation Heatmap",
             "📋 Category-wise Analysis"
-        ]
+        ],
+        key="viz_type_select"
     )
     
     if viz_type == "📊 Attribute Distribution Analysis":
@@ -454,9 +452,9 @@ def display_attribute_distribution(oam_combined, attribute_cols):
                 "Max": attr_data.max()
             }
             
-            st.metric("Average", f"{stats['Mean']:.2f}")
-            st.metric("Median", f"{stats['Median']:.2f}")
-            st.metric("Std Deviation", f"{stats['Std Dev']:.2f}")
+            st.metric("Average", f"{stats['Mean']:.2f}", key="avg_metric")
+            st.metric("Median", f"{stats['Median']:.2f}", key="median_metric")
+            st.metric("Std Deviation", f"{stats['Std Dev']:.2f}", key="std_metric")
     
     with col2:
         if selected_attribute:
@@ -473,7 +471,7 @@ def display_attribute_distribution(oam_combined, attribute_cols):
                 yaxis_title="Number of Students",
                 showlegend=False
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="dist_histogram")
             
             # Box plot for outlier detection
             fig_box = px.box(
@@ -481,7 +479,7 @@ def display_attribute_distribution(oam_combined, attribute_cols):
                 y=selected_attribute,
                 title=f"Box Plot - {selected_attribute.replace('_', ' ').title()}"
             )
-            st.plotly_chart(fig_box, use_container_width=True)
+            st.plotly_chart(fig_box, use_container_width=True, key="dist_boxplot")
 
 def display_student_comparison(oam_combined, attribute_cols):
     """Display comparison of students across multiple attributes"""
@@ -493,14 +491,16 @@ def display_student_comparison(oam_combined, attribute_cols):
         selected_students = st.multiselect(
             "Select Students to Compare",
             options=oam_combined["userfullname"].tolist(),
-            default=oam_combined["userfullname"].head(5).tolist()
+            default=oam_combined["userfullname"].head(5).tolist(),
+            key="student_comparison_multiselect"
         )
     
     with col2:
         selected_attributes = st.multiselect(
             "Select Attributes for Comparison",
             options=attribute_cols,
-            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols
+            default=attribute_cols[:5] if len(attribute_cols) >= 3 else attribute_cols,
+            key="attr_comparison_multiselect"
         )
     
     if selected_students and selected_attributes:
@@ -510,11 +510,11 @@ def display_student_comparison(oam_combined, attribute_cols):
         # Create radar chart for comparison
         if len(selected_attributes) >= 3:
             fig_radar = create_radar_chart(comparison_data, selected_students, selected_attributes)
-            st.plotly_chart(fig_radar, use_container_width=True)
+            st.plotly_chart(fig_radar, use_container_width=True, key="comparison_radar")
         
         # Bar chart comparison
         fig_bar = create_attribute_comparison_bar(comparison_data, selected_students, selected_attributes)
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_bar, use_container_width=True, key="comparison_bar")
 
 def create_radar_chart(comparison_data, students, attributes):
     """Create a radar chart for student comparison"""
@@ -588,7 +588,7 @@ def display_top_performers(oam_combined, attribute_cols):
         key="top_perf_select"
     )
     
-    top_n = st.slider("Number of Top Students to Show", 5, 20, 10)
+    top_n = st.slider("Number of Top Students to Show", 5, 20, 10, key="top_n_slider")
     
     if selected_attribute:
         # Get top performers
@@ -611,22 +611,27 @@ def display_top_performers(oam_combined, attribute_cols):
             showlegend=False
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="top_performers_chart")
         
         # Display table
-        st.dataframe(top_students, use_container_width=True)
+        st.dataframe(top_students, use_container_width=True, key="top_performers_df")
 
 def display_student_profile(oam_combined, attribute_cols):
+    """Display individual student profile"""
     st.subheader("👤 Student Profile")
     
-    selected_student = st.selectbox("Select Student", oam_combined["userfullname"].tolist())
+    selected_student = st.selectbox(
+        "Select Student", 
+        oam_combined["userfullname"].tolist(),
+        key="student_profile_select"
+    )
     
     if selected_student:
         student_data = oam_combined[oam_combined["userfullname"] == selected_student].iloc[0]
         
         st.markdown(f"### 📊 Profile for: **{selected_student}**")
         
-        # Just show a clean table with all attributes
+        # Create profile data table
         profile_data = []
         for attr in attribute_cols:
             profile_data.append({
@@ -637,20 +642,21 @@ def display_student_profile(oam_combined, attribute_cols):
             })
         
         profile_df = pd.DataFrame(profile_data)
-        st.dataframe(profile_df, use_container_width=True, height=500)
+        st.dataframe(profile_df, use_container_width=True, height=500, key="student_profile_df")
         
         # Simple summary
         above_avg = sum(1 for attr in attribute_cols 
                        if student_data[attr] > oam_combined[attr].mean())
         
-        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)-1} attributes are above class average")
+        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average", 
+                key="student_summary_info")
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
     st.subheader("🌐 Attribute Correlation Heatmap")
     
     if len(attribute_cols) < 2:
-        st.warning("Need at least 2 attributes for correlation analysis")
+        st.warning("Need at least 2 attributes for correlation analysis", key="correlation_warning")
         return
     
     # Calculate correlation matrix
@@ -671,10 +677,10 @@ def display_correlation_heatmap(oam_combined, attribute_cols):
         height=600
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="correlation_heatmap")
     
     # Interpretation
-    with st.expander("💡 Correlation Interpretation Guide"):
+    with st.expander("💡 Correlation Interpretation Guide", key="correlation_guide_expander"):
         st.markdown("""
         **Correlation Values Meaning:**
         - **+1.0**: Perfect positive correlation
@@ -707,10 +713,14 @@ def display_category_analysis(oam_combined):
     categories = {k: v for k, v in categories.items() if v}
     
     if not categories:
-        st.warning("No categorized attributes available")
+        st.warning("No categorized attributes available", key="category_warning")
         return
     
-    selected_category = st.selectbox("Select Category", list(categories.keys()))
+    selected_category = st.selectbox(
+        "Select Category", 
+        list(categories.keys()),
+        key="category_select"
+    )
     
     if selected_category and categories[selected_category]:
         category_cols = categories[selected_category]
@@ -733,7 +743,7 @@ def display_category_analysis(oam_combined):
             showlegend=False
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="category_avg_chart")
         
         # Show top performers in this category
         st.subheader(f"🏆 Top Performers - {selected_category} Category")
@@ -753,7 +763,7 @@ def display_category_analysis(oam_combined):
                 color_continuous_scale='Plasma'
             )
             
-            st.plotly_chart(fig_top, use_container_width=True)
+            st.plotly_chart(fig_top, use_container_width=True, key="category_top_chart")
 
 if __name__ == "__main__":
     main()
