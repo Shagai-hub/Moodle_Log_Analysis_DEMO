@@ -421,9 +421,6 @@ def display_graph_section(oam_combined):
     elif viz_type == "🔥 Top Performers by Attribute":
         display_top_performers(oam_combined, attribute_cols)
     
-    elif viz_type == "📈 Student Attribute Profile":
-        display_student_profile(oam_combined, attribute_cols)
-    
     elif viz_type == "🌐 Correlation Heatmap":
         display_correlation_heatmap(oam_combined, attribute_cols)
     
@@ -616,57 +613,6 @@ def display_top_performers(oam_combined, attribute_cols):
         # Display table
         st.dataframe(top_students, use_container_width=True)
 
-def display_student_profile(oam_combined, attribute_cols):
-    """Display individual student attribute profile"""
-    st.subheader("📈 Student Attribute Profile")
-    
-    selected_student = st.selectbox(
-        "Select Student",
-        options=oam_combined["userfullname"].tolist()
-    )
-    
-    if selected_student:
-        student_data = oam_combined[oam_combined["userfullname"] == selected_student].iloc[0]
-        
-        # Create gauge charts for key metrics
-        st.markdown(f"### 📊 Performance Profile: {selected_student}")
-        
-        # Select top 6 attributes for display
-        display_attrs = attribute_cols[:10] if len(attribute_cols) >= 6 else attribute_cols
-        
-        # Create gauge subplots
-        cols = st.columns(3)
-        for i, attr in enumerate(display_attrs):
-            with cols[i % 3]:
-                value = student_data[attr]
-                max_val = oam_combined[attr].max()
-                
-                fig = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = value,
-                    title = {'text': attr.replace('_', ' ').title()},
-                    gauge = {
-                        'axis': {'range': [0, max_val]},
-                        'bar': {'color': "darkblue"},
-                        'steps': [
-                            {'range': [0, max_val/3], 'color': "lightgray"},
-                            {'range': [max_val/3, 2*max_val/3], 'color': "gray"}
-                        ]
-                    }
-                ))
-                fig.update_layout(height=200, margin=dict(l=10, r=10, t=50, b=10))
-                st.plotly_chart(fig, use_container_width=True)
-        
-        # Overall performance bar chart
-        fig_bar = px.bar(
-            x=display_attrs,
-            y=[student_data[attr] for attr in display_attrs],
-            title=f"Attribute Scores - {selected_student}",
-            labels={'x': 'Attributes', 'y': 'Score'},
-            color=[student_data[attr] for attr in display_attrs],
-            color_continuous_scale='Blues'
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
