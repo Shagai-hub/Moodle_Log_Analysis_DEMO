@@ -643,7 +643,7 @@ def display_student_profile(oam_combined, attribute_cols):
         above_avg = sum(1 for attr in attribute_cols 
                        if student_data[attr] > oam_combined[attr].mean())
         
-        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)} attributes are above class average")
+        st.info(f"**Summary:** {above_avg} out of {len(attribute_cols)-3} attributes are above class average")
 
 def display_correlation_heatmap(oam_combined, attribute_cols):
     """Display correlation heatmap between attributes"""
