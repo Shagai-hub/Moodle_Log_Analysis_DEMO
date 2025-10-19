@@ -54,7 +54,7 @@ def main():
     student_attributes = data_manager.get_student_attributes()
     if student_attributes is not None:
         display_hybrid_layout(student_attributes, data_manager)
-    
+        
     # Show visualization section if attributes have been computed
     if data_manager.get_student_attributes() is not None:
         st.markdown("---")
@@ -255,8 +255,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
             except Exception as e:
                 st.error(f"Error computing {attr}: {e}")
                 oam_combined[attr] = 0
-    
-            data_manager.store_student_attributes(oam_combined)
+
     st.success("✅ All attributes have been computed successfully!")
 
     # Fill NaN values and sort
@@ -266,10 +265,10 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     attr_cols_sorted = sorted(attr_cols)
     oam_combined = oam_combined[fixed_cols + attr_cols_sorted]
     oam_combined = oam_combined.sort_values("userfullname")
-
     
-    # Display in hybrid layout
-    display_hybrid_layout(oam_combined, data_manager)
+    # Store in session state
+    data_manager.store_student_attributes(oam_combined)
+    
 
 def display_hybrid_layout(oam_combined, data_manager):
     """Display attributes in hybrid layout (categories + combined)"""
