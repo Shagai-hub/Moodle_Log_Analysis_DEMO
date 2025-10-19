@@ -632,7 +632,7 @@ def display_student_profile(oam_combined, attribute_cols):
         st.markdown(f"### 📊 Performance Profile: {selected_student}")
         
         # Select top 6 attributes for display
-        display_attrs = attribute_cols[len(attribute_cols)] if len(attribute_cols) >= 6 else attribute_cols
+        display_attrs = attribute_cols[:10] if len(attribute_cols) >= 6 else attribute_cols
         
         # Create gauge subplots
         cols = st.columns(3)
