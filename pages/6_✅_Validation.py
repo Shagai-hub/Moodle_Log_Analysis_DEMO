@@ -44,8 +44,8 @@ def main():
             
             # Check for required columns
             st.write("**Required Column Check:**")
-            delta_found = 'Delta_T_ny' in main_table.columns
-            becsl_found = 'Becsl_s' in main_table.columns
+            delta_found = 'Delta/Tény' in main_table.columns
+            becsl_found = 'Becslés' in main_table.columns
             
             if delta_found:
                 st.success("✅ Found Delta column")
