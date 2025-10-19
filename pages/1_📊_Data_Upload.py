@@ -49,6 +49,13 @@ def main():
                 "text/csv",
                 use_container_width=True
             )
+            
+            st.markdown("---")
+            if st.button("⚙️Configuration", use_container_width=True, key="go_to_config"):
+                try:
+                    st.switch_page("pages/2_⚙️_Configuration.py")
+                except Exception:
+                    st.warning("Unable to auto-navigate. Please open '⚙️ Configuration' from the sidebar.")
 
 def process_uploaded_file(uploaded_file):
     """Process uploaded file and return cleaned DataFrame"""
