@@ -422,7 +422,7 @@ def display_graph_section(oam_combined):
         display_top_performers(oam_combined, attribute_cols)
     
     elif viz_type == "📈 Student Attribute Profile":
-        display_student_profile(oam_combined, attribute_cols)
+        display_student_profile_super_simple(oam_combined, attribute_cols)
     
     elif viz_type == "🌐 Correlation Heatmap":
         display_correlation_heatmap(oam_combined, attribute_cols)
