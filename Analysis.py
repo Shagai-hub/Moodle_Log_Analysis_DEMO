@@ -36,17 +36,30 @@ st.markdown("""
         opacity: 0.95;
     }
     .feature-card {
-        background: white;
+        background: #f8f9fa;
         padding: 1.5rem;
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         margin-bottom: 1rem;
         border-left: 4px solid #667eea;
         transition: transform 0.2s;
+        height: 220px;
+        display: flex;
+        flex-direction: column;
     }
     .feature-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .feature-card h3 {
+        color: #2c3e50;
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+        color: #555;
+        font-size: 1rem;
+        line-height: 1.5;
     }
     .feature-icon {
         font-size: 2.5rem;
