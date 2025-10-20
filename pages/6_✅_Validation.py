@@ -105,8 +105,7 @@ def main():
     st.markdown("---")
     col1, col2 = st.columns([1, 1])
     with col1:
-        if st.button("⬅️ Back to COCO Analysis", use_container_width=True):
-            st.switch_page("pages/4_📊_COCO_Analysis.py")
+       st.write("")
     with col2:
         if st.button("🤖 Get AI Insights ➡️", use_container_width=True):
             st.switch_page("pages/7_🤖_AI_Insights.py")
@@ -318,16 +317,6 @@ def display_validation_results(validation_results, data_manager):
         st.plotly_chart(fig, use_container_width=True)
         
         # Additional statistics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            avg_score_valid = validation_results[validation_results['Is_Valid']]['Becslés'].mean()
-            st.metric("Avg Score (Valid)", f"{avg_score_valid:.3f}")
-        with col2:
-            avg_score_invalid = validation_results[~validation_results['Is_Valid']]['Becslés'].mean()
-            st.metric("Avg Score (Invalid)", f"{avg_score_invalid:.3f}")
-        with col3:
-            score_range = f"{validation_results['Becslés'].min():.3f} - {validation_results['Becslés'].max():.3f}"
-            st.metric("Score Range", score_range)
     
     with tab2:
         # Scatter plot for delta comparison
@@ -503,16 +492,7 @@ def display_validation_results(validation_results, data_manager):
     export_col1, export_col2 = st.columns(2)
     
     with export_col1:
-        # Full dataset export
-        full_csv = validation_results.to_csv(index=False)
-        st.download_button(
-            "📊 Download Full Dataset (CSV)",
-            full_csv,
-            f"validation_full_results_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
-            "text/csv",
-            use_container_width=True,
-            help="Includes all validation data and calculations"
-        )
+        st.write("---")
     
     with export_col2:
         # Summary report
