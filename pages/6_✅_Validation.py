@@ -266,22 +266,6 @@ def display_validation_results(validation_results, data_manager):
             delta_color=delta_color
         )
     
-    with col4:
-        # Overall status with emoji
-        if validity_percentage >= 80:
-            status = "EXCELLENT ✅"
-            status_color = "green"
-        elif validity_percentage >= 50:
-            status = "GOOD ⚠️"
-            status_color = "orange"
-        else:
-            status = "NEEDS REVIEW ❌"
-            status_color = "red"
-            
-        st.metric(
-            "Overall Status", 
-            status
-        )
     
     # Visualization section with tabs - USING FULL WIDTH
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -487,6 +471,36 @@ def display_validation_results(validation_results, data_manager):
     
     # Final export section
     st.markdown("---")
+    
+    chart_df = validation_results[["userfullname", "Becslés", "Validation_Result", "Final_Rank"]].copy()
+    chart_df = chart_df.rename(columns={
+        "userfullname": "Student",
+        "Becslés": "Score",
+        "Validation_Result": "Validation",
+        "Final_Rank": "Rank"
+    })
+    
+    # Create interactive bar chart
+    bar_chart = (
+        alt.Chart(chart_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("Student:N", sort=None, title="Student", axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("Score:Q", title="Final Score (Becsl_s)"),
+            color=alt.Color("Validation:N",
+                          scale=alt.Scale(domain=["Valid", "Invalid"],
+                                        range=["#00ff00", "#ff0000"]),
+                          legend=alt.Legend(title="Validation Result")),
+            tooltip=["Student", "Score", "Validation", "Rank"]
+        )
+        .properties(
+            width=700,
+            height=400,
+            title="Student Final Scores with Validation Results"
+        )
+    )
+    
+    st.altair_chart(bar_chart, use_container_width=True)
     st.subheader("💾 Export Options")
     
     
