@@ -91,13 +91,10 @@ def main():
     st.markdown("""
         <div class="info-card">
             <strong>📋 Supported Formats:</strong> CSV, XLSX<br>
-            <strong>📌 Required Columns:</strong> userid, userfullname, message<br>
-            <strong>💡 Optional Columns:</strong> created, modified (for time-based analysis)
         </div>
     """, unsafe_allow_html=True)
 
     # Upload section
-    st.markdown("<div class='upload-zone'>", unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
         "Drop your file here or click to browse", 
         type=["csv", "xlsx"], 
