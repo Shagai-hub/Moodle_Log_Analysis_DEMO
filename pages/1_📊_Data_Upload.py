@@ -48,7 +48,7 @@ def main():
             margin: 1rem 0;
         }
         .metric-card {
-            background: white;
+            background: Black;
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
