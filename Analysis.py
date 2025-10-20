@@ -88,6 +88,60 @@ st.markdown("""
         transform: scale(1.02);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
+    
+    /* Mobile Responsive Styles */
+    @media only screen and (max-width: 768px) {
+        .main-header h1 {
+            font-size: 2rem !important;
+        }
+        .main-header p {
+            font-size: 1rem !important;
+        }
+        .main-header {
+            padding: 1.5rem 0.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .feature-card {
+            height: auto !important;
+            min-height: 180px;
+            margin-bottom: 1rem !important;
+            padding: 1rem !important;
+        }
+        .feature-card h3 {
+            font-size: 1.1rem !important;
+        }
+        .feature-card p {
+            font-size: 0.9rem !important;
+        }
+        .feature-icon {
+            font-size: 2rem !important;
+        }
+        .stButton > button {
+            padding: 0.6rem 1rem !important;
+            font-size: 1rem !important;
+        }
+        [data-testid="column"] {
+            padding: 0.25rem !important;
+        }
+    }
+    
+    @media only screen and (max-width: 480px) {
+        .main-header h1 {
+            font-size: 1.5rem !important;
+        }
+        .main-header p {
+            font-size: 0.9rem !important;
+        }
+        .feature-card {
+            min-height: 150px;
+        }
+        .feature-card h3 {
+            font-size: 1rem !important;
+        }
+        .feature-card p {
+            font-size: 0.85rem !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -118,7 +172,7 @@ with col2:
         <div class="feature-card">
             <div class="feature-icon">📊</div>
             <h3>Visual Reports</h3>
-            <p>Generate interactive visualizations that make data interpretation effortless.</p>
+            <p>Generate beautiful, interactive visualizations that make data interpretation effortless.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -144,7 +198,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
 with col_center:
-    if st.button("📤 Upload Your Data Now", width="stretch", key="goto_upload", help="Navigate to the data upload page"):
+    if st.button("📤 Upload Your Data Now", key="goto_upload", help="Navigate to the data upload page"):
         st.switch_page("pages/1_📊_Data_Upload.py")
 
 # Footer Info
