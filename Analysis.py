@@ -163,7 +163,7 @@ with col1:
         <div class="feature-card">
             <div class="feature-icon">📈</div>
             <h3>Analyze Student Activity</h3>
-            <p>Deep dive into student engagement patterns and learning behaviors with comprehensive analytics.</p>
+            <p>Deep dive into student patterns and learning behaviors with comprehensive analytics.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -198,7 +198,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
 with col_center:
-    if st.button("📤 Upload Your Data Now", key="goto_upload", help="Navigate to the data upload page"):
+    if st.button("📤 Upload Your Data Now", key="goto_upload",width="stretch", help="Navigate to the data upload page"):
         st.switch_page("pages/1_📊_Data_Upload.py")
 
 # Footer Info
