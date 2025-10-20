@@ -36,87 +36,70 @@ def main():
                     st.switch_page("pages/4_📊_COCO_Analysis.py")
         return
     
-    # Success banner with stats
+    # Success banner with simplified stats
     with st.container(border=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("📈 Students Ready", len(ranked_data), border=True)
-        with col2:
-            st.metric("🔢 Data Points", f"{len(ranked_data) * (len(ranked_data.columns)-2):,}", border=True)
-        with col3:
-            st.metric("📋 Tables Available", len(coco_results), border=True)
+        st.metric("📈 Students Ready for Validation", len(ranked_data), border=True)
     
     # Configuration and preview section
-    with st.expander("🔧 **Configuration & Data Preview**", expanded=True):
+    with st.expander("🔧 **Data Preview**", expanded=False):
         if 'table_4' in coco_results:
             main_table = coco_results['table_4']
             
-            # Enhanced table preview with tabs
-            tab1, tab2 = st.tabs(["📊 Table Preview", "🔍 Column Analysis"])
+            # Simple table preview
+            st.dataframe(
+                main_table.head(8), 
+                use_container_width=True,
+                hide_index=True
+            )
+            st.caption(f"Showing 8 of {main_table.shape[0]} rows × {main_table.shape[1]} columns")
             
-            with tab1:
-                st.dataframe(
-                    main_table.head(8), 
-                    use_container_width=True,
-                    hide_index=True
-                )
-                st.caption(f"Showing 8 of {main_table.shape[0]} rows × {main_table.shape[1]} columns")
+            # Basic column validation
+            delta_found = 'Delta/Tény' in main_table.columns
+            becsl_found = 'Becslés' in main_table.columns
             
-            with tab2:
-                # Column validation with visual indicators
-                delta_found = 'Delta/Tény' in main_table.columns
-                becsl_found = 'Becslés' in main_table.columns
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    if delta_found:
-                        st.success("✅ **Delta Column**", icon="✅")
-                        st.metric("Delta Values", f"{len(main_table['Delta/Tény'])}", delta="Ready")
-                    else:
-                        st.error("❌ **Missing Delta Column**", icon="❌")
-                        
-                with col2:
-                    if becsl_found:
-                        st.success("✅ **Estimation Column**", icon="✅")
-                        st.metric("Estimation Values", f"{len(main_table['Becslés'])}", delta="Ready")
-                    else:
-                        st.error("❌ **Missing Estimation Column**", icon="❌")
-                
-                # Show all available columns
-                st.write("**All Available Columns:**")
-                cols_per_row = 4
-                columns = list(main_table.columns)
-                for i in range(0, len(columns), cols_per_row):
-                    cols = st.columns(cols_per_row)
-                    for j, col in enumerate(cols):
-                        if i + j < len(columns):
-                            with col:
-                                st.code(columns[i + j], language="text")
-            
-            # Validation readiness check
             if delta_found and becsl_found:
-                st.success("🎯 **Validation Ready** - All required columns are available!", icon="🎯")
-                
-                # Modern button with icon
-                st.markdown("---")
-                col1, col2 = st.columns([1, 2])
-                with col2:
-                    if st.button(
-                        "🚀 Run Comprehensive Validation", 
-                        type="primary", 
-                        use_container_width=True,
-                        help="Validate COCO results by comparing with inverted rankings"
-                    ):
-                        run_validation_analysis(ranked_data, coco_results, data_manager)
+                st.success("✅ **Validation Ready** - All required columns are available!", icon="🎯")
             else:
-                st.error("🔧 **Configuration Required** - Please check your COCO analysis results.", icon="🚨")
-                
+                st.error("❌ **Missing Required Columns**", icon="🚨")
+                if not delta_found:
+                    st.error("Missing 'Delta/Tény' column")
+                if not becsl_found:
+                    st.error("Missing 'Becslés' column")
         else:
             st.error("📋 **Table Missing** - 'table_4' not found in COCO results", icon="❌")
-            with st.container(border=True):
-                st.write("Available tables in results:")
-                for table_name in coco_results.keys():
-                    st.write(f"• {table_name}")
+    
+    # Run Validation Button - OUTSIDE expander and prominent
+    st.markdown("---")
+    
+    # Check if we can run validation
+    can_run_validation = ('table_4' in coco_results and 
+                         'Delta/Tény' in coco_results['table_4'].columns and 
+                         'Becslés' in coco_results['table_4'].columns)
+    
+    if can_run_validation:
+        if st.button(
+            "🚀 Run Comprehensive Validation", 
+            type="primary", 
+            use_container_width=True,
+            help="Validate COCO results by comparing with inverted rankings",
+            key="run_validation_main"
+        ):
+            run_validation_analysis(ranked_data, coco_results, data_manager)
+    else:
+        st.button(
+            "🚀 Run Comprehensive Validation", 
+            type="secondary", 
+            use_container_width=True,
+            disabled=True,
+            help="Cannot run validation - missing required data",
+            key="run_validation_disabled"
+        )
+        st.warning("Please ensure COCO analysis completed successfully with required columns.")
+    
+    # Display validation results if available - OUTSIDE expander and full width
+    validation_results = data_manager.get_validation_results()
+    if validation_results is not None:
+        display_validation_results(validation_results, data_manager)
     
     # Navigation footer
     st.markdown("---")
@@ -175,9 +158,6 @@ def run_validation_analysis(ranked_data, coco_results, data_manager):
                 if validation_results is not None and not validation_results.empty:
                     data_manager.store_validation_results(validation_results)
                     status.update(label="✅ **Validation Complete!**", state="complete", expanded=False)
-                    
-                    # Display results
-                    display_validation_results(validation_results, data_manager)
                 else:
                     status.update(label="❌ **Validation Failed**", state="error")
                     st.error("Validation failed to produce meaningful results")
@@ -242,7 +222,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
         return None
 
 def display_validation_results(validation_results, data_manager):
-    """Display modern validation results with enhanced visuals"""
+    """Display modern validation results with enhanced visuals - FULL SCREEN WIDTH"""
     
     st.header("📊 Validation Results Dashboard", divider="rainbow")
     
@@ -304,7 +284,7 @@ def display_validation_results(validation_results, data_manager):
             status
         )
     
-    # Visualization section with tabs
+    # Visualization section with tabs - USING FULL WIDTH
     tab1, tab2, tab3, tab4 = st.tabs([
         "📈 Score Distribution", 
         "🔍 Validation Analysis", 
@@ -408,7 +388,7 @@ def display_validation_results(validation_results, data_manager):
                     st.warning("Unexpected correlation pattern detected")
     
     with tab3:
-        # Enhanced results table
+        # Enhanced results table - FULL WIDTH
         st.subheader("📋 Detailed Validation Results")
         
         display_columns = ["userfullname", "Final_Rank", "Becslés", "Validation_Result", "Original_Delta", "Inverted_Delta"]
