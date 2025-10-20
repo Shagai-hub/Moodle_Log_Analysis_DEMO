@@ -177,11 +177,38 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
             with debug_expander:
                 st.write("**COCO Response received:**")
                 st.write(f"- Response type: {type(resp)}")
-                st.write(f"- Response length: {len(resp) if resp else 'None'}")
+                if resp is not None:
+                    # FIX: Properly handle Response object
+                    st.write(f"- Response status code: {resp.status_code}")
+                    st.write(f"- Response headers: {dict(resp.headers)}")
+                    # Only show content length if available
+                    if hasattr(resp, 'content'):
+                        st.write(f"- Response content length: {len(resp.content) if resp.content else 0}")
+                    if hasattr(resp, 'text'):
+                        st.write(f"- Response text length: {len(resp.text) if resp.text else 0}")
+                    # Show a preview of the response text (first 500 chars)
+                    if hasattr(resp, 'text') and resp.text:
+                        st.write("**Response text preview (first 500 chars):**")
+                        st.text(resp.text[:500] + "..." if len(resp.text) > 500 else resp.text)
+                else:
+                    st.write("- Response: None")
         
         # Step 4: Parse inverted results
         status_text.text("Step 4: Parsing inverted COCO results...")
         progress_bar.progress(80)
+        
+        # FIX: Check if response is valid before parsing
+        if resp is None:
+            st.error("❌ No response received from COCO API")
+            return
+            
+        if resp.status_code != 200:
+            st.error(f"❌ COCO API returned error status: {resp.status_code}")
+            if debug_mode:
+                with debug_expander:
+                    st.write("**Error response details:**")
+                    st.text(resp.text)
+            return
         
         inverted_tables = parse_coco_html(resp)
         
@@ -189,8 +216,9 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
             with debug_expander:
                 st.subheader("🔧 Step 4: Parse COCO Results")
                 st.write("**Parsed tables:**")
-                st.write(f"- Number of tables found: {len(inverted_tables)}")
-                st.write(f"- Table keys: {list(inverted_tables.keys())}")
+                st.write(f"- Number of tables found: {len(inverted_tables) if inverted_tables else 0}")
+                if inverted_tables:
+                    st.write(f"- Table keys: {list(inverted_tables.keys())}")
         
         if not inverted_tables:
             st.error("❌ No results received from inverted COCO analysis")
@@ -228,7 +256,10 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
                 st.error("❌ Validation failed to produce results")
         else:
             st.error("❌ table_4 not found in inverted COCO results")
-            st.write("Available inverted tables:", list(inverted_tables.keys()))
+            if inverted_tables:
+                st.write("Available inverted tables:", list(inverted_tables.keys()))
+            else:
+                st.write("No inverted tables available")
         
         progress_bar.progress(100)
         status_text.text("✅ Validation completed!")
