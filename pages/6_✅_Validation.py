@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, invert_ranking, prepare_coco_matrix
@@ -30,10 +29,10 @@ def main():
     
     st.success(f"✅ Ready to validate {len(ranked_data)} students")
     
-    # Add debug mode toggle
-    debug_mode = st.checkbox("🔍 Enable Debug Mode", value=False, 
-                           help="Show detailed step-by-step computation logs")
 
+    # Configuration section
+
+    
     # Look for the specific table_4
     if 'table_4' in coco_results:
         main_table = coco_results['table_4']
@@ -67,7 +66,7 @@ def main():
             # Run validation
             st.markdown("---")
             if st.button("🚀 Run Validation Analysis", type="primary", use_container_width=True):
-                run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode)
+                run_validation_analysis(ranked_data, coco_results, data_manager)
         else:
             st.error("❌ Cannot run validation - missing required columns in table_4")
             st.info("Please check your COCO analysis results and ensure table_4 contains the required columns.")
@@ -84,88 +83,37 @@ def main():
             if st.button("🤖 AI Insights", use_container_width=True, help="AI insights"):
               st.switch_page("pages/7_🤖_AI_Insights.py")
 
-def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=False):
-    """Run the complete validation analysis with detailed debugging"""
+def run_validation_analysis(ranked_data, coco_results, data_manager):
+    """Run the complete validation analysis"""
     
     progress_bar = st.progress(0)
     status_text = st.empty()
     
-    # Create debug expander
-    debug_expander = st.expander("🔍 Debug Logs", expanded=debug_mode)
-    
     try:
-        # Step 1: Get table_4 and prepare inverted matrix
-        status_text.text("Step 1: Preparing inverted matrix...")
-        progress_bar.progress(20)
-        
-        if debug_mode:
-            with debug_expander:
-                st.subheader("🔧 Step 1: Matrix Preparation")
-                st.write("**Original ranked data structure:**")
-                st.write(f"- Shape: {ranked_data.shape}")
-                st.write(f"- Columns: {list(ranked_data.columns)}")
-                st.write("**First 5 rows of original data:**")
-                st.dataframe(ranked_data.head())
-        
         # Get table_4
         main_table = coco_results['table_4']
         
+        # Step 1: Prepare inverted matrix
+        status_text.text("Step 1: Preparing inverted matrix...")
+        progress_bar.progress(20)
+        
         # Extract numeric values for inversion (exclude user identifiers)
         matrix_df = ranked_data.drop(columns=["userid", "userfullname"], errors='ignore')
-        
-        if debug_mode:
-            with debug_expander:
-                st.write("**Matrix after dropping identifiers:**")
-                st.write(f"- Shape: {matrix_df.shape}")
-                st.write(f"- Columns: {list(matrix_df.columns)}")
-                st.write("**Matrix values before inversion:**")
-                st.dataframe(matrix_df.head())
-        
-        # Perform matrix inversion
         inverted_matrix_df = invert_ranking(matrix_df)
         
-        if debug_mode:
-            with debug_expander:
-                st.write("**Matrix after inversion:**")
-                st.write("**Inversion Formula:** `inverted_value = max_value + min_value - original_value`")
-                st.write("**Computation details:**")
-                st.write(f"- Max value in matrix: {matrix_df.values.max()}")
-                st.write(f"- Min value in matrix: {matrix_df.values.min()}")
-                st.write("**Sample inversion calculations:**")
-                sample_original = matrix_df.iloc[0, 0]
-                sample_inverted = inverted_matrix_df.iloc[0, 0]
-                st.write(f"Sample: {sample_original} → {sample_inverted}")
-                st.dataframe(inverted_matrix_df.head())
     
+        
         # Step 2: Convert to COCO format
         status_text.text("Step 2: Converting to COCO format...")
         progress_bar.progress(40)
         
         inverted_matrix_data = prepare_coco_matrix(inverted_matrix_df)
         
-        if debug_mode:
-            with debug_expander:
-                st.subheader("🔧 Step 2: COCO Format Preparation")
-                st.write("**COCO matrix data structure:**")
-                st.write(f"- Type: {type(inverted_matrix_data)}")
-                st.write(f"- Length: {len(inverted_matrix_data)}")
-                st.write("**First few rows of COCO data:**")
-                st.text("\n".join(inverted_matrix_data[:5]))
-
         # Step 3: Send to COCO
         status_text.text("Step 3: Sending inverted matrix to COCO...")
         progress_bar.progress(60)
         
         stair_value = len(ranked_data)
-        if debug_mode:
-            with debug_expander:
-                st.subheader("🔧 Step 3: COCO API Request")
-                st.write("**Request parameters:**")
-                st.write(f"- Job name: StudentRankingInverted")
-                st.write(f"- Stair value: {stair_value}")
-                st.write(f"- Matrix rows: {len(inverted_matrix_data)}")
-                st.write(f"- Timeout: 180 seconds")
-        
         resp = send_coco_request(
             matrix_data=inverted_matrix_data,
             job_name="StudentRankingInverted",
@@ -173,57 +121,18 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
             timeout=180
         )
         
-        if debug_mode:
-            with debug_expander:
-                st.write("**COCO Response received:**")
-                st.write(f"- Response type: {type(resp)}")
-                if resp is not None:
-                    # FIX: Properly handle Response object
-                    st.write(f"- Response status code: {resp.status_code}")
-                    st.write(f"- Response headers: {dict(resp.headers)}")
-                    # Only show content length if available
-                    if hasattr(resp, 'content'):
-                        st.write(f"- Response content length: {len(resp.content) if resp.content else 0}")
-                    if hasattr(resp, 'text'):
-                        st.write(f"- Response text length: {len(resp.text) if resp.text else 0}")
-                    # Show a preview of the response text (first 500 chars)
-                    if hasattr(resp, 'text') and resp.text:
-                        st.write("**Response text preview (first 500 chars):**")
-                        st.text(resp.text[:500] + "..." if len(resp.text) > 500 else resp.text)
-                else:
-                    st.write("- Response: None")
-        
         # Step 4: Parse inverted results
         status_text.text("Step 4: Parsing inverted COCO results...")
         progress_bar.progress(80)
         
-        # FIX: Check if response is valid before parsing
-        if resp is None:
-            st.error("❌ No response received from COCO API")
-            return
-            
-        if resp.status_code != 200:
-            st.error(f"❌ COCO API returned error status: {resp.status_code}")
-            if debug_mode:
-                with debug_expander:
-                    st.write("**Error response details:**")
-                    st.text(resp.text)
-            return
         
         inverted_tables = parse_coco_html(resp)
-        
-        if debug_mode:
-            with debug_expander:
-                st.subheader("🔧 Step 4: Parse COCO Results")
-                st.write("**Parsed tables:**")
-                st.write(f"- Number of tables found: {len(inverted_tables) if inverted_tables else 0}")
-                if inverted_tables:
-                    st.write(f"- Table keys: {list(inverted_tables.keys())}")
         
         if not inverted_tables:
             st.error("❌ No results received from inverted COCO analysis")
             return
         
+                
         # Step 5: Perform validation
         status_text.text("Step 5: Performing validation...")
         progress_bar.progress(90)
@@ -231,18 +140,8 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
         # Look for table_4 in inverted results
         if 'table_4' in inverted_tables:
             inverted_main_table = inverted_tables['table_4']
-            
-            if debug_mode:
-                with debug_expander:
-                    st.subheader("🔧 Step 5: Validation Computation")
-                    st.write("**Tables for validation:**")
-                    st.write("- Original table_4 shape:", main_table.shape)
-                    st.write("- Inverted table_4 shape:", inverted_main_table.shape)
-                    st.write("**Original table_4 columns:**", list(main_table.columns))
-                    st.write("**Inverted table_4 columns:**", list(inverted_main_table.columns))
-            
             validation_results = perform_validation(
-                main_table, inverted_main_table, ranked_data, debug_mode, debug_expander
+                main_table, inverted_main_table, ranked_data
             )
             
             # FIX: Check if validation_results is not None and not empty
@@ -256,10 +155,7 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
                 st.error("❌ Validation failed to produce results")
         else:
             st.error("❌ table_4 not found in inverted COCO results")
-            if inverted_tables:
-                st.write("Available inverted tables:", list(inverted_tables.keys()))
-            else:
-                st.write("No inverted tables available")
+            st.write("Available inverted tables:", list(inverted_tables.keys()))
         
         progress_bar.progress(100)
         status_text.text("✅ Validation completed!")
@@ -270,28 +166,14 @@ def run_validation_analysis(ranked_data, coco_results, data_manager, debug_mode=
         st.error(f"Detailed error: {traceback.format_exc()}")
         progress_bar.progress(0)
         
-def perform_validation(original_table, inverted_table, ranked_data, debug_mode=False, debug_expander=None):
-    """Validate COCO analysis results by comparing original and inverted deltas with detailed debugging."""
+def perform_validation(original_table, inverted_table, ranked_data):
+    """Validate COCO analysis results by comparing original and inverted deltas."""
     try:
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("## 🧮 Validation Mathematical Process")
-                st.write("**Validation Logic:**")
-                st.write("We validate by checking if: `original_delta × inverted_delta ≤ 0`")
-                st.write("This means the deltas should have opposite signs (one positive, one negative)")
-                st.write("**Reasoning:** If the ranking is consistent, inverting the matrix should produce opposite delta values.")
-        
         # The columns should now be properly named after clean_coco_dataframe
         delta_col = 'Delta/Tény'  # Keep the original encoding for now
         becsl_col = 'Becslés'     # Keep the original encoding for now
         
         # Check if columns exist
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("### 🔍 Step 1: Column Verification")
-                st.write(f"Looking for delta column: '{delta_col}'")
-                st.write(f"Looking for becsl column: '{becsl_col}'")
-        
         if delta_col not in original_table.columns or delta_col not in inverted_table.columns:
             st.error(f"❌ Delta column '{delta_col}' not found")
             st.write("Original table columns:", list(original_table.columns))
@@ -305,27 +187,10 @@ def perform_validation(original_table, inverted_table, ranked_data, debug_mode=F
         
         st.success("✅ All required columns found!")
         
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("✅ Columns found successfully")
-                st.write("### 🔢 Step 2: Data Type Conversion")
-                st.write("Converting delta and becsl columns to numeric types...")
-        
         # Convert to numeric and handle invalid values
         original_delta = pd.to_numeric(original_table[delta_col], errors='coerce')
         inverted_delta = pd.to_numeric(inverted_table[delta_col], errors='coerce')
         original_becsl = pd.to_numeric(original_table[becsl_col], errors='coerce')
-        
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("**Data Conversion Results:**")
-                st.write(f"- Original delta: {len(original_delta)} values, {original_delta.isna().sum()} NaN")
-                st.write(f"- Inverted delta: {len(inverted_delta)} values, {inverted_delta.isna().sum()} NaN")
-                st.write(f"- Original becsl: {len(original_becsl)} values, {original_becsl.isna().sum()} NaN")
-                st.write("**Sample converted values:**")
-                st.write(f"Original delta sample: {original_delta.head().tolist()}")
-                st.write(f"Inverted delta sample: {inverted_delta.head().tolist()}")
-                st.write(f"Original becsl sample: {original_becsl.head().tolist()}")
         
         # Ensure no NaN values in deltas
         if original_delta.isna().any() or inverted_delta.isna().any():
@@ -338,49 +203,11 @@ def perform_validation(original_table, inverted_table, ranked_data, debug_mode=F
         ranked_data = ranked_data.loc[valid_indices]
         original_becsl = original_becsl[valid_indices]
         
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("### 🧹 Step 3: Data Cleaning")
-                st.write(f"Removed {(~valid_indices).sum()} rows with NaN values")
-                st.write(f"Remaining valid rows: {valid_indices.sum()}")
-                st.write("**After cleaning:**")
-                st.write(f"- Original delta: {len(original_delta)} values")
-                st.write(f"- Inverted delta: {len(inverted_delta)} values")
-                st.write(f"- Ranked data: {len(ranked_data)} rows")
-                st.write(f"- Original becsl: {len(original_becsl)} values")
-        
         # Calculate validation: original_delta * inverted_delta <= 0 is valid
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("### 🧮 Step 4: Validation Computation")
-                st.write("**Mathematical Operation:** `validation_product = original_delta × inverted_delta`")
-                st.write("**Validation Condition:** `validation_product ≤ 0`")
-                st.write("This means the deltas should have opposite signs for valid results")
-        
         validation_product = original_delta * inverted_delta
         is_valid = validation_product <= 0
         
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("**Validation Computation Results:**")
-                st.write(f"- Validation product range: [{validation_product.min():.3f}, {validation_product.max():.3f}]")
-                st.write(f"- Valid cases (product ≤ 0): {is_valid.sum()}")
-                st.write(f"- Invalid cases (product > 0): {(~is_valid).sum()}")
-                st.write("**Sample computations:**")
-                sample_df = pd.DataFrame({
-                    'Original Delta': original_delta.head(),
-                    'Inverted Delta': inverted_delta.head(),
-                    'Product': validation_product.head(),
-                    'Valid': is_valid.head()
-                })
-                st.dataframe(sample_df)
-        
         # Create validation results
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("### 📊 Step 5: Results Assembly")
-                st.write("Creating final validation results dataframe...")
-        
         validation_results = ranked_data.copy()
         validation_results['Becslés'] = original_becsl
         validation_results['Original_Delta'] = original_delta
@@ -392,23 +219,10 @@ def perform_validation(original_table, inverted_table, ranked_data, debug_mode=F
         # Add ranking based on Becsl_s score
         validation_results['Final_Rank'] = validation_results['Becslés'].rank(ascending=False, method='min').astype(int)
         
-        if debug_mode and debug_expander:
-            with debug_expander:
-                st.write("### 🎯 Step 6: Final Ranking")
-                st.write("**Ranking Method:** `rank(ascending=False, method='min')`")
-                st.write("Higher Becslés values get better (lower) ranks")
-                st.write("**Final results structure:**")
-                st.write(f"- Total rows: {len(validation_results)}")
-                st.write(f"- Columns: {list(validation_results.columns)}")
-                st.write("**Sample final results:**")
-                st.dataframe(validation_results[['userfullname', 'Becslés', 'Final_Rank', 'Validation_Result']].head())
-        
         return validation_results
         
     except Exception as e:
         st.error(f"❌ Error in perform_validation: {str(e)}")
-        import traceback
-        st.error(f"Detailed error: {traceback.format_exc()}")
         return None
 
 def display_validation_results(validation_results, data_manager):
@@ -505,12 +319,6 @@ def display_validation_results(validation_results, data_manager):
         st.write(f"- Number of invalid cases: {len(invalid_cases)}")
         st.write(f"- Average score of invalid cases: {invalid_cases['Becslés'].mean():.3f}")
         st.write(f"- Range of scores in invalid cases: {invalid_cases['Becslés'].min():.3f} to {invalid_cases['Becslés'].max():.3f}")
-        
-        # Mathematical analysis of invalid cases
-        st.write("**Mathematical Analysis of Invalid Cases:**")
-        st.write(f"- Average validation product: {invalid_cases['Validation_Product'].mean():.3f}")
-        st.write(f"- Product range: [{invalid_cases['Validation_Product'].min():.3f}, {invalid_cases['Validation_Product'].max():.3f}]")
-        st.write("**Interpretation:** Positive products indicate both deltas have the same sign (both positive or both negative)")
     
     # Export options
     st.markdown("---")
