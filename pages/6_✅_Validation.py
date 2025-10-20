@@ -489,33 +489,27 @@ def display_validation_results(validation_results, data_manager):
     st.markdown("---")
     st.subheader("💾 Export Options")
     
-    export_col1, export_col2 = st.columns(2)
     
-    with export_col1:
-        st.write("---")
+    summary_data = {
+        'Metric': ['Total Students', 'Valid Cases', 'Invalid Cases', 'Validity Rate', 'Average Score'],
+        'Value': [
+            total_count, 
+            valid_count, 
+            len(validation_results[~validation_results['Is_Valid']]),
+            f"{validity_percentage:.1f}%",
+            f"{validation_results['Becslés'].mean():.3f}"
+        ]
+    }
+    summary_df = pd.DataFrame(summary_data)
+    summary_csv = summary_df.to_csv(index=False)
     
-    with export_col2:
-        # Summary report
-        summary_data = {
-            'Metric': ['Total Students', 'Valid Cases', 'Invalid Cases', 'Validity Rate', 'Average Score'],
-            'Value': [
-                total_count, 
-                valid_count, 
-                len(validation_results[~validation_results['Is_Valid']]),
-                f"{validity_percentage:.1f}%",
-                f"{validation_results['Becslés'].mean():.3f}"
-            ]
-        }
-        summary_df = pd.DataFrame(summary_data)
-        summary_csv = summary_df.to_csv(index=False)
-        
-        st.download_button(
-            "📄 Download Summary Report (CSV)",
-            summary_csv,
-            f"validation_summary_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
-            "text/csv",
-            use_container_width=True,
-            help="High-level validation metrics and summary"
+    st.download_button(
+        "📄 Download Summary Report (CSV)",
+        summary_csv,
+        f"validation_summary_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+        "text/csv",
+        use_container_width=True,
+        help="High-level validation metrics and summary"
         )
 
 
