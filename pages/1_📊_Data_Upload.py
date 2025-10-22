@@ -93,28 +93,35 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    st.write("Please download sample csv or xlxc file.")
-    col1,col2= st.columns(2)
-    with col1:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            with open("sample_data/discussion_demo.xlsx", "rb") as file:
-                st.download_button(label="XLSX",
-                                   data=file, 
-                                   file_name="discussion_demo.xlsx", 
-                                   mime="application/octet-stream",
-                                   width="stretch"
-                                   )
-        with col2:
-            with open("sample_data/discussion_demo.csv", "rb") as file:
-                st.download_button(
-                    label="CSV",
-                    data=file,
-                    file_name="discussion_demo.csv",
-                    mime="application/octet-stream",
-                    width="stretch"
-                )
+    st.markdown("### 📂 Try It Instantly")
+    st.write(
+        "Download our clean demo datasets to explore the workflow without preparing your own files first."
+    )
+
+    demo_col_csv, demo_col_xlsx = st.columns(2)
+
+    sample_csv_path = os.path.join("sample_data", "discussion_demo.csv")
+    sample_xlsx_path = os.path.join("sample_data", "discussion_demo.xlsx")
+
+    with demo_col_csv:
+        with open(sample_csv_path, "rb") as sample_csv:
+            st.download_button(
+                label="📥 Download Demo CSV",
+                data=sample_csv.read(),
+                file_name="discussion_demo.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+    with demo_col_xlsx:
+        with open(sample_xlsx_path, "rb") as sample_xlsx:
+            st.download_button(
+                label="📥 Download Demo XLSX",
+                data=sample_xlsx.read(),
+                file_name="discussion_demo.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
             
 
     # Upload section
@@ -188,15 +195,17 @@ def process_uploaded_file(uploaded_file):
                 # Try different separators
                 try:
                     df = pd.read_csv(uploaded_file, encoding=encoding, sep=',')
-                except:
+                except Exception:
                     uploaded_file.seek(0)
                     try:
                         df = pd.read_csv(uploaded_file, encoding=encoding, sep=';')
-                    except:
+                    except Exception:
                         uploaded_file.seek(0)
                         df = pd.read_csv(uploaded_file, encoding=encoding, sep='\t')
-                break
-            except Exception as e:
+                if df is not None:
+                    break
+            except Exception:
+                df = None
                 continue
 
     elif file_ext == ".xlsx":

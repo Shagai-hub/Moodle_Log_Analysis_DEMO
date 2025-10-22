@@ -61,6 +61,39 @@ st.markdown("""
         font-size: 1rem;
         line-height: 1.5;
     }
+    .step-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        height: 100%;
+    }
+    .step-badge {
+        min-width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    .step-content h4 {
+        margin: 0 0 0.35rem 0;
+        font-size: 1.15rem;
+        color: #2c3e50;
+    }
+    .step-content p {
+        margin: 0;
+        color: #4a5568;
+        line-height: 1.6;
+    }
     .feature-icon {
         font-size: 2.5rem;
         margin-bottom: 0.5rem;
@@ -78,15 +111,17 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        border-radius: 8px;
+        padding: 1rem 2.5rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        border-radius: 10px;
         transition: all 0.3s;
+        text-transform: uppercase;
     }
     .stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        transform: scale(1.03);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.45);
     }
     
     /* Mobile Responsive Styles */
@@ -117,7 +152,7 @@ st.markdown("""
             font-size: 2rem !important;
         }
         .stButton > button {
-            padding: 0.6rem 1rem !important;
+            padding: 0.75rem 1.5rem !important;
             font-size: 1rem !important;
         }
         [data-testid="column"] {
@@ -153,37 +188,55 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Features Section
+# Guided flow section
+st.markdown("### 🧭 Follow These Three Steps")
+
+step_cols = st.columns(3)
+
+step_content = [
+    ("1", "Analyze", "Upload Moodle discussions to explore student activity, participation, and content quality."),
+    ("2", "Visualize", "Generate interactive dashboards that highlight engagement trends and cohort comparisons."),
+    ("3", "Interpret", "Turn insights into actions by identifying standout students and opportunities for support."),
+]
+
+for col, (badge, title, description) in zip(step_cols, step_content):
+    with col:
+        st.markdown(
+            f"""
+            <div class="step-card">
+                <div class="step-badge">{badge}</div>
+                <div class="step-content">
+                    <h4>{title}</h4>
+                    <p>{description}</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+# Capabilities section
 st.markdown("### ✨ What You Can Do")
 
-col1, col2, col3 = st.columns(3)
+feature_cols = st.columns(3)
 
-with col1:
-    st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">📈</div>
-            <h3>Analyze Student Activity</h3>
-            <p>Deep dive into student patterns and learning behaviors with comprehensive analytics.</p>
-        </div>
-    """, unsafe_allow_html=True)
+feature_cards = [
+    ("📈", "Analyze Student Activity", "Deep dive into student patterns and learning behaviors with comprehensive analytics."),
+    ("📊", "Visual Reports", "Generate beautiful, interactive visualizations that make data interpretation effortless."),
+    ("🎯", "Actionable Insights", "Identify trends and patterns to improve course design and student outcomes."),
+]
 
-with col2:
-    st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <h3>Visual Reports</h3>
-            <p>Generate beautiful, interactive visualizations that make data interpretation effortless.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">🎯</div>
-            <h3>Actionable Insights</h3>
-            <p>Identify trends and patterns to improve course design and student outcomes.</p>
-        </div>
-    """, unsafe_allow_html=True)
+for col, (icon, heading, text) in zip(feature_cols, feature_cards):
+    with col:
+        st.markdown(
+            f"""
+            <div class="feature-card">
+                <div class="feature-icon">{icon}</div>
+                <h3>{heading}</h3>
+                <p>{text}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # Getting Started Section
 st.markdown("### 🚀 Getting Started")
@@ -198,7 +251,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
 with col_center:
-    if st.button("📤 Upload Your Data Now", key="goto_upload",width="stretch", help="Navigate to the data upload page"):
+    if st.button("📤 Upload Your Data Now", key="goto_upload", help="Navigate to the data upload page", use_container_width=True):
         st.switch_page("pages/1_📊_Data_Upload.py")
 
 # Footer Info
