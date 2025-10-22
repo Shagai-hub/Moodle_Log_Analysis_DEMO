@@ -130,8 +130,7 @@ def main():
         type=["csv", "xlsx"], 
         help="File should contain columns like userid, userfullname, message, created, etc.",
         label_visibility="visible",
-        width="100%",
-        height=300
+        width="100%"
     )
     st.markdown("</div>", unsafe_allow_html=True)
         
