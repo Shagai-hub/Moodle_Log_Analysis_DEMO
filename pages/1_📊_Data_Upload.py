@@ -99,7 +99,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            with open("pages\sample_data\discussion_demo.xlsx", "rb") as file:
+            with open("sample_data\discussion_demo.xlsx", "rb") as file:
                 st.download_button(label="XLSX",
                                    data=file, 
                                    file_name="discussion_demo.xlsx", 
@@ -107,7 +107,7 @@ def main():
                                    width="stretch"
                                    )
         with col2:
-            with open("pages\sample_data\discussion_demo.csv", "rb") as file:
+            with open("sample_data\discussion_demo.csv", "rb") as file:
                 st.download_button(
                     label="CSV",
                     data=file,
