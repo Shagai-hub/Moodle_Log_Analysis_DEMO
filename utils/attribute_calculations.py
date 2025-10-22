@@ -207,7 +207,7 @@ def deadline_exceeded_posts_generic(df, exam_name):
     config = st.session_state.config
     
     if exam_name not in config.deadlines:
-        return pd.DataFrame(columns=["userid", "userfullname", f"deadline_exceeded_posts_{exam_name.replace(' ', '_')}"])
+        return pd.DataFrame(columns=["userid", "userfullname", f"deadline_exceeded_posts_{exam_name}"])
     
     deadline = config.deadlines[exam_name]
     
@@ -412,6 +412,7 @@ ATTRIBUTE_FUNCS = {
     "max_streak": max_streak,
     "topic_relevance_score": compute_topic_relevance,
     "avg_AI_involvedMsg_score": compute_avg_ai_involved,
+    "average_posts_per_day" : average_posts_per_day
 }
 
 # Attribute groups

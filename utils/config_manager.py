@@ -11,9 +11,9 @@ class ConfigManager:
         """Load default configuration"""
         self.professors = ["professor_1", "professor_2"]
         self.deadlines = {
-            "Quasi Exam I": pd.to_datetime("2024-11-09 00:00:00"),
-            "Quasi Exam II": pd.to_datetime("2024-11-09 00:00:00"),
-            "Quasi Exam III": pd.to_datetime("2024-11-16 00:00:00"),
+            "Quasi_exam_I": pd.to_datetime("2024-11-09 00:00:00"),
+            "Quasi_exam_II": pd.to_datetime("2024-11-09 00:00:00"),
+            "Quasi_exam_III": pd.to_datetime("2024-11-16 00:00:00"),
         }
         self.parent_ids_pattern = [163486]
         self.analysis_settings = {

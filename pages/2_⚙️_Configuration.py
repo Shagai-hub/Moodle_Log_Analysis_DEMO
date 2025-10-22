@@ -139,15 +139,15 @@ def main():
         st.json(config.to_dict())
         
         st.subheader("📊 Current Configuration")
-    summary = config.get_config_summary()
-    
-    col1, col2 = st.columns([1, 1])
-    with col2:
-       if st.button("📈Go to Analisys", use_container_width=True, key="go_to_analysis"):
-        try:
-            st.switch_page("pages/3_📈_Attribute_Analysis.py")
-        except Exception:
-            st.warning("Unable to auto-navigate. Please open '📈Attribute_Analysis' from the sidebar.")
+        summary = config.get_config_summary()
+        
+        col1, col2 = st.columns([1, 1])
+        with col2:
+            if st.button("📈Go to Analisys", use_container_width=True, key="go_to_analysis"):
+                try:
+                    st.switch_page("pages/3_📈_Attribute_Analysis.py")
+                except Exception:
+                    st.warning("Unable to auto-navigate. Please open '📈Attribute_Analysis' from the sidebar.")
 
 if __name__ == "__main__":
     main()
