@@ -86,13 +86,36 @@ def main():
             <p>Upload your Moodle discussion data to begin analysis</p>
         </div>
     """, unsafe_allow_html=True)
-
     # Info section
     st.markdown("""
         <div class="info-card">
             <strong>📋 Supported Formats:</strong> CSV, XLSX<br>
         </div>
     """, unsafe_allow_html=True)
+
+    st.write("Please download sample csv or xlxc file.")
+    col1,col2= st.columns(2)
+    with col1:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            with open("pages\sample_data\discussion_demo.xlsx", "rb") as file:
+                st.download_button(label="XLSX",
+                                   data=file, 
+                                   file_name="discussion_demo.xlsx", 
+                                   mime="application/octet-stream",
+                                   width="stretch"
+                                   )
+        with col2:
+            with open("pages\sample_data\discussion_demo.csv", "rb") as file:
+                st.download_button(
+                    label="CSV",
+                    data=file,
+                    file_name="discussion_demo.csv",
+                    mime="application/octet-stream",
+                    width="stretch"
+                )
+            
 
     # Upload section
     uploaded_file = st.file_uploader(
@@ -102,7 +125,8 @@ def main():
         label_visibility="visible"
     )
     st.markdown("</div>", unsafe_allow_html=True)
-
+        
+    
     if uploaded_file:
         with st.spinner("🔄 Processing your file..."):
             df = process_uploaded_file(uploaded_file)
