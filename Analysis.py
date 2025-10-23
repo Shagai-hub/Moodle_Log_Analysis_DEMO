@@ -1,6 +1,10 @@
 import streamlit as st
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
+from utils.ui_steps import render_steps
+
+st.set_page_config(layout="wide")  # optional
+render_steps(active="1 Analyze")
 
 # Initialize session state managers ONCE
 if 'data_manager' not in st.session_state:
@@ -187,32 +191,6 @@ st.markdown("""
         <p>Transform your Moodle data into actionable insights</p>
     </div>
 """, unsafe_allow_html=True)
-
-# Guided flow section
-st.markdown("### 🧭 Follow These Three Steps")
-
-step_cols = st.columns(3)
-
-step_content = [
-    ("1", "Analyze", "Upload Moodle discussions to explore student activity, participation, and content quality."),
-    ("2", "Visualize", "Generate interactive dashboards that highlight engagement trends and cohort comparisons."),
-    ("3", "Interpret", "Turn insights into actions by identifying standout students and opportunities for support."),
-]
-
-for col, (badge, title, description) in zip(step_cols, step_content):
-    with col:
-        st.markdown(
-            f"""
-            <div class="step-card">
-                <div class="step-badge">{badge}</div>
-                <div class="step-content">
-                    <h4>{title}</h4>
-                    <p>{description}</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
 # Capabilities section
 st.markdown("### ✨ What You Can Do")
