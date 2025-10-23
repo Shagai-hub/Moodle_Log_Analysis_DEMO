@@ -1,272 +1,189 @@
 import streamlit as st
+import pandas as pd
+import os
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 
-# Initialize session state managers ONCE
-if 'data_manager' not in st.session_state:
-    st.session_state.data_manager = SessionDataManager()
-if 'config' not in st.session_state:
-    st.session_state.config = ConfigManager()
+def main():
+    # Initialize managers from session state
+    data_manager = st.session_state.data_manager
+    config = st.session_state.config
 
-st.set_page_config(
-    page_title="Moodle Log Analyzer hello",
-    page_icon="📊", 
-    layout="wide"
-)
-
-# Custom CSS for enhanced styling
-st.markdown("""
-    <style>
-    .main-header {
-        text-align: center;
-        padding: 2rem 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .main-header h1 {
-        font-size: 3rem;
-        margin-bottom: 0.5rem;
-        font-weight: 700;
-    }
-    .main-header p {
-        font-size: 1.2rem;
-        opacity: 0.95;
-    }
-    .feature-card {
-        background: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1rem;
-        border-left: 4px solid #667eea;
-        transition: transform 0.2s;
-        height: 220px;
-        display: flex;
-        flex-direction: column;
-    }
-    .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    .feature-card h3 {
-        color: #2c3e50;
-        font-size: 1.3rem;
-        margin-bottom: 0.5rem;
-    }
-    .feature-card p {
-        color: #555;
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-    .step-card {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        display: flex;
-        gap: 1rem;
-        align-items: flex-start;
-        height: 100%;
-    }
-    .step-badge {
-        min-width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 1.2rem;
-    }
-    .step-content h4 {
-        margin: 0 0 0.35rem 0;
-        font-size: 1.15rem;
-        color: #2c3e50;
-    }
-    .step-content p {
-        margin: 0;
-        color: #4a5568;
-        line-height: 1.6;
-    }
-    .feature-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-    .cta-section {
-        text-align: center;
-        padding: 2rem;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        border-radius: 10px;
-        margin-top: 2rem;
-        color: white;
-    }
-    .stButton > button {
-        width: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 1rem 2.5rem;
-        font-size: 1.2rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        border-radius: 10px;
-        transition: all 0.3s;
-        text-transform: uppercase;
-    }
-    .stButton > button:hover {
-        transform: scale(1.03);
-        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.45);
-    }
-    
-    /* Mobile Responsive Styles */
-    @media only screen and (max-width: 768px) {
-        .main-header h1 {
-            font-size: 2rem !important;
+    # Custom CSS for enhanced styling
+    st.markdown("""
+        <style>
+        .header {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .main-header p {
-            font-size: 1rem !important;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.3rem;
+            font-weight: 700;
         }
-        .main-header {
-            padding: 1.5rem 0.5rem !important;
-            margin-bottom: 1rem !important;
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin: 0;
         }
-        .feature-card {
-            height: auto !important;
-            min-height: 180px;
-            margin-bottom: 1rem !important;
-            padding: 1rem !important;
+        .upload-zone, .analysis-zone {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 2px dashed #4facfe;
+            margin: 1rem 0;
+            text-align: center;
         }
-        .feature-card h3 {
-            font-size: 1.1rem !important;
+        .info-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin: 1rem 0;
         }
-        .feature-card p {
-            font-size: 0.9rem !important;
-        }
-        .feature-icon {
-            font-size: 2rem !important;
+        .metric-card {
+            background: Black;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
         .stButton > button {
-            padding: 0.75rem 1.5rem !important;
-            font-size: 1rem !important;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
         }
-        [data-testid="column"] {
-            padding: 0.25rem !important;
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-    }
-    
-    @media only screen and (max-width: 480px) {
-        .main-header h1 {
-            font-size: 1.5rem !important;
-        }
-        .main-header p {
-            font-size: 0.9rem !important;
-        }
-        .feature-card {
-            min-height: 150px;
-        }
-        .feature-card h3 {
-            font-size: 1rem !important;
-        }
-        .feature-card p {
-            font-size: 0.85rem !important;
-        }
-    }
-    </style>
-""", unsafe_allow_html=True)
+        </style>
+    """, unsafe_allow_html=True)
 
-# Header Section
-st.markdown("""
-    <div class="main-header">
-        <h1>🎓 Moodle Log Analyzer`helloo</h1>
-        <p>Transform your Moodle data into actionable insights</p>
-    </div>
-""", unsafe_allow_html=True)
+    # Header Section
+    st.markdown("""
+        <div class="header">
+            <h1>📊 Moodle Log Analysis</h1>
+            <p>Upload your data and analyze Moodle discussion logs in one place</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-# Guided flow section
-st.markdown("### 🧭 Follow These Three Steps")
+    # Upload Section
+    st.markdown("### 📂 Upload Your Data")
+    uploaded_file = st.file_uploader(
+        "Drop your file here or click to browse",
+        type=["csv", "xlsx"],
+        help="File should contain columns like userid, userfullname, message, created, etc.",
+    )
 
-step_cols = st.columns(3)
+    if uploaded_file:
+        with st.spinner("🔄 Processing your file..."):
+            df = process_uploaded_file(uploaded_file)
 
-step_content = [
-    ("1", "Analyze", "Upload Moodle discussions to explore student activity, participation, and content quality."),
-    ("2", "Visualize", "Generate interactive dashboards that highlight engagement trends and cohort comparisons."),
-    ("3", "Interpret", "Turn insights into actions by identifying standout students and opportunities for support."),
-]
+        if df is not None:
+            # Store in session state instead of database
+            data_manager.store_raw_data(df, source_info=uploaded_file.name)
 
-for col, (badge, title, description) in zip(step_cols, step_content):
-    with col:
-        st.markdown(
-            f"""
-            <div class="step-card">
-                <div class="step-badge">{badge}</div>
-                <div class="step-content">
-                    <h4>{title}</h4>
-                    <p>{description}</p>
+            st.success(f"✅ Successfully loaded '{uploaded_file.name}'!")
+
+            # Dataset Overview
+            st.markdown("### 📊 Dataset Overview")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Rows", f"{df.shape[0]:,}")
+            with col2:
+                st.metric("Total Columns", df.shape[1])
+            with col3:
+                st.metric("Unique Users", df['userfullname'].nunique())
+
+            # Data Preview
+            st.markdown("### 📋 Data Preview")
+            with st.expander("Click to view first 10 rows", expanded=True):
+                st.dataframe(df.head(10), use_container_width=True)
+
+            # Analysis Section
+            st.markdown("### 📈 Analysis")
+            st.markdown("""
+                <div class="analysis-zone">
+                    <p>Perform advanced analysis on your uploaded data.</p>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            """, unsafe_allow_html=True)
 
-# Capabilities section
-st.markdown("### ✨ What You Can Do")
+            # Example Analysis: Word Count
+            if 'message' in df.columns:
+                st.markdown("#### 📝 Word Count Analysis")
+                df['word_count'] = df['message'].apply(lambda x: len(str(x).split()))
+                st.bar_chart(df['word_count'].value_counts().head(10))
 
-feature_cols = st.columns(3)
+            # Action Buttons
+            st.markdown("### 🎯 Next Steps")
+            col1, col2 = st.columns(2)
+            with col1:
+                csv_data = df.to_csv(index=False)
+                st.download_button(
+                    "⬇️ Download Processed Data",
+                    csv_data,
+                    f"processed_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+                    "text/csv",
+                    use_container_width=True
+                )
+            with col2:
+                if st.button("⚙️ Go to Configuration", use_container_width=True, key="go_to_config", type="primary"):
+                    try:
+                        st.switch_page("Configuration")
+                    except Exception:
+                        st.warning("Unable to auto-navigate. Please open '⚙️ Configuration' from the sidebar.")
 
-feature_cards = [
-    ("📈", "Analyze Student Activity", "Deep dive into student patterns and learning behaviors with comprehensive analytics."),
-    ("📊", "Visual Reports", "Generate beautiful, interactive visualizations that make data interpretation effortless."),
-    ("🎯", "Actionable Insights", "Identify trends and patterns to improve course design and student outcomes."),
-]
+def process_uploaded_file(uploaded_file):
+    """Process uploaded file and return cleaned DataFrame"""
+    file_ext = os.path.splitext(uploaded_file.name)[1].lower()
+    df = None
 
-for col, (icon, heading, text) in zip(feature_cols, feature_cards):
-    with col:
-        st.markdown(
-            f"""
-            <div class="feature-card">
-                <div class="feature-icon">{icon}</div>
-                <h3>{heading}</h3>
-                <p>{text}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    if file_ext == ".csv":
+        encodings = ["utf-8", "latin1", "cp1250", "utf-8-sig"]
+        for encoding in encodings:
+            try:
+                uploaded_file.seek(0)
+                df = pd.read_csv(uploaded_file, encoding=encoding)
+                if df is not None:
+                    break
+            except Exception:
+                continue
 
-# Getting Started Section
-st.markdown("### 🚀 Getting Started")
-st.info("""
-    **Ready to begin?** Upload your Moodle log data to start analyzing student activity, 
-    course engagement, and learning patterns. The process is simple and takes just a few clicks!
-""")
+    elif file_ext == ".xlsx":
+        try:
+            import openpyxl
+        except ImportError:
+            st.error("Missing 'openpyxl' library. Install: `pip install openpyxl`")
+            st.stop()
+        try:
+            df = pd.read_excel(uploaded_file, engine="openpyxl")
+        except Exception as e:
+            st.error(f"Failed to read '{uploaded_file.name}': {e}")
+            st.stop()
 
-# Call to Action
-st.markdown("<br>", unsafe_allow_html=True)
+    if df is None:
+        st.error(f"❌ Failed to read '{uploaded_file.name}'. Please check the file format.")
+        return None
 
-col_left, col_center, col_right = st.columns([1, 2, 1])
+    # Validate required columns
+    required_columns = ['userid', 'userfullname', 'message']
+    missing_columns = [col for col in required_columns if col not in df.columns]
 
-with col_center:
-    if st.button("📤 Upload Your Data Now", key="goto_upload", help="Navigate to the data upload page", use_container_width=True):
-        st.switch_page("pages/1_📊_Data_Upload.py")
+    if missing_columns:
+        st.error(f"❌ Missing required columns: {missing_columns}")
+        return None
 
-# Footer Info
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown("---")
-col_a, col_b, col_c = st.columns(3)
+    # Convert date columns if present
+    if 'created' in df.columns:
+        df['created'] = pd.to_datetime(df['created'], errors='coerce')
 
-with col_a:
-    st.markdown("**📁 Supported Formats**")
-    st.caption("CSV, Excel, and other log formats")
+    return df
 
-with col_b:
-    st.markdown("**🔒 Secure Processing**")
-    st.caption("Your data stays private and secure")
-
-with col_c:
-    st.markdown("**⚡ Fast Analysis**")
-    st.caption("Get insights in seconds")
+if __name__ == "__main__":
+    main()
