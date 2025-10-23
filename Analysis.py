@@ -3,7 +3,6 @@ from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.ui_steps import render_steps
 
-st.set_page_config(layout="wide")  # optional
 render_steps(active="1 Analyze")
 
 # Initialize session state managers ONCE
