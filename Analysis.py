@@ -9,7 +9,7 @@ if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 
 st.set_page_config(
-    page_title="Moodle Log Analyzer",
+    page_title="Moodle Log Analyzer hello",
     page_icon="📊", 
     layout="wide"
 )
