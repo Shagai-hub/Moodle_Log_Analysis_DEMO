@@ -183,7 +183,7 @@ st.markdown("""
 # Header Section
 st.markdown("""
     <div class="main-header">
-        <h1>🎓 Moodle Log Analyzer</h1>
+        <h1>🎓 Moodle Log Analyzer`helloo</h1>
         <p>Transform your Moodle data into actionable insights</p>
     </div>
 """, unsafe_allow_html=True)
