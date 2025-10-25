@@ -4,7 +4,7 @@ def render_steps(active: str):
     st.markdown("""
     <style>
       .stepbar{position:sticky; top:0; z-index:100; padding:10px 0; 
-               background: rgba(0,0,0,0); backdrop-filter:saturate(1.2) blur(2px);}
+               background: rgba(0,0,0,0); margin-top: 24px; backdrop-filter:saturate(1.2) blur(2px);}
       .steps{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;}
       .step{padding:8px 14px; border-radius:999px; border:1px solid rgba(128,128,128,.3);
             font-weight:600; opacity:.7;}

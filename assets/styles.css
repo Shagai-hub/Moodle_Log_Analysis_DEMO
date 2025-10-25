@@ -1,0 +1,69 @@
+/* Pulse CTA — aligned to current UI design system */
+.st-key-pulse button {
+  /* layout */
+  width: min(560px, 92%);
+  margin: 0 auto;
+  padding: 0.95rem 1.4rem;
+  margin-top: 100px;
+
+  /* visuals */
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+  color: #000000 !important;
+  border: none !important;
+  border-radius: 999px !important;
+  font-size: 4rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .3px !important;
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.35);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  /* motion */
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+  animation: pulseRing 2.4s ease-in-out infinite;
+}
+
+.st-key-pulse button:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 42px rgba(124, 58, 237, 0.42);
+}
+
+.st-key-pulse button:active {
+  transform: translateY(0) scale(.995);
+}
+
+/* Accessible focus ring that matches the theme */
+.st-key-pulse button:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 3px var(--panel),
+    0 0 0 6px var(--ring),
+    0 16px 42px rgba(124, 58, 237, 0.42);
+}
+
+/* Subtle animated sheen */
+.st-key-pulse button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.18), transparent 50%);
+  mix-blend-mode: soft-light;
+  opacity: .6;
+  transition: opacity .2s ease;
+}
+.st-key-pulse button:hover::after { opacity: .8; }
+
+/* Gentle outer ring pulse (no layout shift) */
+@keyframes pulseRing {
+  0%   { box-shadow: 0 12px 32px rgba(124, 58, 237, 0.35); }
+  50%  { box-shadow: 0 14px 38px rgba(124, 58, 237, 0.48); }
+  100% { box-shadow: 0 12px 32px rgba(124, 58, 237, 0.35); }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .st-key-pulse button { animation: none; }
+}
