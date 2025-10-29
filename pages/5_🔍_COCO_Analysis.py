@@ -74,7 +74,7 @@ def main():
                 "🏆 Result Validation",
                 use_container_width=True,
                 help="Navigate to the validation page",
-                key="proceed_to_validation_btn",
+                key="pulse",
                 type="primary",
             ):
                 st.switch_page("pages/6_✅_Validation.py")

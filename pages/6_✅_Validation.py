@@ -120,7 +120,7 @@ def main():
     with col1:
        st.write("")
     with col2:
-        if st.button("🤖 Get AI Insights ➡️", use_container_width=True, type="primary"):
+        if st.button("🤖 Get AI Insights ➡️",key="pulse", use_container_width=True, type="primary"):
             st.switch_page("pages/7_🤖_AI_Insights.py")
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
