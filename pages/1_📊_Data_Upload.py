@@ -269,7 +269,7 @@ def main():
                 st.dataframe(df.head(10), use_container_width=True)
 
             # Actions
-            st.markdown('<div class="section-title"><span class="dot"></span><span>Next steps</span></div>', unsafe_allow_html=True)
+          
             act1, act2 = st.columns(2)
             with act1:
                 csv_data = df.to_csv(index=False)

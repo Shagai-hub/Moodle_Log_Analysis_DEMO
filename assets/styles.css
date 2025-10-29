@@ -67,3 +67,21 @@
 @media (prefers-reduced-motion: reduce) {
   .st-key-pulse button { animation: none; }
 }
+
+.st-key-go_to_analysis_btn button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+    color: #fff !important; border: none !important;
+    padding: .9rem 1.1rem !important; font-weight: 800 !important;
+    letter-spacing: .2px !important; border-radius: 999px !important;
+    box-shadow: 0 10px 28px rgba(124,58,237,0.35);
+    transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+  }
+  .st-key-go_to_analysis_btn button:hover {
+    transform: translateY(-1px) scale(1.02);
+    filter: brightness(1.08);
+    box-shadow: 0 18px 40px rgba(124,58,237,0.45), 0 10px 26px rgba(6,182,212,0.32);
+  }
+  .st-key-go_to_analysis_btn button:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 3px var(--panel), 0 0 0 6px var(--ring), 0 18px 44px rgba(124,58,237,.42) !important;
+  }

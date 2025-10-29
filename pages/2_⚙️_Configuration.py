@@ -23,7 +23,7 @@ data_manager: SessionDataManager = st.session_state.data_manager
 def main():
     # Top header + optional steps
     if STEPS_AVAILABLE:
-        render_steps(active="2 Visualize")  # or "2 Configure" if you prefer
+        render_steps(active="1 Analyze")  # or "2 Configure" if you prefer
 
     st.title("⚙️ Configuration")
     st.caption("Set professors, exam deadlines, and analysis parameters before computing attributes.")
@@ -153,9 +153,6 @@ def main():
                     new_deadlines[name] = date
             config.deadlines = new_deadlines
 
-            # Delete selected exam
-            if st.button("🗑️ Remove selected row(s) above by clearing the Exam name", use_container_width=True):
-                st.info("Rows with empty Exam names will be dropped at next rerun.")
 
         else:
             st.info("No exams yet. Add one above to get started.")

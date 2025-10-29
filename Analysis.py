@@ -223,7 +223,7 @@ hr{ border: none; border-top:1px solid rgba(148,163,184,0.15); margin: 1.2rem 0;
 st.markdown("""
 <div class="main-header">
   <h1>Moodle Log Analyzer</h1>
-  <p>Transform your Moodle data into actionable insights <br> without wrestling with spreadsheets.</p>
+  <p>Transform your Moodle data into actionable insights.</p>
 </div>
 """, unsafe_allow_html=True)
 
