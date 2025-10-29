@@ -150,7 +150,7 @@ def render_attribute_selection_ui():
           <div style="font-size:1.35rem; font-weight:900;">{len(st.session_state.selected_attributes)}</div>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True , width="stretch"
     )
 
     # Category expanders for attribute selection
