@@ -249,7 +249,7 @@ def main():
         if st.button(
             "⬅️ Back to Upload",
             use_container_width=True,
-            key="pulse",
+            key="back_to_upload_btn",
             type="secondary",
         ):
             st.switch_page("pages/1_📊_Data_Upload.py")
@@ -259,7 +259,7 @@ def main():
         if st.button(
             "➡️ Go to Attribute Analysis",
             use_container_width=True,
-            key="go_to_analysis_btn",
+            key="pulse",
             type="primary",
         ):
             try:

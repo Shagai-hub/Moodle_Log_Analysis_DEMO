@@ -99,7 +99,7 @@ def main():
                 type="primary",  # Add this line
                 use_container_width=True,
                 help="Navigate to the ranking page with computed attributes",
-                key="proceed_to_ranking_btn"
+                key="pulse"
             ):
                 st.switch_page("pages/4_🏆_Ranking.py")
     
