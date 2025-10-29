@@ -70,6 +70,7 @@ html, body, [class*="stApp"] {
 
 /* Section heading */
 .section-title{
+  font-size:2   rem;
   display:flex; align-items:center; gap:.6rem;
   font-weight: 800; letter-spacing:-0.02em;
   margin: 1.2rem 0 .8rem 0; color: var(--text);
@@ -97,7 +98,7 @@ html, body, [class*="stApp"] {
 }
 
 /* Default buttons on this page = secondary/dark */
-.stButton > button {
+.stButton > button:not([data-testid="baseButton-primary"]) {
   background: linear-gradient(135deg, var(--panel), var(--card)) !important;
   color: var(--text) !important;
   border: 1px solid rgba(148,163,184,0.18) !important;
@@ -108,7 +109,7 @@ html, body, [class*="stApp"] {
   box-shadow: 0 8px 22px rgba(2,6,23,0.35) !important;
   transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease !important;
 }
-.stButton > button:hover {
+.stButton > button:not([data-testid="baseButton-primary"]):hover {
   transform: translateY(-1px) scale(1.01);
   filter: brightness(1.05);
   border-color: rgba(124,58,237,0.35) !important;
@@ -133,21 +134,32 @@ html, body, [class*="stApp"] {
   box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
 }
 
-/* Primary CTAs: make only the main navigation/actions bright using their keys */
-.stButton.st-key-compute_attributes_btn > button,
-.stButton.st-key-proceed_to_ranking_btn > button {
+/* Primary CTAs: ONLY specific primary buttons */
+.stButton > button[data-testid="baseButton-primary"] {
   background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
-  color: #000B18 !important;
+  color: #fff !important;
   border: none !important;
-  box-shadow: 0 14px 35px rgba(124,58,237,0.35), 0 6px 16px rgba(6,182,212,0.25) !important;
-}
-.stButton.st-key-compute_attributes_btn > button:hover,
-.stButton.st-key-proceed_to_ranking_btn > button:hover {
-  transform: translateY(-1px) scale(1.02);
-  filter: brightness(1.08);
-  box-shadow: 0 18px 40px rgba(124,58,237,0.45), 0 10px 26px rgba(6,182,212,0.32) !important;
+  padding: .9rem 1.1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .2px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 28px rgba(124,58,237,0.35) !important;
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease !important;
 }
 
+.stButton > button[data-testid="baseButton-primary"]:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 42px rgba(124,58,237,0.42) !important;
+}
+
+.stButton > button[data-testid="baseButton-primary"]:focus-visible {
+  outline: none !important;
+  box-shadow: 
+    0 0 0 3px var(--panel),
+    0 0 0 6px var(--ring),
+    0 16px 42px rgba(124,58,237,0.42) !important;
+}
 /* Expander polish */
 .streamlit-expanderHeader { font-weight: 700; color: var(--text); }
 .stExpander { border: 1px solid rgba(148,163,184,0.12); border-radius: var(--radius); }
@@ -166,7 +178,7 @@ def main():
     config = st.session_state.config
 
     # ---------- HEADER ----------
-    st.markdown('<div class="section-title"><span class="dot"></span><span>Attribute Analysis</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title"></span><span>Attribute Analysis</span></div>', unsafe_allow_html=True)
     st.caption("Compute and analyze student attributes. Select attributes and generate the OAM.")
 
     # Check if data is available
@@ -227,8 +239,8 @@ def main():
     render_attribute_selection_ui()
 
     # Compute attributes CTA (bright)
-    st.markdown("<hr>", unsafe_allow_html=True)
-    if st.button("🚀 Compute Selected Attributes", use_container_width=True, key="compute_attributes_btn"):
+    # Update the compute attributes button
+    if st.button("🚀 Compute Attributes", type="primary", use_container_width=True, key="compute_attributes_btn"):
         compute_and_display_attributes(df, df_all, data_manager, config)
 
     # After compute
@@ -242,18 +254,20 @@ def main():
         display_graph_section(data_manager.get_student_attributes())
 
     # Navigation CTA (bright)
+    # In the navigation section of your code, update the button to:
     if data_manager.get_student_attributes() is not None:
         st.markdown("<hr>", unsafe_allow_html=True)
         col1, col2 = st.columns([1, 1])
         with col2:
             if st.button(
                 "🏆 Proceed to Ranking",
+                type="primary",  # Add this line
                 use_container_width=True,
                 help="Navigate to the ranking page with computed attributes",
                 key="proceed_to_ranking_btn"
             ):
                 st.switch_page("pages/4_🏆_Ranking.py")
-
+    
 
 def render_attribute_selection_ui():
     """Render the attribute selection interface"""
