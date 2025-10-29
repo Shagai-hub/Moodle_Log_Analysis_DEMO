@@ -137,7 +137,7 @@ html, body, [class*="stApp"] {
 .stButton.st-key-compute_attributes_btn > button,
 .stButton.st-key-proceed_to_ranking_btn > button {
   background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
-  color: #fff !important;
+  color: #000B18 !important;
   border: none !important;
   box-shadow: 0 14px 35px rgba(124,58,237,0.35), 0 6px 16px rgba(6,182,212,0.25) !important;
 }
