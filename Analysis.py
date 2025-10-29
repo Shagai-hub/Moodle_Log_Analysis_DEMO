@@ -33,7 +33,6 @@ with act2:
     if st.button(
         "🚀 Upload your data",
         key="first",
-        type="primary",
         help="Go to the Data Upload page",
         use_container_width=True,  # makes it stretch nicely in center
     ):
