@@ -249,7 +249,7 @@ def main():
         if st.button(
             "⬅️ Back to Upload",
             use_container_width=True,
-            key="back_to_upload_btn",
+            key="pulse",
             type="secondary",
         ):
             st.switch_page("pages/1_📊_Data_Upload.py")
