@@ -35,7 +35,7 @@ load_css(pathlib.Path("assets/styles.css"))
 st.markdown("""
 <style>
 :root{
-  --bg: #0b1220;
+  --bg: #000B18;
   --panel: #0f172a;
   --card: #121a2c;
   --muted: #9aa3b2;
@@ -185,21 +185,45 @@ def main():
     df_all["userfullname"] = df_all["userfullname"].astype(str)
     df = df_all[~df_all["userfullname"].isin(PROFESSORS)].copy()
 
-    # Overview panel
-    st.markdown("""
-    <div class="panel">
-      <strong>Dataset:</strong> Analyzing student posts (professors excluded)<br>
-      <span style="color:var(--muted)">Professors: will be excluded from computation and used for reply-based metrics</span>
-    </div>
-    """, unsafe_allow_html=True)
-
+    
     col_meta1, col_meta2 = st.columns(2)
+    
+    st.markdown("""
+    <style>
+    .metric-box {
+        background: rgba(124, 58, 237, 0.15); /* soft purple highlight */
+        border: 1px solid rgba(124, 58, 237, 0.4);
+        border-radius: 12px;
+        padding: 18px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: #e6e9ef;
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+    }
+    .metric-box span {
+        font-size: 28px;
+        color: #a78bfa; /* lighter purple for emphasis */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     with col_meta1:
-        st.write(f"📊 Posts considered: **{len(df)}**")
-    with col_meta2:
-        st.write(f"👨‍🏫 Professors: {', '.join(PROFESSORS) if PROFESSORS else '—'}")
+        st.markdown(f"""
+        <div class="metric-box">
+            📊 Posts considered<br><span>{len(df)}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Attribute selection UI
+    with col_meta2:
+        st.markdown(f"""
+        <div class="metric-box">
+            👨‍🏫 Professors<br><span>{', '.join(PROFESSORS) if PROFESSORS else '—'}</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    
+        # Attribute selection UI
     render_attribute_selection_ui()
 
     # Compute attributes CTA (bright)
@@ -261,7 +285,7 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
 
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=True):
+    with st.expander("ℹ️ Attribute Descriptions", expanded=False):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  

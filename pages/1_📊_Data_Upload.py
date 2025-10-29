@@ -21,7 +21,7 @@ def main():
     st.markdown("""
     <style>
     :root{
-      --bg: #0b1220;
+      --bg: #000B18;
       --panel: #0f172a;
       --card: #121a2c;
       --muted: #9aa3b2;
