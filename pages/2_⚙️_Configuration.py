@@ -4,6 +4,7 @@ import pandas as pd
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
 import pathlib
+
 # Optional: step bar if you use it elsewhere
 try:
     from utils.ui_steps import render_steps
@@ -27,13 +28,79 @@ def load_css(file_path: pathlib.Path):
     except FileNotFoundError:
         pass
 
-# External CSS first (lets users override defaults if they want)
+# External CSS first (if present)
 load_css(pathlib.Path("assets/styles.css"))
+
+# ---------- Local page-scoped UI polish ----------
+st.markdown("""
+<style>
+/* Secondary buttons (default for this page): darker, neutral, compact) */
+.stButton > button {
+  background: linear-gradient(135deg, var(--panel, #0f172a), var(--card, #121a2c)) !important;
+  color: var(--text, #e6e9ef) !important;
+  border: 1px solid rgba(148,163,184,0.18) !important;
+  padding: .85rem 1.05rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .2px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35) !important;
+  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease !important;
+}
+.stButton > button:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+  border-color: rgba(124,58,237,0.35) !important;
+  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
+}
+
+/* Download buttons: keep them neutral/secondary as well */
+.stDownloadButton > button {
+  background: linear-gradient(135deg, var(--panel, #0f172a), var(--card, #121a2c)) !important;
+  color: var(--text, #e6e9ef) !important;
+  border: 1px solid rgba(148,163,184,0.18) !important;
+  padding: .85rem 1.05rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .2px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35) !important;
+}
+.stDownloadButton > button:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+  border-color: rgba(124,58,237,0.35) !important;
+  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
+}
+
+/* Primary navigation CTA: ONLY the “Go to Attribute Analysis” button should be bright */
+.stButton.st-key-go_to_analysis_btn > button {
+  background: linear-gradient(135deg, var(--accent, #7c3aed), var(--accent-2, #06b6d4)) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 1rem 1.25rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .3px !important;
+  border-radius: 999px !important;
+  box-shadow: 0 14px 35px rgba(124,58,237,0.35), 0 6px 16px rgba(6,182,212,0.25) !important;
+}
+.stButton.st-key-go_to_analysis_btn > button:hover {
+  transform: translateY(-1px) scale(1.02);
+  filter: brightness(1.08);
+  box-shadow: 0 18px 40px rgba(124,58,237,0.45), 0 10px 26px rgba(6,182,212,0.32) !important;
+}
+.stButton.st-key-go_to_analysis_btn > button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--panel, #0f172a),
+              0 0 0 6px var(--ring, rgba(124,58,237,0.4)),
+              0 18px 44px rgba(124,58,237,.42) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 def main():
     # Top header + optional steps
     if STEPS_AVAILABLE:
-        render_steps(active="1 Analyze")  # or "2 Configure" if you prefer
+        render_steps(active="1 Analyze")  # or "2 Configure"
 
     st.title("⚙️ Configuration")
     st.caption("Set professors, exam deadlines, and analysis parameters before computing attributes.")
@@ -99,7 +166,6 @@ def main():
         detected_exams = []
         if has_data and "subject" in raw_df.columns:
             subj = raw_df["subject"].dropna().astype(str)
-            # A simple heuristic: take frequent subjects that contain "exam"
             detected_exams = (
                 subj[subj.str.contains("exam", case=False, na=False)]
                 .value_counts()
@@ -113,7 +179,6 @@ def main():
             new_exam = st.text_input("➕ Add exam (custom name)", placeholder="e.g., Quasi Exam IV")
             if st.button("Add Exam", use_container_width=True, key="add_exam_btn") and new_exam:
                 if new_exam not in config.deadlines:
-                    # Default to today
                     config.deadlines[new_exam] = pd.Timestamp.today().normalize()
                     st.success(f"Added: {new_exam}")
                     st.rerun()
@@ -136,7 +201,6 @@ def main():
         # Editable deadline table
         if config.deadlines:
             st.markdown("#### 🗓️ Edit deadlines")
-            # Build an editable table
             dl_df = pd.DataFrame([
                 {"Exam": name, "Deadline": pd.to_datetime(date).date()}
                 for name, date in config.deadlines.items()
@@ -162,8 +226,6 @@ def main():
                 if name:
                     new_deadlines[name] = date
             config.deadlines = new_deadlines
-
-
         else:
             st.info("No exams yet. Add one above to get started.")
 
@@ -201,7 +263,6 @@ def main():
         cpa, cpb, cpc = st.columns(3)
         with cpa:
             if st.button("Balanced preset", use_container_width=True):
-                # You can later set more fields if needed
                 st.success("Balanced preset applied.")
         with cpb:
             if st.button("Engagement-focused preset", use_container_width=True):

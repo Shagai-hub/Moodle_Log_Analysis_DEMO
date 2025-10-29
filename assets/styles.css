@@ -70,7 +70,7 @@
 
 .st-key-go_to_analysis_btn button {
     background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
-    color: #ffffff !important;
+    color: #fff !important;
     border: none !important;
     border-radius: 999px !important;
     padding: 1rem 1.3rem !important;
