@@ -100,7 +100,7 @@ code {
 }
 .page-header__title {
   margin: 0;
-  font-size: clamp(3rem, 8vw, 6rem); /* Bigger range */
+  font-size: clamp(6rem, 8vw, 12rem); /* Bigger range */
   font-weight: 900;
   letter-spacing: -0.04em;
   display: flex;
@@ -114,7 +114,7 @@ code {
 }
 
 .page-header__emoji {
-  font-size: clamp(2.8rem, 7vw, 5rem); /* Larger emoji for balance */
+  font-size: clamp(1.4rem, 7vw, 5rem); /* Larger emoji for balance */
   line-height: 1;
 }
 
