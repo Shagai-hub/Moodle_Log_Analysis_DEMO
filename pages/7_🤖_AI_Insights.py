@@ -17,4 +17,4 @@ info_panel(
 )
 
 divider()
-st.info("🚧 We're preparing this experience. Check back soon for AI-powered insights!")
+st.info("🚧 This experience is being prepared. Check back soon for AI-powered insights!")
