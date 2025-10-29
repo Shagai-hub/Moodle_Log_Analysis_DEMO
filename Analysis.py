@@ -26,9 +26,9 @@ page_header(
     "Transform your Moodle discussion data into actionable insights.", icon="🎓",
 )
 
-col1, col2, col3 = st.columns([1, 2, 1])
+act1, act2, act3 = st.columns([1, 2, 1])
 
-with col2:
+with act2:
     # Centered button inside the middle column
     if st.button(
         "🚀 Upload your data",
