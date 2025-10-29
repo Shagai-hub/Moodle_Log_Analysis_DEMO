@@ -189,8 +189,8 @@ code {
   border-radius: var(--radius);
   padding: 1.05rem 1.15rem;
   box-shadow: var(--shadow-soft);
-  height: 100px;
-  width: 100px;
+  height: 150px;
+  width: 400px;
 }
 .card--surface {
   background: rgba(255,255,255,0.02);
