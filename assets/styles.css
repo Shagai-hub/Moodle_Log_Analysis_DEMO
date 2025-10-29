@@ -100,27 +100,30 @@ code {
 }
 .page-header__title {
   margin: 0;
-  font-size: 5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: clamp(3rem, 8vw, 6rem); /* Bigger range */
+  font-weight: 900;
+  letter-spacing: -0.04em;
   display: flex;
-  gap: .6rem;
+  gap: 1rem;
   align-items: center;
   justify-content: center;
-
 }
+
 .page-header--left .page-header__title {
   justify-content: flex-start;
 }
+
 .page-header__emoji {
-  font-size: clamp(2.1rem, 5vw, 3rem);
+  font-size: clamp(2.8rem, 7vw, 5rem); /* Larger emoji for balance */
   line-height: 1;
 }
+
 .page-header__subtitle {
-  margin-top: .45rem;
+  margin-top: 0.8rem;
   color: var(--text-dim);
-  font-size: clamp(1rem, 1.6vw, 1.1rem);
+  font-size: clamp(1.2rem, 2vw, 1.6rem); /* Noticeably bigger */
 }
+
 
 /* Section Title -------------------------------------------------- */
 .section-title {
