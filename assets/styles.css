@@ -363,11 +363,15 @@ div[data-testid="stMetricLabel"] > div {
 }
 
 .st-key-pulse button {
-  width: min(420px, 92%);
+  /* layout */
+  width: min(560px, 92%);
   margin: 0 auto;
   padding: 0.95rem 1.4rem;
-  font-size: 1.12rem !important;
-  animation: pulseRing 2.4s ease-in-out infinite;
+  margin-top: 100px;
+
+  /* visuals */
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+  color: #000000 !important;
 }
 .st-key-pulse button::after {
   content: "";
