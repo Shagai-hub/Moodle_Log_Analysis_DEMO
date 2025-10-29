@@ -1,153 +1,258 @@
 # pages/2_⚙️_Configuration.py
 import streamlit as st
+import pandas as pd
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
-import pandas as pd
 
-# Safe initialization
+# Optional: step bar if you use it elsewhere
+try:
+    from utils.ui_steps import render_steps
+    STEPS_AVAILABLE = True
+except Exception:
+    STEPS_AVAILABLE = False
+
+# ---------- Safe initialization ----------
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 if 'data_manager' not in st.session_state:
     st.session_state.data_manager = SessionDataManager()
 
+config: ConfigManager = st.session_state.config
+data_manager: SessionDataManager = st.session_state.data_manager
+
 def main():
-    config = st.session_state.config
-    data_manager = st.session_state.data_manager
-    
-    st.title("⚙️ Configuration Settings")
-    
-    # Configuration summary
-    
-    # Main configuration interface
-    st.subheader("Configure Analysis Parameters")
-    
-    tab1, tab2, tab3 = st.tabs(["👨‍🏫 Professors & Exams", "📊 Analysis Settings", "💾 Export/Import"])
-    
+    # Top header + optional steps
+    if STEPS_AVAILABLE:
+        render_steps(active="2 Visualize")  # or "2 Configure" if you prefer
+
+    st.title("⚙️ Configuration")
+    st.caption("Set professors, exam deadlines, and analysis parameters before computing attributes.")
+
+    # Pull raw data (if any) to power suggestions
+    raw_df = data_manager.get_raw_data()
+    has_data = raw_df is not None and not raw_df.empty
+
+    # ----------- QUICK SUMMARY -----------
+    with st.expander("🔍 Quick Summary (current settings)", expanded=False):
+        st.json(config.to_dict())
+
+    # ----------- TABS -----------
+    tab1, tab2, tab3 = st.tabs(["👨‍🏫 Professors & Exams", "📊 Analysis Settings", "💾 Export / Import"])
+
+    # ===================== TAB 1: Professors & Exams =====================
     with tab1:
-        # Professor configuration
-        st.markdown("### Professor Settings")
-        
-        prof_input = st.text_area(
-            "Professor names (one per line)", 
-            value="\n".join(config.professors),
-            height=150,
-            help="Enter one professor name per line. These names will be used to identify professor-related activities in the logs."
-        )
-        config.professors = [p.strip() for p in prof_input.split('\n') if p.strip()]
-        
-        # Deadline configuration
-        st.markdown("### Exam Deadline Settings")
-        st.markdown("Set deadlines for each exam (posts after these dates will be flagged)")
-        
-        # Add new exam
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            new_exam = st.text_input("Add new exam name", placeholder="e.g., Final Exam")
-        with col2:
-            if st.button("Add Exam", use_container_width=True) and new_exam:
-                if new_exam not in config.deadlines:
-                    config.deadlines[new_exam] = pd.Timestamp.now()
-                    st.success(f"Added {new_exam}")
-                    st.rerun()
-        
-        # Existing deadlines
-        for exam_name in list(config.deadlines.keys()):
-            col1, col2, col3 = st.columns([3, 2, 1])
-            with col1:
-                st.text_input("Exam name", value=exam_name, key=f"name_{exam_name}", disabled=True)
-            with col2:
-                new_date = st.date_input(
-                    "Deadline",
-                    value=config.deadlines[exam_name].date(),
-                    key=f"date_{exam_name}"
+        st.subheader("👨‍🏫 Professor Settings")
+
+        # Suggestions from data
+        candidate_names = []
+        if has_data and "userfullname" in raw_df.columns:
+            candidate_names = (
+                raw_df["userfullname"].dropna().astype(str).value_counts().head(30).index.tolist()
+            )
+
+        colp1, colp2 = st.columns([2, 1])
+
+        with colp1:
+            st.markdown("**Professor names (one per line)**")
+            prof_input = st.text_area(
+                label="",
+                value="\n".join(config.professors),
+                height=140,
+                placeholder="e.g.\nProf. László Pitlik\nProf. Example Name",
+                help="These names are used to identify professor-related activities in the logs."
+            )
+            # Normalize + deduplicate
+            profs = [p.strip() for p in prof_input.split("\n") if p.strip()]
+            config.professors = list(dict.fromkeys(profs))  # de-duplicate, keep order
+
+        with colp2:
+            if candidate_names:
+                st.markdown("**Quick insert from detected users**")
+                add_prof = st.selectbox(
+                    "Add from data",
+                    options=["— select —"] + candidate_names,
+                    index=0
                 )
-                config.deadlines[exam_name] = pd.to_datetime(new_date)
-            with col3:
-                if st.button("🗑️", key=f"delete_{exam_name}") and len(config.deadlines) > 1:
-                    del config.deadlines[exam_name]
+                if add_prof != "— select —":
+                    if add_prof not in config.professors:
+                        config.professors.append(add_prof)
+                        st.success(f"Added professor: {add_prof}")
+                        st.rerun()
+            else:
+                st.info("Load data to get suggested professor names.")
+
+        st.markdown("---")
+        st.subheader("🧪 Exam Deadline Settings")
+        st.caption("Set deadlines for each exam. Posts after these dates will be flagged.")
+
+        # Helper: detect exam-like subjects from data
+        detected_exams = []
+        if has_data and "subject" in raw_df.columns:
+            subj = raw_df["subject"].dropna().astype(str)
+            # A simple heuristic: take frequent subjects that contain "exam"
+            detected_exams = (
+                subj[subj.str.contains("exam", case=False, na=False)]
+                .value_counts()
+                .head(10)
+                .index.tolist()
+            )
+
+        # Add exam UI (manual or from detected)
+        cole1, cole2 = st.columns([2, 2])
+        with cole1:
+            new_exam = st.text_input("➕ Add exam (custom name)", placeholder="e.g., Quasi Exam IV")
+            if st.button("Add Exam", use_container_width=True, key="add_exam_btn") and new_exam:
+                if new_exam not in config.deadlines:
+                    # Default to today
+                    config.deadlines[new_exam] = pd.Timestamp.today().normalize()
+                    st.success(f"Added: {new_exam}")
                     st.rerun()
-    
+                else:
+                    st.warning(f"'{new_exam}' already exists.")
+
+        with cole2:
+            if detected_exams:
+                add_det = st.selectbox("➕ Add from detected subjects", ["— select —"] + detected_exams)
+                if add_det != "— select —":
+                    if add_det not in config.deadlines:
+                        config.deadlines[add_det] = pd.Timestamp.today().normalize()
+                        st.success(f"Added: {add_det}")
+                        st.rerun()
+                    else:
+                        st.warning(f"'{add_det}' already exists.")
+            else:
+                st.info("No exam-like subjects detected. Load data first to auto-suggest.")
+
+        # Editable deadline table
+        if config.deadlines:
+            st.markdown("#### 🗓️ Edit deadlines")
+            # Build an editable table
+            dl_df = pd.DataFrame([
+                {"Exam": name, "Deadline": pd.to_datetime(date).date()}
+                for name, date in config.deadlines.items()
+            ])
+
+            edited = st.data_editor(
+                dl_df,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Exam": st.column_config.TextColumn("Exam"),
+                    "Deadline": st.column_config.DateColumn("Deadline", format="YYYY-MM-DD")
+                },
+                hide_index=True,
+                key="deadlines_editor"
+            )
+
+            # Apply edits back into config
+            new_deadlines = {}
+            for _, row in edited.iterrows():
+                name = str(row["Exam"]).strip()
+                date = pd.to_datetime(row["Deadline"]) if pd.notna(row["Deadline"]) else pd.Timestamp.today()
+                if name:
+                    new_deadlines[name] = date
+            config.deadlines = new_deadlines
+
+            # Delete selected exam
+            if st.button("🗑️ Remove selected row(s) above by clearing the Exam name", use_container_width=True):
+                st.info("Rows with empty Exam names will be dropped at next rerun.")
+
+        else:
+            st.info("No exams yet. Add one above to get started.")
+
+    # ===================== TAB 2: Analysis Settings =====================
     with tab2:
-        st.markdown("### Advanced Analysis Settings")
-        
+        st.subheader("📊 Analysis Settings")
+
         col1, col2 = st.columns(2)
-        
         with col1:
             st.markdown("#### Pattern Matching")
+            pattern_str = ", ".join(map(str, config.parent_ids_pattern or []))
             pattern_input = st.text_input(
-                "Parent IDs for pattern analysis",
-                value=", ".join(map(str, config.parent_ids_pattern)),
-                help="Comma-separated list of parent IDs used for pattern_followed attribute"
+                "Parent IDs (comma-separated)",
+                value=pattern_str,
+                help="Used for the Pattern_followed attribute."
             )
             try:
-                config.parent_ids_pattern = [int(x.strip()) for x in pattern_input.split(",") if x.strip()]
+                parsed = [int(x.strip()) for x in pattern_input.split(",") if x.strip()]
+                config.parent_ids_pattern = parsed
             except ValueError:
-                st.error("Please enter valid integer IDs")
-        
+                st.error("Please enter only integers separated by commas, e.g., 163483, 163486")
+
         with col2:
-            st.markdown("#### COCO Analysis Settings")
+            st.markdown("#### COCO Analysis")
             config.analysis_settings['y_value'] = st.number_input(
-                "Y value for COCO analysis",
-                value=config.analysis_settings['y_value'],
+                "Y reference value",
+                value=config.analysis_settings.get('y_value', 0),
                 min_value=0,
                 max_value=100000,
-                help="Reference value used in ranking and COCO analysis"
+                help="Reference value used in ranking and COCO analysis."
             )
-            
+
+        st.divider()
+        st.markdown("#### Presets (optional)")
+        cpa, cpb, cpc = st.columns(3)
+        with cpa:
+            if st.button("Balanced preset", use_container_width=True):
+                # You can later set more fields if needed
+                st.success("Balanced preset applied.")
+        with cpb:
+            if st.button("Engagement-focused preset", use_container_width=True):
+                st.success("Engagement preset applied.")
+        with cpc:
+            if st.button("Exam-focused preset", use_container_width=True):
+                st.success("Exam preset applied.")
+
+    # ===================== TAB 3: Export / Import =====================
     with tab3:
-        st.markdown("### Configuration Management")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Save/Export")
-            
-            # Export configuration as JSON
+        st.subheader("💾 Configuration Management")
+        colx, coly = st.columns(2)
+
+        with colx:
+            st.markdown("#### Save / Export")
             import json
-            config_dict = config.to_dict()
-            config_json = json.dumps(config_dict, indent=2)
+            cfg_dict = config.to_dict()
+            cfg_json = json.dumps(cfg_dict, indent=2, default=str)
             st.download_button(
-                "📥 Export Configuration as JSON",
-                config_json,
-                "moodle_analyzer_config.json",
-                "application/json",
+                "📥 Export Configuration (JSON)",
+                data=cfg_json,
+                file_name="moodle_analyzer_config.json",
+                mime="application/json",
                 use_container_width=True
             )
-        
-        with col2:
-            st.markdown("#### Reset")
-            if st.button("🔄 Reset to Defaults", use_container_width=True):
-                config.load_defaults()
-                st.success("Configuration reset to defaults!")
-                st.rerun()
-            
-            # Import configuration
-            uploaded_config = st.file_uploader("Import configuration JSON", type=['json'])
-            if uploaded_config is not None:
+
+        with coly:
+            st.markdown("#### Import / Reset")
+            up = st.file_uploader("Import configuration JSON", type=['json'])
+            if up is not None:
                 try:
                     import json
-                    config_dict = json.load(uploaded_config)
-                    config.from_dict(config_dict)
-                    st.success("Configuration imported successfully!")
+                    imported = json.load(up)
+                    config.from_dict(imported)
+                    st.success("Configuration imported successfully.")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Error importing configuration: {e}")
-    
-    
-    # Configuration preview
-    with st.expander("🔍 Configuration Preview", expanded=False):
-        st.json(config.to_dict())
-        
-        st.subheader("📊 Current Configuration")
-        summary = config.get_config_summary()
-        
-        col1, col2 = st.columns([1, 1])
-        with col2:
-            if st.button("📈Go to Analisys", use_container_width=True, key="go_to_analysis"):
-                try:
-                    st.switch_page("pages/3_📈_Attribute_Analysis.py")
-                except Exception:
-                    st.warning("Unable to auto-navigate. Please open '📈Attribute_Analysis' from the sidebar.")
+                    st.error(f"Error importing: {e}")
+
+            if st.button("🔄 Reset to Defaults", use_container_width=True):
+                config.load_defaults()
+                st.success("Reset to defaults.")
+                st.rerun()
+
+    # ----------- NAVIGATION CTAs -----------
+    st.divider()
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c1:
+        if st.button("⬅️ Back to Upload", use_container_width=True, key="back_to_upload_btn"):
+            st.switch_page("pages/1_📊_Data_Upload.py")
+    with c2:
+        st.caption("Your settings are applied immediately. You can revisit this page anytime.")
+    with c3:
+        if st.button("➡️ Go to Attribute Analysis", use_container_width=True, key="go_to_analysis_btn"):
+            try:
+                st.switch_page("pages/3_📈_Attribute_Analysis.py")
+            except Exception:
+                st.warning("Unable to auto-navigate. Please open ‘📈 Attribute Analysis’ from the sidebar.")
 
 if __name__ == "__main__":
     main()
