@@ -141,6 +141,7 @@ def render_attribute_selection_ui():
         **Content Analysis:** Content quality, length, and relevance  
         **Exam Performance:** Exam-related posting behavior and deadline compliance  
         """)
+        
     count = len(st.session_state.selected_attributes)
     # Selected count card
     st.markdown(
@@ -151,6 +152,7 @@ def render_attribute_selection_ui():
     """,
     unsafe_allow_html=True
 )
+    st.markdown("")
 
     # Category expanders for attribute selection
     col1, col2 = st.columns(2)
