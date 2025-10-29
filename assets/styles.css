@@ -195,6 +195,7 @@ code {
   box-shadow: var(--shadow-soft);
   height: 150px;
   width: 400px;
+  justify-content: center;
 }
 .card--surface {
   background: rgba(255,255,255,0.02);
