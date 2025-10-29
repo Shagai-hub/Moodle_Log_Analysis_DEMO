@@ -141,7 +141,7 @@ def render_attribute_selection_ui():
         **Content Analysis:** Content quality, length, and relevance  
         **Exam Performance:** Exam-related posting behavior and deadline compliance  
         """)
-
+    count = len(st.session_state.selected_attributes)
     # Selected count card
     st.markdown(
     f"""
