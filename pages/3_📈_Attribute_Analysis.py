@@ -75,7 +75,7 @@ def main():
 
     # Compute attributes CTA (bright)
     # Update the compute attributes button
-    if st.button("🚀 Compute Attributes", type="primary", use_container_width=True, key="pulse"):
+    if st.button("🚀 Compute Attributes", type="primary", use_container_width=True, key="compute_attributes_btn"):
         compute_and_display_attributes(df, df_all, data_manager, config)
 
     # After compute
