@@ -121,7 +121,7 @@ def main():
                 if st.button(
                     "⚙️ Go to Configuration",
                     use_container_width=True,
-                    key="go_to_config",
+                    key="pulse",
                     type="primary",
                 ):
                     try:
