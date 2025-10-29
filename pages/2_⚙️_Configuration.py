@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
-
+import pathlib
 # Optional: step bar if you use it elsewhere
 try:
     from utils.ui_steps import render_steps
@@ -19,6 +19,16 @@ if 'data_manager' not in st.session_state:
 
 config: ConfigManager = st.session_state.config
 data_manager: SessionDataManager = st.session_state.data_manager
+
+def load_css(file_path: pathlib.Path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+# External CSS first (lets users override defaults if they want)
+load_css(pathlib.Path("assets/styles.css"))
 
 def main():
     # Top header + optional steps
