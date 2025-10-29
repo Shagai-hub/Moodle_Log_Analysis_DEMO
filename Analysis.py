@@ -46,17 +46,14 @@ st.markdown(
       <div class="card span-4">
         <div class="panel__icon">📈</div>
         <h3>Analyze Student Activity</h3>
-        <p>Understand posting rhythm, streaks, and participation trends without wading through raw tables.</p>
       </div>
       <div class="card span-4">
         <div class="panel__icon">📊</div>
         <h3>Visual Reports</h3>
-        <p>Interactive plots and compact summaries made for review meetings and quick exports.</p>
       </div>
       <div class="card span-4">
         <div class="panel__icon">🎯</div>
         <h3>Insights</h3>
-        <p>Surface risk, diligence, and understanding signals early enough for real interventions.</p>
       </div>
     </div>
     """,
