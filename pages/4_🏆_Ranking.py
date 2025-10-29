@@ -123,6 +123,7 @@ def main():
                 use_container_width=True,
                 help="Navigate to COCO Analysis page with ranked data",
                 type="primary",
+                key="pulse"
             ):
                 st.switch_page("pages/5_🔍_COCO_Analysis.py")
 
