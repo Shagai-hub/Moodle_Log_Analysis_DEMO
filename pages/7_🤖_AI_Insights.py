@@ -1,5 +1,20 @@
 import streamlit as st
+from assets.ui_components import apply_theme, divider, info_panel, page_header
 
-st.title("🤖 AI Insights")
-st.write("Leverage AI to gain deeper insights into your Moodle log data. This feature uses advanced language models to analyze patterns, trends, and anomalies in your data, providing you with actionable insights and recommendations.")  
-st.markdown("coming soon...")
+apply_theme()
+
+page_header(
+    "AI Insights",
+    "Leverage language models to surface patterns, trends, and anomalies in your Moodle data.",
+    icon="🤖",
+    align="left",
+    compact=True,
+)
+
+info_panel(
+    "This workspace will host conversational AI helpers, automated summaries, and predictive flags.",
+    icon="💡",
+)
+
+divider()
+st.info("🚧 We're preparing this experience. Check back soon for AI-powered insights!")

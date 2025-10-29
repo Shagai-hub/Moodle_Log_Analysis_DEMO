@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, invert_ranking, prepare_coco_matrix
+from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -14,13 +15,19 @@ if 'data_manager' not in st.session_state:
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 
+apply_theme()
+
 def main():
     data_manager = st.session_state.data_manager
     config = st.session_state.config
     
-    # Modern header with icon and description
-    st.header("🎯 Validation Dashboard", divider="rainbow")
-    st.markdown("Validate COCO analysis results by comparing original and inverted rankings for accuracy assessment.")
+    page_header(
+        "Validation Dashboard",
+        "Validate COCO results by comparing original and inverted rankings.",
+        icon="🎯",
+        align="left",
+        compact=True,
+    )
     
     # Check if required data is available
     ranked_data = data_manager.get_ranked_results()
@@ -28,18 +35,24 @@ def main():
     
     if ranked_data is None or coco_results is None:
         st.error("📊 **Data Required**", icon="🚨")
-        with st.container(border=True):
-            st.markdown("Please complete the COCO analysis first to enable validation.")
-            col1, col2 = st.columns([3, 1])
-            with col2:
-                if st.button("🏃 Go to COCO Analysis", use_container_width=True):
-                    st.switch_page("pages/4_📊_COCO_Analysis.py")
+        info_panel("Please complete the COCO analysis first to enable validation.", icon="ℹ️")
+        _, col_btn = st.columns([3, 1])
+        with col_btn:
+            if st.button(
+                "🏃 Go to COCO Analysis",
+                use_container_width=True,
+                type="primary",
+            ):
+                st.switch_page("pages/4_📊_COCO_Analysis.py")
         return
-    
+   
     # Success banner with simplified stats
-    with st.container(border=True):
-        st.metric("📈 Students Ready for Validation", len(ranked_data), border=True)
+    info_panel(
+        f"<strong>Students ready for validation:</strong> {len(ranked_data)}",
+        icon="📈",
+    )
     
+    st.write("")
     # Configuration and preview section
     with st.expander("🔧 **Data Preview**", expanded=False):
         if 'table_4' in coco_results:
@@ -69,7 +82,7 @@ def main():
             st.error("📋 **Table Missing** - 'table_4' not found in COCO results", icon="❌")
     
     # Run Validation Button - OUTSIDE expander and prominent
-    st.markdown("---")
+    divider()
     
     # Check if we can run validation
     can_run_validation = ('table_4' in coco_results and 
@@ -102,12 +115,12 @@ def main():
         display_validation_results(validation_results, data_manager)
     
     # Navigation footer
-    st.markdown("---")
+    divider()
     col1, col2 = st.columns([1, 1])
     with col1:
        st.write("")
     with col2:
-        if st.button("🤖 Get AI Insights ➡️", use_container_width=True):
+        if st.button("🤖 Get AI Insights ➡️", use_container_width=True, type="primary"):
             st.switch_page("pages/7_🤖_AI_Insights.py")
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
@@ -223,7 +236,7 @@ def perform_validation(original_table, inverted_table, ranked_data):
 def display_validation_results(validation_results, data_manager):
     """Display modern validation results with enhanced visuals - FULL SCREEN WIDTH"""
     
-    st.header("📊 Validation Results Dashboard", divider="rainbow")
+    section_header("Validation Results Dashboard", icon="📊")
     
     # Enhanced metrics with visual appeal
     valid_count = validation_results['Is_Valid'].sum()
@@ -277,7 +290,7 @@ def display_validation_results(validation_results, data_manager):
     
     with tab1:
         # Enhanced score distribution visualization
-        st.subheader("Final Score Distribution by Validation Status")
+        section_header("Final Score Distribution by Validation Status", tight=True)
         
         # Create interactive Plotly histogram
         fig = px.histogram(
@@ -304,7 +317,7 @@ def display_validation_results(validation_results, data_manager):
     
     with tab2:
         # Scatter plot for delta comparison
-        st.subheader("Delta Comparison: Original vs Inverted")
+        section_header("Delta Comparison: Original vs Inverted", tight=True)
         
         scatter_fig = px.scatter(
             validation_results,
@@ -332,37 +345,47 @@ def display_validation_results(validation_results, data_manager):
         st.plotly_chart(scatter_fig, use_container_width=True)
         
         # Validation insights
-        st.subheader("📊 Validation Insights")
+        section_header("Validation Insights", icon="📊", tight=True)
         
         insights_col1, insights_col2 = st.columns(2)
-        
+
+        if validity_percentage >= 80:
+            status_icon = "✅"
+            status_message = "**Strong Consistency** — results show high reliability"
+        elif validity_percentage >= 50:
+            status_icon = "⚠️"
+            status_message = "**Moderate Consistency** — some results need review"
+        else:
+            status_icon = "❌"
+            status_message = "**Low Consistency** — significant review required"
+
         with insights_col1:
-            with st.container(border=True):
-                st.write("**Validation Pattern**")
-                if validity_percentage >= 80:
-                    st.success("**Strong Consistency** - Results show high reliability")
-                elif validity_percentage >= 50:
-                    st.warning("**Moderate Consistency** - Some results need review")
-                else:
-                    st.error("**Low Consistency** - Significant review required")
-                
-                st.write(f"**Success Rate**: {validity_percentage:.1f}%")
-                st.write(f"**Valid Cases**: {valid_count}/{total_count}")
-        
+            info_panel(
+                f"{status_message}<br><br>"
+                f"<strong>Success Rate</strong>: {validity_percentage:.1f}%<br>"
+                f"<strong>Valid Cases</strong>: {valid_count}/{total_count}",
+                icon=status_icon,
+            )
+
+        delta_correlation = validation_results['Original_Delta'].corr(validation_results['Inverted_Delta'])
+        correlation_hint = (
+            "Low correlation expected for valid inversion"
+            if abs(delta_correlation) < 0.3
+            else "Unexpected correlation pattern detected"
+        )
+
         with insights_col2:
-            with st.container(border=True):
-                st.write("**Data Quality**")
-                delta_correlation = validation_results['Original_Delta'].corr(validation_results['Inverted_Delta'])
-                st.write(f"**Delta Correlation**: {delta_correlation:.3f}")
-                
-                if abs(delta_correlation) < 0.3:
-                    st.info("Low correlation expected for valid inversion")
-                else:
-                    st.warning("Unexpected correlation pattern detected")
-    
+            info_panel(
+                f"<strong>Delta Correlation</strong>: {delta_correlation:.3f}<br>"
+                f"{correlation_hint}<br><br>"
+                f"<strong>Mean Delta (Original)</strong>: {validation_results['Original_Delta'].mean():.3f}<br>"
+                f"<strong>Mean Delta (Inverted)</strong>: {validation_results['Inverted_Delta'].mean():.3f}",
+                icon="📐",
+            )
+
     with tab3:
         # Enhanced results table - FULL WIDTH
-        st.subheader("📋 Detailed Validation Results")
+        section_header("Detailed Validation Results", icon="📋", tight=True)
         
         display_columns = ["userfullname", "Final_Rank", "Becslés", "Validation_Result", "Original_Delta", "Inverted_Delta"]
         display_df = validation_results[display_columns].copy()
@@ -409,7 +432,7 @@ def display_validation_results(validation_results, data_manager):
         invalid_cases = validation_results[~validation_results['Is_Valid']]
         
         if not invalid_cases.empty:
-            st.subheader("⚠️ Cases Requiring Review")
+            section_header("Cases Requiring Review", icon="⚠️", tight=True)
             
             # Invalid cases metrics
             col1, col2, col3 = st.columns(3)
@@ -470,7 +493,7 @@ def display_validation_results(validation_results, data_manager):
             st.success("🎉 **Excellent!** No invalid cases found requiring review.")
     
     # Final export section
-    st.markdown("---")
+    divider()
     
     chart_df = validation_results[["userfullname", "Becslés", "Validation_Result", "Final_Rank"]].copy()
     chart_df = chart_df.rename(columns={
@@ -501,7 +524,7 @@ def display_validation_results(validation_results, data_manager):
     )
     
     st.altair_chart(bar_chart, use_container_width=True)
-    st.subheader("💾 Export Options")
+    section_header("Export Options", icon="💾", tight=True)
     
     
     summary_data = {

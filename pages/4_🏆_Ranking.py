@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
+from assets.ui_components import apply_theme, divider, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -11,12 +12,19 @@ if 'data_manager' not in st.session_state:
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 
+apply_theme()
+
 def main():
     data_manager = st.session_state.data_manager
     config = st.session_state.config
     
-    st.title("🏆 Student Ranking")
-    st.markdown("Rank students attributes for COCO analysis.")
+    page_header(
+        "Student Ranking",
+        "Rank computed attributes before moving into the COCO analysis.",
+        icon="🏆",
+        align="left",
+        compact=True,
+    )
     
     # Check if attributes are computed
     student_attributes = data_manager.get_student_attributes()
@@ -44,7 +52,7 @@ def main():
     
     with col1:
         # Y-value display (read-only from configuration)
-        st.subheader("🎯 Reference Value (Y)")
+        section_header("Reference Value (Y)", icon="🎯", tight=True)
         st.info(f"**Y Value:** {y_value}")
         st.caption("💡 Configure Y value in the Configuration page")
         
@@ -61,13 +69,13 @@ def main():
             )
     
     with col2:
-        st.subheader("📊 Summary")
+        section_header("Summary", icon="📊", tight=True)
         st.metric("Students", len(student_attributes))
         st.metric("Attributes", len(selected_attributes))
         st.metric("Y Value", y_value)
     
     # Simple ranking directions
-    st.subheader("📈 Ranking Directions")
+    section_header("Ranking Directions", icon="📈", tight=True)
     
     # Create attribute directions
     attr_directions = {}
@@ -94,7 +102,7 @@ def main():
             st.write(info)
     
     # Run ranking
-    st.markdown("---")
+    divider()
     if st.button("🚀 Run Student Ranking", use_container_width=True, type="primary"):
         ranked_df = rank_students(student_attributes, selected_attributes, attr_directions, y_value)
         
@@ -107,11 +115,15 @@ def main():
     
     # Show navigation button if ranking has been computed
     if data_manager.get_ranked_results() is not None:
-        st.markdown("---")
+        divider()
         col1, col2 = st.columns([1, 1])
         with col2:
-            if st.button("🔍 Proceed to COCO Analysis", use_container_width=True, 
-                        help="Navigate to COCO Analysis page with ranked data"):
+            if st.button(
+                "🔍 Proceed to COCO Analysis",
+                use_container_width=True,
+                help="Navigate to COCO Analysis page with ranked data",
+                type="primary",
+            ):
                 st.switch_page("pages/5_🔍_COCO_Analysis.py")
 
 def rank_students(df_oam, selected_attrs, attr_directions, y_value):
@@ -170,7 +182,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         st.error("No ranking columns found.")
         return
     
-    st.header("📊 Ranking Results")
+    section_header("Ranking Results", icon="📊")
     
     # Summary statistics
     col1, col2, col3 = st.columns(3)
@@ -217,7 +229,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         st.write(f"{rank_icon} **{row['Overall Rank']}.** {row['Student Name']} (Avg Rank: {row['Average Rank']:.1f})")
     
     # Export options
-    st.markdown("---")
+    divider()
     st.subheader("💾 Export")
     
         # Download ranked data

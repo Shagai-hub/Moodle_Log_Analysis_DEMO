@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
-import pathlib
+from assets.ui_components import apply_theme, divider, page_header, section_header, subtle_text
 
 # Optional: step bar if you use it elsewhere
 try:
@@ -21,80 +21,7 @@ if 'data_manager' not in st.session_state:
 config: ConfigManager = st.session_state.config
 data_manager: SessionDataManager = st.session_state.data_manager
 
-def load_css(file_path: pathlib.Path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
-
-# External CSS first (if present)
-load_css(pathlib.Path("assets/styles.css"))
-
-# ---------- Local page-scoped UI polish ----------
-st.markdown("""
-<style>
-/* Secondary buttons (default for this page): darker, neutral, compact) */
-.stButton > button {
-  background: linear-gradient(135deg, var(--panel, #0f172a), var(--card, #121a2c)) !important;
-  color: var(--text, #e6e9ef) !important;
-  border: 1px solid rgba(148,163,184,0.18) !important;
-  padding: .85rem 1.05rem !important;
-  font-weight: 800 !important;
-  letter-spacing: .2px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35) !important;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease !important;
-}
-.stButton > button:hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
-  border-color: rgba(124,58,237,0.35) !important;
-  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
-}
-
-/* Download buttons: keep them neutral/secondary as well */
-.stDownloadButton > button {
-  background: linear-gradient(135deg, var(--panel, #0f172a), var(--card, #121a2c)) !important;
-  color: var(--text, #e6e9ef) !important;
-  border: 1px solid rgba(148,163,184,0.18) !important;
-  padding: .85rem 1.05rem !important;
-  font-weight: 800 !important;
-  letter-spacing: .2px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35) !important;
-}
-.stDownloadButton > button:hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
-  border-color: rgba(124,58,237,0.35) !important;
-  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
-}
-
-/* Primary navigation CTA: ONLY the “Go to Attribute Analysis” button should be bright */
-.stButton.st-key-go_to_analysis_btn > button {
-  background: linear-gradient(135deg, var(--accent, #7c3aed), var(--accent-2, #06b6d4)) !important;
-  color: #ffffff !important;
-  border: none !important;
-  padding: 1rem 1.25rem !important;
-  font-weight: 900 !important;
-  letter-spacing: .3px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 14px 35px rgba(124,58,237,0.35), 0 6px 16px rgba(6,182,212,0.25) !important;
-}
-.stButton.st-key-go_to_analysis_btn > button:hover {
-  transform: translateY(-1px) scale(1.02);
-  filter: brightness(1.08);
-  box-shadow: 0 18px 40px rgba(124,58,237,0.45), 0 10px 26px rgba(6,182,212,0.32) !important;
-}
-.stButton.st-key-go_to_analysis_btn > button:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 3px var(--panel, #0f172a),
-              0 0 0 6px var(--ring, rgba(124,58,237,0.4)),
-              0 18px 44px rgba(124,58,237,.42) !important;
-}
-</style>
-""", unsafe_allow_html=True)
+apply_theme()
 
 
 def main():
@@ -102,23 +29,31 @@ def main():
     if STEPS_AVAILABLE:
         render_steps(active="1 Analyze")  # or "2 Configure"
 
-    st.title("⚙️ Configuration")
-    st.caption("Set professors, exam deadlines, and analysis parameters before computing attributes.")
+    page_header(
+        "Configuration",
+        "Set professors, exam deadlines, and analysis parameters before computing attributes.",
+        icon="⚙️",
+        align="left",
+        compact=True,
+    )
 
     # Pull raw data (if any) to power suggestions
     raw_df = data_manager.get_raw_data()
     has_data = raw_df is not None and not raw_df.empty
 
     # ----------- QUICK SUMMARY -----------
+    section_header("Quick summary", tight=True, icon="🔎")
     with st.expander("🔍 Quick Summary (current settings)", expanded=False):
         st.json(config.to_dict())
+
+    divider()
 
     # ----------- TABS -----------
     tab1, tab2, tab3 = st.tabs(["👨‍🏫 Professors & Exams", "📊 Analysis Settings", "💾 Export / Import"])
 
     # ===================== TAB 1: Professors & Exams =====================
     with tab1:
-        st.subheader("👨‍🏫 Professor Settings")
+        section_header("Professor Settings", tight=True, icon="👨‍🏫")
 
         # Suggestions from data
         candidate_names = []
@@ -159,8 +94,8 @@ def main():
                 st.info("Load data to get suggested professor names.")
 
         st.markdown("---")
-        st.subheader("🧪 Exam Deadline Settings")
-        st.caption("Set deadlines for each exam. Posts after these dates will be flagged.")
+        section_header("Exam Deadline Settings", icon="🧪", tight=True)
+        subtle_text("Set deadlines for each exam. Posts after these dates will be flagged.")
 
         # Helper: detect exam-like subjects from data
         detected_exams = []
@@ -231,7 +166,7 @@ def main():
 
     # ===================== TAB 2: Analysis Settings =====================
     with tab2:
-        st.subheader("📊 Analysis Settings")
+        section_header("Analysis Settings", icon="📊", tight=True)
 
         col1, col2 = st.columns(2)
         with col1:
@@ -258,7 +193,7 @@ def main():
                 help="Reference value used in ranking and COCO analysis."
             )
 
-        st.divider()
+        divider()
         st.markdown("#### Presets (optional)")
         cpa, cpb, cpc = st.columns(3)
         with cpa:
@@ -273,7 +208,7 @@ def main():
 
     # ===================== TAB 3: Export / Import =====================
     with tab3:
-        st.subheader("💾 Configuration Management")
+        section_header("Configuration Management", icon="💾", tight=True)
         colx, coly = st.columns(2)
 
         with colx:
@@ -308,15 +243,25 @@ def main():
                 st.rerun()
 
     # ----------- NAVIGATION CTAs -----------
-    st.divider()
+    divider()
     c1, c2, c3 = st.columns([1, 2, 1])
     with c1:
-        if st.button("⬅️ Back to Upload", use_container_width=True, key="back_to_upload_btn"):
+        if st.button(
+            "⬅️ Back to Upload",
+            use_container_width=True,
+            key="back_to_upload_btn",
+            type="secondary",
+        ):
             st.switch_page("pages/1_📊_Data_Upload.py")
     with c2:
         st.caption("Your settings are applied immediately. You can revisit this page anytime.")
     with c3:
-        if st.button("➡️ Go to Attribute Analysis", use_container_width=True, key="go_to_analysis_btn"):
+        if st.button(
+            "➡️ Go to Attribute Analysis",
+            use_container_width=True,
+            key="go_to_analysis_btn",
+            type="primary",
+        ):
             try:
                 st.switch_page("pages/3_📈_Attribute_Analysis.py")
             except Exception:

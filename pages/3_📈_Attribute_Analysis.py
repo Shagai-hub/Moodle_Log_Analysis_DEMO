@@ -5,7 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-import pathlib
 
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
@@ -14,6 +13,7 @@ from utils.attribute_calculations import (
     content_attrs, exam_attrs, available_attributes,
     to_dt
 )
+from assets.ui_components import apply_theme, divider, page_header, section_header
 
 # ---------- Safe initialization ----------
 if 'data_manager' not in st.session_state:
@@ -21,165 +21,20 @@ if 'data_manager' not in st.session_state:
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 
-def load_css(file_path: pathlib.Path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
-
-# External CSS first (lets users override defaults if they want)
-load_css(pathlib.Path("assets/styles.css"))
-
-# ---------- Baseline design system (same as Home / Upload) ----------
-st.markdown("""
-<style>
-:root{
-  --bg: #000B18;
-  --panel: #0f172a;
-  --card: #121a2c;
-  --muted: #9aa3b2;
-  --text: #e6e9ef;
-  --text-dim: #cdd3dd;
-  --accent: #7c3aed;    /* primary */
-  --accent-2: #06b6d4;  /* secondary */
-  --ring: rgba(124,58,237,0.4);
-  --shadow: 0 10px 30px rgba(0,0,0,0.35);
-  --radius: 14px;
-  --radius-sm: 10px;
-  --gap: 16px;
-}
-
-@media (prefers-color-scheme: light) {
-  :root{
-    --bg:#f7f9fc; --panel:#ffffff; --card:#ffffff;
-    --text:#0b1220; --text-dim:#324055; --muted:#6b7280;
-    --shadow: 0 8px 20px rgba(18,27,40,0.08);
-    --ring: rgba(124,58,237,0.25);
-  }
-}
-
-html, body, [class*="stApp"] {
-  background:
-    radial-gradient(900px 600px at 10% 10%, rgba(124,58,237,0.10), transparent 60%),
-    radial-gradient(800px 500px at 90% 90%, rgba(6,182,212,0.08), transparent 60%),
-    var(--bg) !important;
-  color: var(--text);
-}
-.block-container { padding-top: 1.2rem; padding-bottom: 2.2rem; }
-
-/* Section heading */
-.section-title{
-  font-size:2   rem;
-  display:flex; align-items:center; gap:.6rem;
-  font-weight: 800; letter-spacing:-0.02em;
-  margin: 1.2rem 0 .8rem 0; color: var(--text);
-}
-.section-title .dot{
-  width:10px; height:10px; border-radius:50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
-}
-
-/* Panels and cards */
-.panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
-  border: 1px solid rgba(148,163,184,0.12);
-  border-radius: var(--radius);
-  padding: 1.2rem;
-  box-shadow: var(--shadow);
-}
-.card {
-  background: var(--card);
-  border: 1px solid rgba(148,163,184,0.12);
-  border-radius: var(--radius);
-  padding: 1rem 1.1rem;
-  box-shadow: var(--shadow);
-}
-
-/* Default buttons on this page = secondary/dark */
-.stButton > button:not([data-testid="baseButton-primary"]) {
-  background: linear-gradient(135deg, var(--panel), var(--card)) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(148,163,184,0.18) !important;
-  padding: .9rem 1.1rem !important;
-  font-weight: 800 !important;
-  letter-spacing: .2px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(2,6,23,0.35) !important;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease !important;
-}
-.stButton > button:not([data-testid="baseButton-primary"]):hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
-  border-color: rgba(124,58,237,0.35) !important;
-  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
-}
-
-/* Download buttons secondary too */
-.stDownloadButton > button {
-  background: linear-gradient(135deg, var(--panel), var(--card)) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(148,163,184,0.18) !important;
-  padding: .9rem 1.1rem !important;
-  font-weight: 800 !important;
-  letter-spacing: .2px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 8px 22px rgba(2,6,23,0.35) !important;
-}
-.stDownloadButton > button:hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
-  border-color: rgba(124,58,237,0.35) !important;
-  box-shadow: 0 12px 32px rgba(124,58,237,0.20) !important;
-}
-
-/* Primary CTAs: ONLY specific primary buttons */
-.stButton > button[data-testid="baseButton-primary"] {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
-  color: #fff !important;
-  border: none !important;
-  padding: .9rem 1.1rem !important;
-  font-weight: 800 !important;
-  letter-spacing: .2px !important;
-  border-radius: 999px !important;
-  box-shadow: 0 10px 28px rgba(124,58,237,0.35) !important;
-  transition: transform .15s ease, filter .15s ease, box-shadow .15s ease !important;
-}
-
-.stButton > button[data-testid="baseButton-primary"]:hover {
-  transform: translateY(-1px) scale(1.01);
-  filter: brightness(1.05);
-  box-shadow: 0 16px 42px rgba(124,58,237,0.42) !important;
-}
-
-.stButton > button[data-testid="baseButton-primary"]:focus-visible {
-  outline: none !important;
-  box-shadow: 
-    0 0 0 3px var(--panel),
-    0 0 0 6px var(--ring),
-    0 16px 42px rgba(124,58,237,0.42) !important;
-}
-/* Expander polish */
-.streamlit-expanderHeader { font-weight: 700; color: var(--text); }
-.stExpander { border: 1px solid rgba(148,163,184,0.12); border-radius: var(--radius); }
-
-/* Divider */
-hr{ border: none; border-top:1px solid rgba(148,163,184,0.15); margin: 1.2rem 0; }
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
-</style>
-""", unsafe_allow_html=True)
+apply_theme()
 
 
 def main():
     data_manager = st.session_state.data_manager
     config = st.session_state.config
 
-    # ---------- HEADER ----------
-    st.markdown('<div class="section-title"></span><span>Attribute Analysis</span></div>', unsafe_allow_html=True)
-    st.caption("Compute and analyze student attributes. Select attributes and generate the OAM.")
+    page_header(
+        "Attribute Analysis",
+        "Compute and analyse student attributes. Select metrics and generate the OAM.",
+        icon="📈",
+        align="left",
+        compact=True,
+    )
 
     # Check if data is available
     raw_data = data_manager.get_raw_data()
@@ -197,29 +52,8 @@ def main():
     df_all["userfullname"] = df_all["userfullname"].astype(str)
     df = df_all[~df_all["userfullname"].isin(PROFESSORS)].copy()
 
-    
+    section_header("Dataset snapshot", icon="🗂️", tight=True)
     col_meta1, col_meta2 = st.columns(2)
-    
-    st.markdown("""
-    <style>
-    .metric-box {
-        background: rgba(124, 58, 237, 0.15); /* soft purple highlight */
-        border: 1px solid rgba(124, 58, 237, 0.4);
-        border-radius: 12px;
-        padding: 18px;
-        text-align: center;
-        font-size: 22px;
-        font-weight: 700;
-        color: #e6e9ef;
-        box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
-    }
-    .metric-box span {
-        font-size: 28px;
-        color: #a78bfa; /* lighter purple for emphasis */
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     with col_meta1:
         st.markdown(f"""
         <div class="metric-box">
@@ -233,9 +67,10 @@ def main():
             👨‍🏫 Professors<br><span>{', '.join(PROFESSORS) if PROFESSORS else '—'}</span>
         </div>
         """, unsafe_allow_html=True)
-    
-    
-        # Attribute selection UI
+
+    section_header("Select attributes", icon="🎛️")
+
+    # Attribute selection UI
     render_attribute_selection_ui()
 
     # Compute attributes CTA (bright)
@@ -250,13 +85,13 @@ def main():
 
     # Visualization section
     if data_manager.get_student_attributes() is not None:
-        st.markdown("<hr>", unsafe_allow_html=True)
+        divider()
         display_graph_section(data_manager.get_student_attributes())
 
     # Navigation CTA (bright)
     # In the navigation section of your code, update the button to:
     if data_manager.get_student_attributes() is not None:
-        st.markdown("<hr>", unsafe_allow_html=True)
+        divider()
         col1, col2 = st.columns([1, 1])
         with col2:
             if st.button(
@@ -357,7 +192,7 @@ def render_attribute_selection_ui():
                     update_selected_attributes(attr, checked)
 
     # Selection controls
-    st.markdown("<hr>", unsafe_allow_html=True)
+    divider()
     colsa, colsb = st.columns([1, 1])
     with colsa:
         st.button("✅ Select All", on_click=select_all, use_container_width=True, key="select_all_btn")

@@ -4,6 +4,7 @@ import time
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix
+from assets.ui_components import apply_theme, divider, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -11,12 +12,19 @@ if 'data_manager' not in st.session_state:
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
 
+apply_theme()
+
 def main():
     data_manager = st.session_state.data_manager
     config = st.session_state.config
     
-    st.title("🔍 COCO Analysis")
-    st.markdown("Run COCO multi-criteria analysis on ranked student data.")
+    page_header(
+        "COCO Analysis",
+        "Run multi-criteria evaluation on the ranked student results.",
+        icon="🔍",
+        align="left",
+        compact=True,
+    )
     
     # Check if ranking is available
     ranked_data = data_manager.get_ranked_results()
@@ -30,7 +38,7 @@ def main():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📐 Analysis Parameters")
+        section_header("Analysis Parameters", icon="📐", tight=True)
         job_name = st.text_input(
             "Analysis Name:",
             value="StudentRanking",
@@ -42,7 +50,7 @@ def main():
         st.info(f"**Stair Value (Objects):** {stair_value}")
     
     with col2:
-        st.subheader("📊 Data Summary")
+        section_header("Data Summary", icon="📊", tight=True)
         st.metric("Students", len(ranked_data))
         st.metric("Y Value", ranked_data["Y_value"].iloc[0] if "Y_value" in ranked_data.columns else "N/A")
     
@@ -52,18 +60,23 @@ def main():
         st.caption(f"Full dataset: {ranked_data.shape[0]} rows × {ranked_data.shape[1]} columns")
     
     # Run COCO analysis
-    st.markdown("---")
+    divider()
 
     
     if st.button("🚀 Run COCO Analysis", type="primary", use_container_width=True):
         run_coco_analysis(ranked_data, job_name, stair_value, data_manager)
 
     if data_manager.get_coco_results() is not None:
-        st.markdown("---")
+        divider()
         col1, col2 = st.columns([1, 1])
         with col2:
-            if st.button("🏆 Result Validation", use_container_width=True, 
-                        help="Navigate to the validation page", key="proceed_to_validation_btn"):
+            if st.button(
+                "🏆 Result Validation",
+                use_container_width=True,
+                help="Navigate to the validation page",
+                key="proceed_to_validation_btn",
+                type="primary",
+            ):
                 st.switch_page("pages/6_✅_Validation.py")
 
 def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
@@ -154,7 +167,7 @@ def handle_coco_error(resp):
 
 def display_coco_results(tables, data_manager, job_name, stair_value):
     
-    st.header("📊 COCO Analysis Result")
+    section_header("COCO Analysis Result", icon="📊")
     
     # Store results in session
     data_manager.store_coco_results(tables)
@@ -234,7 +247,7 @@ def display_key_tables(tables):
 def display_export_options(tables, data_manager):
     """Display options to export COCO results"""
     
-    st.markdown("---")
+    divider()
     st.header("💾 Export Results & Result Validation")
     
     # Export all tables as CSV - directly use download_button
