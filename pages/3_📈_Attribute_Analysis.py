@@ -144,13 +144,7 @@ def render_attribute_selection_ui():
 
     # Selected count card
     st.markdown(
-        f"""
-        <div class="card" style="text-align:center; padding:.7rem; margin:.3rem 0 1rem 0;">
-          <div style="color:var(--muted); font-weight:700;">Selected attributes</div>
-          <div style="font-size:1.35rem; font-weight:900;">{len(st.session_state.selected_attributes)}</div>
-        </div>
-        """,
-        unsafe_allow_html=True , width="stretch"
+       len(st.session_state.selected_attributes), width="stretch"
     )
 
     # Category expanders for attribute selection
