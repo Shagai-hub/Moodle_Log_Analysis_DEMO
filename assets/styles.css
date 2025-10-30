@@ -377,7 +377,7 @@ div[data-testid="stMetricLabel"] > div {
   color: #fff !important;
   border: none !important;
   border-radius: 999px !important;
-  font-size: 1.05rem !important;
+  font-size: 2rem !important;
   font-weight: 800 !important;
   letter-spacing: .3px !important;
   box-shadow: 0 12px 32px rgba(124, 58, 237, 0.35);
