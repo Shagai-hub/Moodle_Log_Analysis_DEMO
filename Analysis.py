@@ -4,11 +4,14 @@ from utils.config_manager import ConfigManager
 from utils.ui_steps import render_steps  # keep imported; optional
 from assets.ui_components import apply_theme, divider, page_header, section_header
 
+if "sidebar_state" not in st.session_state:
+    st.session_state.sidebar_state = "collapsed"
+    
 st.set_page_config(
     page_title="Moodle Log Analyzer",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state=st.session_state.sidebar_state
 )
 
 
