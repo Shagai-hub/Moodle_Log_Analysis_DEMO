@@ -1,5 +1,5 @@
 import streamlit as st
-from assets.ui_components import apply_theme, divider, info_panel, nav_footer, page_header
+from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
 
 apply_theme()
 

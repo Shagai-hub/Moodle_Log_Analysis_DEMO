@@ -13,7 +13,7 @@ from utils.attribute_calculations import (
     content_attrs, exam_attrs, available_attributes,
     to_dt
 )
-from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header
+from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
 
 # ---------- Safe initialization ----------
 if 'data_manager' not in st.session_state:
