@@ -4,7 +4,7 @@ import time
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix
-from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header
+from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
