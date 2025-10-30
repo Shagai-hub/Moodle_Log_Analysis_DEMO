@@ -13,7 +13,7 @@ from utils.attribute_calculations import (
     content_attrs, exam_attrs, available_attributes,
     to_dt
 )
-from assets.ui_components import apply_theme, divider, page_header, section_header
+from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header
 
 # ---------- Safe initialization ----------
 if 'data_manager' not in st.session_state:
@@ -40,6 +40,17 @@ def main():
     raw_data = data_manager.get_raw_data()
     if raw_data is None:
         st.warning("📊 Please upload data first on the Data Upload page.")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to Configuration",
+                "page": "pages/2_⚙️_Configuration.py",
+                "key": "nav_back_to_configuration_missing_data",
+                "fallback": "⚙️ Configuration",
+            },
+            message="Upload your discussion logs to unlock attribute analysis.",
+            forward=None,
+        )
         return
 
     # Use configuration from ConfigManager
@@ -88,21 +99,27 @@ def main():
         divider()
         display_graph_section(data_manager.get_student_attributes())
 
-    # Navigation CTA (bright)
-    # In the navigation section of your code, update the button to:
+    forward_spec = None
     if data_manager.get_student_attributes() is not None:
-        divider()
-        col1, col2 = st.columns([1, 1])
-        with col2:
-            if st.button(
-                "🏆 Proceed to Ranking",
-                type="primary",  # Add this line
-                use_container_width=True,
-                help="Navigate to the ranking page with computed attributes",
-                key="pulse"
-            ):
-                st.switch_page("pages/4_🏆_Ranking.py")
-    
+        forward_spec = {
+            "label": "🏆 Proceed to Ranking",
+            "page": "pages/4_🏆_Ranking.py",
+            "key": "pulse",
+            "fallback": "🏆 Ranking",
+            "help": "Navigate to the ranking page with computed attributes",
+        }
+
+    divider()
+    nav_footer(
+        back={
+            "label": "⬅️ Back to Configuration",
+            "page": "pages/2_⚙️_Configuration.py",
+            "key": "nav_back_to_configuration",
+            "fallback": "⚙️ Configuration",
+        },
+        message="Review configuration or upload settings anytime—your selections stay in session.",
+        forward=forward_spec,
+    )
 
 def render_attribute_selection_ui():
     """Render the attribute selection interface"""

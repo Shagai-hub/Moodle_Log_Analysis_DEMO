@@ -4,7 +4,7 @@ import time
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, clean_coco_dataframe, prepare_coco_matrix
-from assets.ui_components import apply_theme, divider, page_header, section_header
+from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -30,6 +30,15 @@ def main():
     ranked_data = data_manager.get_ranked_results()
     if ranked_data is None:
         st.warning("📊 Please run student ranking first on the Ranking page.")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to Ranking",
+                "page": "pages/4_🏆_Ranking.py",
+                "key": "nav_back_to_ranking_missing_coco",
+                "fallback": "🏆 Ranking",
+            }
+        )
         return
     
     st.success(f"✅ Ready to analyze {len(ranked_data)} ranked students")
@@ -55,7 +64,7 @@ def main():
         st.metric("Y Value", ranked_data["Y_value"].iloc[0] if "Y_value" in ranked_data.columns else "N/A")
     
     # Data preview
-    with st.expander("🔍 Preview Ranked Data", expanded=False):
+    with st.expander("🔍 Preview Ranked Data", expanded=True):
         st.dataframe(ranked_data.head(10), use_container_width=True)
         st.caption(f"Full dataset: {ranked_data.shape[0]} rows × {ranked_data.shape[1]} columns")
     
@@ -66,18 +75,26 @@ def main():
     if st.button("🚀 Run COCO Analysis", type="primary", use_container_width=True):
         run_coco_analysis(ranked_data, job_name, stair_value, data_manager)
 
+    forward_spec = None
     if data_manager.get_coco_results() is not None:
-        divider()
-        col1, col2 = st.columns([1, 1])
-        with col2:
-            if st.button(
-                "🏆 Result Validation",
-                use_container_width=True,
-                help="Navigate to the validation page",
-                key="pulse",
-                type="primary",
-            ):
-                st.switch_page("pages/6_✅_Validation.py")
+        forward_spec = {
+            "label": "🏆 Result Validation",
+            "page": "pages/6_✅_Validation.py",
+            "key": "pulse",
+            "fallback": "✅ Validation",
+            "help": "Navigate to the validation page",
+        }
+
+    divider()
+    nav_footer(
+        back={
+            "label": "⬅️ Back to Ranking",
+            "page": "pages/4_🏆_Ranking.py",
+            "key": "nav_back_to_ranking_footer",
+            "fallback": "🏆 Ranking",
+        },
+        forward=forward_spec,
+    )
 
 def run_coco_analysis(ranked_data, job_name, stair_value, data_manager):
     """Execute COCO analysis and display results"""

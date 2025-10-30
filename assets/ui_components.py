@@ -121,3 +121,44 @@ def divider() -> None:
 def subtle_text(text: str) -> None:
     """Render supporting text styled like a caption."""
     st.markdown(f"<p class='section-caption'>{text}</p>", unsafe_allow_html=True)
+
+
+def nav_footer(
+    *,
+    back: Optional[dict] = None,
+    forward: Optional[dict] = None,
+    message: Optional[str] = None,
+) -> None:
+    """Render a consistent footer with optional back and forward navigation CTAs."""
+    cols = st.columns([1, 2, 1])
+
+    def _render_button(spec: dict, col, *, kind: str) -> None:
+        if not spec:
+            col.empty()
+            return
+
+        label = spec.get("label", "")
+        target = spec.get("page")
+        help_text = spec.get("help")
+        button_type = spec.get("type") or ("secondary" if kind == "back" else "primary")
+        key = spec.get("key") or f"nav_{kind}_{(target or 'unknown').replace('/', '_')}"
+        fallback = spec.get("fallback") or label or target or "the target page"
+
+        if not target:
+            col.button(label or "•", use_container_width=True, type=button_type, help=help_text, key=key, disabled=True)
+            return
+
+        if col.button(label, use_container_width=True, type=button_type, help=help_text, key=key):
+            try:
+                st.switch_page(target)
+            except Exception:
+                st.warning(f"Unable to auto-navigate. Please open `{fallback}` from the sidebar.")
+
+    _render_button(back, cols[0], kind="back")
+
+    if message:
+        cols[1].caption(message)
+    else:
+        cols[1].empty()
+
+    _render_button(forward, cols[2], kind="forward")

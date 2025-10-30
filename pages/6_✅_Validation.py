@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.coco_utils import send_coco_request, parse_coco_html, invert_ranking, prepare_coco_matrix
-from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header
+from assets.ui_components import apply_theme, divider, info_panel, nav_footer, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -36,14 +36,16 @@ def main():
     if ranked_data is None or coco_results is None:
         st.error("📊 **Data Required**", icon="🚨")
         info_panel("Please complete the COCO analysis first to enable validation.", icon="ℹ️")
-        _, col_btn = st.columns([3, 1])
-        with col_btn:
-            if st.button(
-                "🏃 Go to COCO Analysis",
-                use_container_width=True,
-                type="primary",
-            ):
-                st.switch_page("pages/4_📊_COCO_Analysis.py")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to COCO Analysis",
+                "page": "pages/5_🔍_COCO_Analysis.py",
+                "key": "nav_back_to_coco_missing_validation",
+                "fallback": "🔍 COCO Analysis",
+            },
+            message="Complete the COCO analysis before running validation.",
+        )
         return
    
     # Success banner with simplified stats
@@ -114,14 +116,23 @@ def main():
     if validation_results is not None:
         display_validation_results(validation_results, data_manager)
     
-    # Navigation footer
+    forward_spec = {
+        "label": "🤖 Go to AI Insights",
+        "page": "pages/7_🤖_AI_Insights.py",
+        "key": "nav_forward_to_ai_insights",
+        "fallback": "🤖 AI Insights",
+    }
+
     divider()
-    col1, col2 = st.columns([1, 1])
-    with col1:
-       st.write("")
-    with col2:
-        if st.button("🤖 Get AI Insights ➡️",key="ulse", use_container_width=True, type="primary"):
-            st.switch_page("pages/7_🤖_AI_Insights.py")
+    nav_footer(
+        back={
+            "label": "⬅️ Back to COCO Analysis",
+            "page": "pages/5_🔍_COCO_Analysis.py",
+            "key": "nav_back_to_coco_footer",
+            "fallback": "🔍 COCO Analysis",
+        },
+        forward=forward_spec,
+    )
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
     """Run the complete validation analysis with modern progress tracking"""

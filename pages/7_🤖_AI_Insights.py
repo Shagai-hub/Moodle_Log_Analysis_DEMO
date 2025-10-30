@@ -1,5 +1,5 @@
 import streamlit as st
-from assets.ui_components import apply_theme, divider, info_panel, page_header
+from assets.ui_components import apply_theme, divider, info_panel, nav_footer, page_header
 
 apply_theme()
 
@@ -18,3 +18,13 @@ info_panel(
 
 divider()
 st.info("🚧 This experience is being prepared. Check back soon for AI-powered insights!")
+
+divider()
+nav_footer(
+    back={
+        "label": "⬅️ Back to Validation",
+        "page": "pages/6_✅_Validation.py",
+        "key": "nav_back_to_validation_from_ai",
+        "fallback": "✅ Validation",
+    }
+)

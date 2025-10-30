@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
-from assets.ui_components import apply_theme, divider, page_header, section_header, subtle_text
+from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header, subtle_text
 
 # Optional: step bar if you use it elsewhere
 try:
@@ -244,28 +244,21 @@ def main():
 
     # ----------- NAVIGATION CTAs -----------
     divider()
-    c1, c2, c3 = st.columns([1, 2, 1])
-    with c1:
-        if st.button(
-            "⬅️ Back to Upload",
-            use_container_width=True,
-            key="back_to_upload_btn",
-            type="secondary",
-        ):
-            st.switch_page("pages/1_📊_Data_Upload.py")
-    with c2:
-        st.caption("Your settings are applied immediately. You can revisit this page anytime.")
-    with c3:
-        if st.button(
-            "➡️ Go to Attribute Analysis",
-            use_container_width=True,
-            key="pulse",
-            type="primary",
-        ):
-            try:
-                st.switch_page("pages/3_📈_Attribute_Analysis.py")
-            except Exception:
-                st.warning("Unable to auto-navigate. Please open ‘📈 Attribute Analysis’ from the sidebar.")
+    nav_footer(
+        back={
+            "label": "⬅️ Back to Upload",
+            "page": "pages/1_📊_Data_Upload.py",
+            "key": "nav_back_to_upload",
+            "fallback": "📊 Data Upload",
+        },
+        message="Your settings are applied immediately. You can revisit this page anytime.",
+        forward={
+            "label": "➡️ Go to Attribute Analysis",
+            "page": "pages/3_📈_Attribute_Analysis.py",
+            "key": "pulse",
+            "fallback": "📈 Attribute Analysis",
+        },
+    )
 
 if __name__ == "__main__":
     main()

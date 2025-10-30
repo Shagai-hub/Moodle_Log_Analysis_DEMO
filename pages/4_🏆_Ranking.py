@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
-from assets.ui_components import apply_theme, divider, page_header, section_header
+from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header
 
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -30,16 +30,46 @@ def main():
     student_attributes = data_manager.get_student_attributes()
     if student_attributes is None:
         st.warning("📊 Please compute student attributes first on the Attribute Analysis page.")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to Attribute Analysis",
+                "page": "pages/3_📈_Attribute_Analysis.py",
+                "key": "nav_back_to_attributes_missing_results",
+                "fallback": "📈 Attribute Analysis",
+            },
+            message="Compute student attributes to unlock ranking.",
+        )
         return
     
     # Get selected attributes from session state
     if "selected_attributes" not in st.session_state:
         st.warning("❌ No attributes selected for ranking. Please go back to Attribute Analysis page.")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to Attribute Analysis",
+                "page": "pages/3_📈_Attribute_Analysis.py",
+                "key": "nav_back_to_attributes_missing_selection",
+                "fallback": "📈 Attribute Analysis",
+            },
+            message="Select attributes to prioritise before ranking.",
+        )
         return
     
     selected_attributes = st.session_state.selected_attributes
     if not selected_attributes:
         st.warning("❌ No attributes selected for ranking. Please select attributes first.")
+        divider()
+        nav_footer(
+            back={
+                "label": "⬅️ Back to Attribute Analysis",
+                "page": "pages/3_📈_Attribute_Analysis.py",
+                "key": "nav_back_to_attributes_empty_selection",
+                "fallback": "📈 Attribute Analysis",
+            },
+            message="Pick at least one attribute to build a ranking.",
+        )
         return
     
     st.success(f"✅ Ready to rank {len(student_attributes)} students using {len(selected_attributes)} attributes")
@@ -113,19 +143,26 @@ def main():
             # Display results
             display_ranking_results(ranked_df, selected_attributes, data_manager, y_value)
     
-    # Show navigation button if ranking has been computed
+    forward_spec = None
     if data_manager.get_ranked_results() is not None:
-        divider()
-        col1, col2 = st.columns([1, 1])
-        with col2:
-            if st.button(
-                "🔍 Proceed to COCO Analysis",
-                use_container_width=True,
-                help="Navigate to COCO Analysis page with ranked data",
-                type="primary",
-                key="pulse"
-            ):
-                st.switch_page("pages/5_🔍_COCO_Analysis.py")
+        forward_spec = {
+            "label": "🔍 Proceed to COCO Analysis",
+            "page": "pages/5_🔍_COCO_Analysis.py",
+            "key": "pulse",
+            "fallback": "🔍 COCO Analysis",
+            "help": "Navigate to the COCO Analysis page with ranked data",
+        }
+
+    divider()
+    nav_footer(
+        back={
+            "label": "⬅️ Back to Attribute Analysis",
+            "page": "pages/3_📈_Attribute_Analysis.py",
+            "key": "nav_back_to_attributes_footer",
+            "fallback": "📈 Attribute Analysis",
+        },
+        forward=forward_spec,
+    )
 
 def rank_students(df_oam, selected_attrs, attr_directions, y_value):
     """Rank students based on selected attributes and directions"""
