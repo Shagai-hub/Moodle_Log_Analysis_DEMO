@@ -95,7 +95,7 @@ def main():
             type="primary", 
             use_container_width=True,
             help="Validate COCO results by comparing with inverted rankings",
-            key="run_validation_main"
+            key="pulse"
         ):
             run_validation_analysis(ranked_data, coco_results, data_manager)
     else:
@@ -105,7 +105,7 @@ def main():
             use_container_width=True,
             disabled=True,
             help="Cannot run validation - missing required data",
-            key="run_validation_disabled"
+            key="pulse"
         )
         st.warning("Please ensure COCO analysis completed successfully with required columns.")
     
@@ -120,7 +120,7 @@ def main():
     with col1:
        st.write("")
     with col2:
-        if st.button("🤖 Get AI Insights ➡️",key="pulse", use_container_width=True, type="primary"):
+        if st.button("🤖 Get AI Insights ➡️",key="ulse", use_container_width=True, type="primary"):
             st.switch_page("pages/7_🤖_AI_Insights.py")
 
 def run_validation_analysis(ranked_data, coco_results, data_manager):
