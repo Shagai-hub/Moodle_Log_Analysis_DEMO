@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="Moodle Log Analyzer",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state=st.session_state.sidebar_state
+    initial_sidebar_state=st.session_state.sidebar_state,
 )
 
 
