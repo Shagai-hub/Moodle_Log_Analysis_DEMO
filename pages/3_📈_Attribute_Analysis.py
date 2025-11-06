@@ -91,7 +91,7 @@ def main():
     if student_attributes is not None:
         display_hybrid_layout(student_attributes)
 
-        col_left, col_center, col_right = st.columns([1, 2, 1])
+        col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
         with col_center:
             if st.button(
                 "Visualizations",

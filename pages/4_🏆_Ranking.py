@@ -267,13 +267,14 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         rank_icon = "🥇" if row["Overall Rank"] == 1 else "🥈" if row["Overall Rank"] == 2 else "🥉" if row["Overall Rank"] == 3 else "🏅"
         st.write(f"{rank_icon} **{row['Overall Rank']}.** {row['Student Name']} (Avg Rank: {row['Average Rank']:.1f})")
 
-    viz_left, viz_center, viz_right = st.columns([1, 2, 1])
-    with viz_center:
-        st.page_link(
-            "pages/6_📊_Visualizations.py",
-            label="📊 Open Visualizations",
+    col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
+    with col_center:
+        if st.button(
+            "Visualizations",
+            key="VISUAL",
             icon="📊",
-        )
+            ):
+             st.switch_page("pages/6_📊_Visualizations.py")
     
     # Export options
     divider()

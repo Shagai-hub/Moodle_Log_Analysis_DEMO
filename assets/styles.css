@@ -160,7 +160,7 @@ code {
 
 /* Panels & Cards ------------------------------------------------- */
 .panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent), var(--panel);
+  background: linear-gradient(180deg, rgba(47, 20, 96, 0.02), transparent), var(--panel);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   padding: 1.25rem;
