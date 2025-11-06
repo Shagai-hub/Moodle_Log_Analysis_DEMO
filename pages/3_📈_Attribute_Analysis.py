@@ -93,11 +93,12 @@ def main():
 
         col_left, col_center, col_right = st.columns([1, 2, 1])
         with col_center:
-            st.page_link(
-                "pages/6_📊_Visualizations.py",
-                label="📊 Open Visualizations",
+            if st.button(
+                "Visualizations",
+                key="VISUAL",
                 icon="📊",
-            )
+                ):
+                 st.switch_page("pages/6_📊_Visualizations.py")
 
     forward_spec = None
     if data_manager.get_student_attributes() is not None:
@@ -163,7 +164,7 @@ def render_attribute_selection_ui():
     # Selected count card
     st.markdown(
     f"""
-    <div style='text-align:center; font-size:2.5rem; font-weight:700; color:#7c3aed; margin-top:2rem;'>
+    <div style='text-align:center; font-size:2.5rem; font-weight:700; color:#ADD8E6; margin-top:0.5rem;'>
         Selected attributes: {count}
     </div>
     """,

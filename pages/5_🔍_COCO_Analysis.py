@@ -110,11 +110,12 @@ def main():
         display_coco_results(coco_tables)
         col_left, col_center, col_right = st.columns([1, 2, 1])
         with col_center:
-            st.page_link(
-                "pages/6_📊_Visualizations.py",
-                label="📊 Open Visualizations",
+            if st.button(
+                "Visualizations",
+                key="VISUAL",
                 icon="📊",
-            )
+                ):
+                 st.switch_page("pages/6_📊_Visualizations.py")
         if not has_validation_requirements(coco_tables):
             info_panel(
                 "Validation metrics require the COCO output table containing the columns "
@@ -132,11 +133,7 @@ def main():
             "Detailed validation dashboards are ready. Open the Visualizations page to explore them.",
             icon="✅",
         )
-        st.page_link(
-            "pages/6_📊_Visualizations.py",
-            label="View Validation Dashboards",
-            icon="📊",
-        )
+        
     elif coco_tables:
         st.info("Validation results will appear automatically after a successful COCO run.")
 
@@ -145,7 +142,7 @@ def main():
         forward_spec = {
             "label": "📊 Explore Visualizations",
             "page": "pages/6_📊_Visualizations.py",
-            "key": "nav_forward_to_visualizations_from_coco",
+            "key": "pulse",
             "fallback": "📊 Visualizations",
             "help": "Review charts without re-running heavy computations",
         }
