@@ -26,8 +26,6 @@ apply_theme()
 
 def main():
     # Top header + optional steps
-    if STEPS_AVAILABLE:
-        render_steps(active="1 Analyze")  # or "2 Configure"
 
     page_header(
         "Configuration",

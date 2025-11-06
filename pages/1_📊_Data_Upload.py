@@ -12,8 +12,6 @@ if 'data_manager' not in st.session_state:
     st.session_state.data_manager = SessionDataManager()
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
-
-render_steps(active="1 Analyze")
 apply_theme()
 
 

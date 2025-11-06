@@ -15,7 +15,6 @@ st.set_page_config(
 )
 
 
-
 # Initialize session state managers ONCE
 if 'data_manager' not in st.session_state:
     st.session_state.data_manager = SessionDataManager()

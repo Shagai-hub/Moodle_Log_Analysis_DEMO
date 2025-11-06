@@ -1,6 +1,8 @@
 import streamlit as st
 from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
+from utils.ui_steps import render_steps
 
+render_steps(active="3 Interpret")
 apply_theme()
 
 page_header(
@@ -22,9 +24,9 @@ st.info("🚧 This experience is being prepared. Check back soon for AI-powered 
 divider()
 nav_footer(
     back={
-        "label": "⬅️ Back to Validation",
-        "page": "pages/6_✅_Validation.py",
-        "key": "nav_back_to_validation_from_ai",
-        "fallback": "✅ Validation",
+        "label": "⬅️ Back to Visualizations",
+        "page": "pages/6_📊_Visualizations.py",
+        "key": "nav_back_to_visualizations_from_ai",
+        "fallback": "📊 Visualizations",
     }
 )
