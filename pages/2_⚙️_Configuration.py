@@ -5,12 +5,6 @@ from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
 from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header, subtle_text
 
-# Optional: step bar if you use it elsewhere
-try:
-    from utils.ui_steps import render_steps
-    STEPS_AVAILABLE = True
-except Exception:
-    STEPS_AVAILABLE = False
 
 # ---------- Safe initialization ----------
 if 'config' not in st.session_state:
