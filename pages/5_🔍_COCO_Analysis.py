@@ -77,7 +77,7 @@ def main():
     
     # Run COCO + Validation
     divider()
-
+    
     coco_tables = None
     validation_results = None
 

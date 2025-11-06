@@ -241,7 +241,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     display_columns = ["userfullname", "Overall_Rank", "Average_Rank"] + rank_columns
     
     # Sort by overall rank
-    display_df = ranked_df[display_columns].sort_values("Overall_Rank")
+    display_df = ranked_df[display_columns]
     
     # Rename columns for better display
     column_renames = {
