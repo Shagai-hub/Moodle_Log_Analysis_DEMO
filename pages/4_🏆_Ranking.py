@@ -5,13 +5,14 @@ import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
-
+from utils.ui_steps import render_steps
 # Safe initialization
 if 'data_manager' not in st.session_state:
     st.session_state.data_manager = SessionDataManager()
 if 'config' not in st.session_state:
     st.session_state.config = ConfigManager()
-
+    
+render_steps(active="1 Analyze")
 apply_theme()
 
 def main():
@@ -265,6 +266,14 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     for idx, row in top_5.iterrows():
         rank_icon = "🥇" if row["Overall Rank"] == 1 else "🥈" if row["Overall Rank"] == 2 else "🥉" if row["Overall Rank"] == 3 else "🏅"
         st.write(f"{rank_icon} **{row['Overall Rank']}.** {row['Student Name']} (Avg Rank: {row['Average Rank']:.1f})")
+
+    viz_left, viz_center, viz_right = st.columns([1, 2, 1])
+    with viz_center:
+        st.page_link(
+            "pages/6_📊_Visualizations.py",
+            label="📊 Open Visualizations",
+            icon="📊",
+        )
     
     # Export options
     divider()
