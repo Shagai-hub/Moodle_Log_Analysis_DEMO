@@ -5,14 +5,7 @@ import pathlib
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.ui_steps import render_steps
-from assets.ui_components import (
-    apply_theme,
-    centered_page_button,
-    divider,
-    info_panel,
-    page_header,
-    section_header,
-)
+from assets.ui_components import apply_theme, centered_page_button, divider, info_panel, page_header, section_header
 
 # Safe init if this page is opened directly
 if 'data_manager' not in st.session_state:
