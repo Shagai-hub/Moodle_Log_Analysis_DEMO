@@ -27,8 +27,8 @@ def send_coco_request(matrix_data, job_name="MyTest", stair="", object_names="",
         'matrix': matrix_data.replace("\n", "\r\n"),
         'stair': stair,
         'modell': 'Y0',
-        'object': object_names,
-        'attribute': attribute_names
+        'object': object_names.replace("\n", "\r\n") if object_names else "",
+        'attribute': attribute_names.replace("\n", "\r\n") if attribute_names else ""
     }
     if keep_files:
         data['fajl_megtart'] = '1'
@@ -202,6 +202,23 @@ def prepare_coco_matrix(ranked_df):
     
     matrix_data = "\n".join(matrix_lines)
     return matrix_data
+
+
+def build_object_names_payload(ranked_df):
+    """Create the object names payload for COCO using student names with userid fallback."""
+    names = []
+    for idx, row in ranked_df.iterrows():
+        raw_name = row.get("userfullname")
+        fallback = row.get("userid")
+        if pd.isna(raw_name) or str(raw_name).strip() == "":
+            candidate = fallback if not pd.isna(fallback) else f"student_{idx + 1}"
+        else:
+            candidate = raw_name
+        cleaned = re.sub(r"[\t\r\n]+", " ", str(candidate)).strip()
+        if not cleaned:
+            cleaned = f"student_{idx + 1}"
+        names.append(cleaned)
+    return "\n".join(names)
 
 def save_coco_debug(html_snippet):
     """Save debug information to session state"""

@@ -204,7 +204,7 @@ def rank_students(df_oam, selected_attrs, attr_directions, y_value):
         if len(rdf) > 0:
             rdf.loc[rdf.index[-1], "Y_value"] = 100000
         
-        st.success(f"✅ Successfully ranked {len(rdf)} students!")
+        st.toast(f"✅ Successfully ranked {len(rdf)} students!")
         return rdf
         
     except Exception as e:
@@ -267,15 +267,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         rank_icon = "🥇" if row["Overall Rank"] == 1 else "🥈" if row["Overall Rank"] == 2 else "🥉" if row["Overall Rank"] == 3 else "🏅"
         st.write(f"{rank_icon} **{row['Overall Rank']}.** {row['Student Name']} (Avg Rank: {row['Average Rank']:.1f})")
 
-    col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
-    with col_center:
-        if st.button(
-            "Visualizations",
-            key="VISUAL",
-            icon="📊",
-            ):
-             st.switch_page("pages/6_📊_Visualizations.py")
-    
+
     # Export options
     divider()
     st.subheader("💾 Export")
@@ -289,6 +281,16 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         "text/csv",
         use_container_width=True
     )
+        # Export options
+    divider()
+    col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
+    with col_center:
+        if st.button(
+            "Visualizations",
+            key="VISUAL",
+            icon="📊",
+            ):
+             st.switch_page("pages/6_📊_Visualizations.py")
 
 if __name__ == "__main__":
     main()

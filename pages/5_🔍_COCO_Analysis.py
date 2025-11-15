@@ -8,6 +8,7 @@ from utils.coco_utils import (
     clean_coco_dataframe,
     prepare_coco_matrix,
     invert_ranking,
+    build_object_names_payload,
 )
 from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
 
@@ -163,9 +164,16 @@ def run_coco_analysis(ranked_data, job_name, stair_value):
 
     with st.spinner("Preparing data for COCO analysis..."):
         matrix_data = prepare_coco_matrix(ranked_data)
+        object_names = build_object_names_payload(ranked_data)
 
     with st.expander("🔍 Matrix Data Preview", expanded=False):
         st.text_area("COCO Input Matrix (first 500 chars):", matrix_data[:500], height=150)
+        st.text_area(
+            "COCO Object Names (first 500 chars):",
+            object_names[:500],
+            height=150,
+            help="Names are sent in parallel with the matrix so COCO can label objects correctly.",
+        )
 
     st.info("🌐 Sending request to COCO service...")
 
@@ -181,7 +189,7 @@ def run_coco_analysis(ranked_data, job_name, stair_value):
             matrix_data=matrix_data,
             job_name=job_name,
             stair=str(stair_value),
-            object_names="",
+            object_names=object_names,
             attribute_names="",
             keep_files=False,
             timeout=180,
@@ -360,10 +368,12 @@ def run_validation_analysis(ranked_data, coco_results):
 
             st.write("🌐 Sending inverted matrix to COCO…")
             stair_value = len(ranked_data)
+            object_names = build_object_names_payload(ranked_data)
             resp = send_coco_request(
                 matrix_data=inverted_matrix_data,
                 job_name="StudentRankingInverted",
                 stair=str(stair_value),
+                object_names=object_names,
                 timeout=180,
             )
 

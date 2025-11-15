@@ -299,7 +299,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
                 st.error(f"Error computing {attr}: {e}")
                 oam_combined[attr] = 0
 
-    st.success("✅ All attributes have been computed successfully!")
+    st.toast("✅ All attributes have been computed successfully!")
 
     # Fill NaN values and sort
     oam_combined = oam_combined.fillna(0)

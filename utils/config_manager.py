@@ -1,4 +1,6 @@
 #config manager for the app#
+import json
+import copy
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -21,6 +23,8 @@ class ConfigManager:
             'auto_compute_attributes': False,
             'y_value': 1000
         }
+        self.ai_insights_settings = self._default_ai_settings()
+        self.ai_insight_rules = self._default_ai_rules()
     
     def render_sidebar_config(self):
         """Render configuration UI in sidebar"""
@@ -92,6 +96,120 @@ class ConfigManager:
                     value=self.analysis_settings['y_value'],
                     help="Reference value for COCO analysis"
                 )
+
+            with st.expander("🤖 AI Insights", expanded=False):
+                st.subheader("Model & Thresholds")
+                model_options = [
+                    "google/flan-t5-small",
+                    "facebook/bart-base",
+                    "facebook/bart-large-cnn",
+                    "sshleifer/distilbart-cnn-12-6",
+                ]
+                current_model = self.ai_insights_settings.get("summary_model", model_options[0])
+                self.ai_insights_settings["summary_model"] = st.selectbox(
+                    "Summary Model",
+                    model_options,
+                    index=model_options.index(current_model) if current_model in model_options else 0,
+                    help="Choose a lightweight summarization/Q&A model that can run locally.",
+                )
+                self.ai_insights_settings["summary_temperature"] = st.slider(
+                    "Summary Temperature",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=float(self.ai_insights_settings.get("summary_temperature", 0.0)),
+                    step=0.05,
+                    help="Higher values add variability to generated summaries.",
+                )
+                self.ai_insights_settings["low_engagement_threshold"] = st.number_input(
+                    "Low Engagement Threshold",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=float(self.ai_insights_settings.get("low_engagement_threshold", 0.25)),
+                    step=0.05,
+                    help="Flag students whose engagement rate drops below this value.",
+                    format="%.2f",
+                )
+                self.ai_insights_settings["low_posts_threshold"] = st.number_input(
+                    "Low Posts Threshold",
+                    min_value=0,
+                    max_value=100,
+                    value=int(self.ai_insights_settings.get("low_posts_threshold", 5)),
+                    step=1,
+                    help="Flag students whose total posts fall below this count.",
+                )
+                self.ai_insights_settings["deadline_miss_threshold"] = st.number_input(
+                    "Deadline Miss Threshold",
+                    min_value=0,
+                    max_value=10,
+                    value=int(self.ai_insights_settings.get("deadline_miss_threshold", 1)),
+                    step=1,
+                    help="Flag students exceeding this number of deadline misses per exam.",
+                )
+                self.ai_insights_settings["low_professor_reply_threshold"] = st.number_input(
+                    "Replies to Professor Threshold",
+                    min_value=0,
+                    max_value=20,
+                    value=int(self.ai_insights_settings.get("low_professor_reply_threshold", 1)),
+                    step=1,
+                    help="Flag students at or below this count of replies to the professor.",
+                )
+                self.ai_insights_settings["slow_reply_threshold_hours"] = st.number_input(
+                    "Slow Reply Threshold (hours)",
+                    min_value=0.0,
+                    max_value=168.0,
+                    value=float(self.ai_insights_settings.get("slow_reply_threshold_hours", 24)),
+                    step=1.0,
+                    help="Flag students whose average reply time exceeds this duration.",
+                    format="%.0f",
+                )
+                self.ai_insights_settings["zscore_low_threshold"] = st.slider(
+                    "Low Activity Z-score Threshold",
+                    min_value=-3.0,
+                    max_value=-0.5,
+                    value=float(self.ai_insights_settings.get("zscore_low_threshold", -1.5)),
+                    step=0.1,
+                    help="Values below this z-score will be flagged as low outliers.",
+                )
+                self.ai_insights_settings["zscore_high_threshold"] = st.slider(
+                    "High Activity Z-score Threshold",
+                    min_value=0.5,
+                    max_value=3.0,
+                    value=float(self.ai_insights_settings.get("zscore_high_threshold", 2.5)),
+                    step=0.1,
+                    help="Values above this z-score will be flagged as unusually high.",
+                )
+
+                st.markdown("### Rule Definitions")
+                st.caption("Edit JSON to fine-tune the AI playbooks that tag students. Each rule supports simple AND conditions.")
+
+                rules_editor_key = "ai_rules_text_area"
+                default_rules_text = json.dumps(self.ai_insight_rules, indent=2)
+                if rules_editor_key not in st.session_state:
+                    st.session_state[rules_editor_key] = default_rules_text
+                elif st.session_state[rules_editor_key] == "" and self.ai_insight_rules:
+                    st.session_state[rules_editor_key] = default_rules_text
+
+                col_rules_btn, _ = st.columns([1, 3])
+                with col_rules_btn:
+                    if st.button("↩️ Restore Default Rules"):
+                        self.ai_insight_rules = self._default_ai_rules()
+                        st.session_state[rules_editor_key] = json.dumps(self.ai_insight_rules, indent=2)
+
+                rules_text = st.text_area(
+                    "AI Insight Rules (JSON)",
+                    value=st.session_state[rules_editor_key],
+                    height=220,
+                    key=rules_editor_key,
+                )
+                try:
+                    parsed_rules = json.loads(rules_text) if rules_text.strip() else []
+                    if isinstance(parsed_rules, list):
+                        self.ai_insight_rules = parsed_rules
+                        st.session_state[rules_editor_key] = rules_text
+                    else:
+                        st.warning("Rules JSON should be a list. Keeping previous configuration.")
+                except json.JSONDecodeError as exc:
+                    st.error(f"Invalid JSON for AI insight rules: {exc}. Using last valid configuration.")
             
             # Configuration actions
             st.divider()
@@ -126,7 +244,9 @@ class ConfigManager:
             'professors': self.professors,
             'deadlines': {k: v.isoformat() for k, v in self.deadlines.items()},
             'parent_ids_pattern': self.parent_ids_pattern,
-            'analysis_settings': self.analysis_settings
+            'analysis_settings': self.analysis_settings,
+            'ai_insights_settings': self.ai_insights_settings,
+            'ai_insight_rules': self.ai_insight_rules,
         }
     
     def from_dict(self, config_dict):
@@ -144,3 +264,76 @@ class ConfigManager:
         
         self.parent_ids_pattern = config_dict.get('parent_ids_pattern', self.parent_ids_pattern)
         self.analysis_settings = config_dict.get('analysis_settings', self.analysis_settings)
+        self.ai_insights_settings = config_dict.get('ai_insights_settings', self.ai_insights_settings)
+        self.ai_insight_rules = config_dict.get('ai_insight_rules', self.ai_insight_rules)
+
+    def _default_ai_settings(self):
+        return {
+            "summary_model": "google/flan-t5-small",
+            "summary_temperature": 0.0,
+            "low_engagement_threshold": 0.25,
+            "low_posts_threshold": 5,
+            "deadline_miss_threshold": 1,
+            "low_professor_reply_threshold": 1,
+            "slow_reply_threshold_hours": 24,
+            "zscore_low_threshold": -1.5,
+            "zscore_high_threshold": 2.5,
+        }
+
+    def _default_ai_rules(self):
+        return copy.deepcopy([
+            {
+                "id": "low_engagement_combo",
+                "label": "Low Engagement",
+                "severity": "high",
+                "message": "Engagement rate and posting activity fall below configured thresholds.",
+                "conditions": [
+                    {"column": "engagement_rate", "op": "lt", "setting": "low_engagement_threshold"},
+                    {"column": "total_posts", "op": "lt", "setting": "low_posts_threshold"},
+                ],
+                "playbook": [
+                    "Send a nudge summarizing missed interactions.",
+                    "Offer a short 1:1 check-in slot.",
+                ],
+            },
+            {
+                "id": "deadline_misses_exam_i",
+                "label": "Deadline misses (Exam I)",
+                "severity": "high",
+                "message": "Student missed configured number of submissions for Quasi Exam I.",
+                "conditions": [
+                    {"column": "deadline_exceeded_posts_Quasi_exam_I", "op": "ge", "setting": "deadline_miss_threshold"}
+                ],
+                "playbook": [
+                    "Review Moodle logs for late submissions.",
+                    "Send supportive reminder about upcoming deadlines.",
+                ],
+            },
+            {
+                "id": "deadline_misses_exam_ii",
+                "label": "Deadline misses (Exam II)",
+                "severity": "medium",
+                "message": "Student exceeded deadline threshold for Quasi Exam II.",
+                "conditions": [
+                    {"column": "deadline_exceeded_posts_Quasi_exam_II", "op": "ge", "setting": "deadline_miss_threshold"}
+                ],
+            },
+            {
+                "id": "few_professor_replies",
+                "label": "No replies to professor",
+                "severity": "medium",
+                "message": "Replies back to the professor are below the configured threshold.",
+                "conditions": [
+                    {"column": "total_replies_to_professor", "op": "le", "setting": "low_professor_reply_threshold"}
+                ],
+            },
+            {
+                "id": "slow_responder",
+                "label": "Slow response times",
+                "severity": "medium",
+                "message": "Average reply time exceeds configured hours.",
+                "conditions": [
+                    {"column": "avg_reply_time", "op": "gt", "setting": "slow_reply_threshold_hours"}
+                ],
+            },
+        ])
