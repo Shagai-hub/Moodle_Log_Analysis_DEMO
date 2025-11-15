@@ -35,7 +35,7 @@ with act2:
     # Centered button inside the middle column
     if st.button(
         "🚀 Upload your data",
-        key="hero_upload_cta",
+        key="pulse",
         help="Go to the Data Upload page",
         use_container_width=True,  # makes it stretch nicely in center
     ):
