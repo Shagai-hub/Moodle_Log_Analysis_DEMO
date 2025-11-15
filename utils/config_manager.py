@@ -100,18 +100,23 @@ class ConfigManager:
             with st.expander("🤖 AI Insights", expanded=False):
                 st.subheader("Model & Thresholds")
                 model_options = [
-                    "google/flan-t5-small",
-                    "facebook/bart-base",
-                    "facebook/bart-large-cnn",
-                    "sshleifer/distilbart-cnn-12-6",
+                    ("manual", "Manual narrative (fastest)"),
+                    ("google/flan-t5-small", "FLAN-T5 small (Hugging Face)"),
+                    ("facebook/bart-base", "BART base"),
+                    ("facebook/bart-large-cnn", "BART large CNN"),
+                    ("sshleifer/distilbart-cnn-12-6", "DistilBART CNN"),
                 ]
-                current_model = self.ai_insights_settings.get("summary_model", model_options[0])
-                self.ai_insights_settings["summary_model"] = st.selectbox(
+                option_values = [value for value, _ in model_options]
+                labels_map = {value: label for value, label in model_options}
+                current_model = self.ai_insights_settings.get("summary_model", option_values[0])
+                selected_model = st.selectbox(
                     "Summary Model",
-                    model_options,
-                    index=model_options.index(current_model) if current_model in model_options else 0,
-                    help="Choose a lightweight summarization/Q&A model that can run locally.",
+                    option_values,
+                    index=option_values.index(current_model) if current_model in option_values else 0,
+                    format_func=lambda value: labels_map.get(value, value),
+                    help="Manual mode skips heavy ML downloads. Model options require the Transformers package and download time.",
                 )
+                self.ai_insights_settings["summary_model"] = selected_model
                 self.ai_insights_settings["summary_temperature"] = st.slider(
                     "Summary Temperature",
                     min_value=0.0,
@@ -269,7 +274,7 @@ class ConfigManager:
 
     def _default_ai_settings(self):
         return {
-            "summary_model": "google/flan-t5-small",
+            "summary_model": "manual",
             "summary_temperature": 0.0,
             "low_engagement_threshold": 0.25,
             "low_posts_threshold": 5,

@@ -1,5 +1,8 @@
+import re
 import textwrap
+from collections import Counter
 from datetime import datetime
+from difflib import get_close_matches
 
 import numpy as np
 import pandas as pd
@@ -23,6 +26,9 @@ if "config" not in st.session_state:
 @st.cache_data(show_spinner=False)
 def generate_model_summary(prompt, model_name, temperature):
     """Generate a summary with a lightweight local model."""
+    if not model_name or str(model_name).lower() in {"manual", "none", "disabled"}:
+        return {"summary": None, "error": "manual_mode"}
+
     try:
         from transformers import pipeline
 
@@ -319,6 +325,96 @@ def format_watchlist_dataframe(watchlist):
     return df
 
 
+
+def build_focus_points(metrics_snapshot, watchlist, anomalies):
+    points = []
+    total = metrics_snapshot.get("total_students") or 0
+    watch_count = len(watchlist)
+    if watch_count:
+        ratio = f" (~{(watch_count / total) * 100:.0f}% of the cohort)" if total else ""
+        first_entry = watchlist[0] if watchlist else {}
+        top_flag = None
+        for bucket in (first_entry.get("flags") or [], first_entry.get("anomalies") or []):
+            if bucket:
+                top_flag = bucket[0]
+                break
+        if top_flag:
+            points.append(f"{watch_count} learners{ratio} triggered '{top_flag}'.")
+        else:
+            points.append(f"{watch_count} learners{ratio} are on the watchlist.")
+    low_eng = metrics_snapshot.get("low_engagement_count")
+    if low_eng:
+        points.append(f"{low_eng} students are operating below the engagement threshold.")
+    low_posts = metrics_snapshot.get("low_post_count")
+    if low_posts:
+        points.append(f"{low_posts} students have not contributed a post yet.")
+    avg_deadlines = metrics_snapshot.get("avg_deadline_misses")
+    if avg_deadlines and avg_deadlines > 0.5:
+        points.append(f"Average deadline misses sit at {avg_deadlines:.1f} per student.")
+    if anomalies:
+        labels = sorted({a.get("label") for a in anomalies if a.get("label")})
+        if labels:
+            joined = ", ".join(labels[:2])
+            points.append(f"Outliers detected for {joined}.")
+    if not points:
+        points.append("No major risks detected—use the chat below to inspect particular learners.")
+    return points[:3]
+
+
+def build_severity_dataframe(severity_counts):
+    if not severity_counts:
+        return None
+    rows = [
+        {"Severity": key.title(), "Students": value}
+        for key, value in severity_counts.items()
+        if value
+    ]
+    if not rows:
+        return None
+    df = pd.DataFrame(rows).set_index("Severity")
+    return df
+
+
+def render_watchlist_cards(watchlist):
+    top_entries = watchlist[: min(3, len(watchlist))]
+    if not top_entries:
+        return
+    cols = st.columns(len(top_entries))
+    severity_styles = {
+        "high": ("rgba(248,113,113,0.2)", "#f87171"),
+        "medium": ("rgba(251,191,36,0.18)", "#facc15"),
+        "low": ("rgba(52,211,153,0.18)", "#34d399"),
+    }
+    for entry, col in zip(top_entries, cols):
+        severity = (entry.get("severity") or "medium").lower()
+        bg, accent = severity_styles.get(severity, ("rgba(148,163,184,0.18)", "#94a3b8"))
+        name = entry.get("userfullname") or (f"ID {entry['userid']}" if entry.get("userid") else "Unknown")
+        reasons = entry.get("flags") or entry.get("anomalies") or []
+        metrics = entry.get("metrics", {})
+        stat_bits = []
+        posts = metrics.get("total_posts")
+        if posts is not None:
+            stat_bits.append(f"{int(posts)} posts")
+        engagement = metrics.get("engagement_rate")
+        if engagement is not None:
+            stat_bits.append(f"{float(engagement):.2f} engagement")
+        misses = metrics.get("deadline_exceeded_posts_Quasi_exam_I")
+        if misses:
+            stat_bits.append(f"{misses} deadline misses")
+        stats_line = " · ".join(stat_bits) if stat_bits else "Limited metrics"
+        reason_block = "<br>".join(reasons[:2]) if reasons else "General anomaly trigger"
+        col.markdown(
+            f"""
+            <div style="border:1px solid rgba(148,163,184,0.25); border-radius:18px; padding:1rem; background:{bg};">
+              <div style="font-size:0.8rem; text-transform:uppercase; font-weight:600; color:{accent};">{severity.title()}</div>
+              <div style="font-size:1.1rem; font-weight:600; margin-top:0.2rem;">{name}</div>
+              <div style="font-size:0.9rem; color:var(--muted,#94a3b8); margin:.3rem 0;">{stats_line}</div>
+              <div style="font-size:0.85rem; line-height:1.3;">{reason_block}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
 def generate_ai_insights(student_df, config, data_manager):
     settings = config.ai_insights_settings if hasattr(config, "ai_insights_settings") else {}
     rules = config.ai_insight_rules if hasattr(config, "ai_insight_rules") else []
@@ -349,6 +445,8 @@ def generate_ai_insights(student_df, config, data_manager):
     summary_text = summary_result["summary"] or manual
 
     notifications = generate_sample_notifications(watchlist, metrics_snapshot)
+    severity_counts = Counter(entry.get("severity", "medium") for entry in watchlist if entry)
+    focus_points = build_focus_points(metrics_snapshot, watchlist, anomalies)
 
     return {
         "generated_at": datetime.utcnow().isoformat(),
@@ -364,12 +462,14 @@ def generate_ai_insights(student_df, config, data_manager):
         "anomalies": anomalies,
         "settings": settings,
         "summary_prompt": prompt_trimmed,
+        "severity_counts": dict(severity_counts),
+        "summary_points": focus_points,
     }
 
 
 def display_summary_section(insights):
-    section_header("Summary / Risk Overview", icon="🧠", tight=True)
-    info_panel(insights.get("summary", "No summary available."), icon="💡")
+    section_header("Summary / Risk Overview", icon="??", tight=True)
+    info_panel(insights.get("summary", "No summary available."), icon="??")
 
     if insights.get("model_summary") is None and insights.get("model_error"):
         st.caption(f"Model summary unavailable ({insights['model_error']}). Showing heuristic overview.")
@@ -382,20 +482,38 @@ def display_summary_section(insights):
     total = metrics.get("total_students", 0) or 0
     avg_engagement = metrics.get("avg_engagement")
     avg_posts = metrics.get("avg_posts")
+    avg_deadlines = metrics.get("avg_deadline_misses")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Watchlist size", watch_count, help="Students currently flagged by rules or anomalies.")
+        delta = f"{(watch_count / total) * 100:.0f}%" if total else None
+        st.metric("Watchlist size", watch_count, delta=delta, help="Share of the cohort currently flagged.")
     with col2:
-        if avg_engagement is not None:
-            st.metric("Avg engagement", f"{avg_engagement:.2f}")
-        else:
-            st.metric("Avg engagement", "N/A")
+        st.metric("Avg engagement", f"{avg_engagement:.2f}" if avg_engagement is not None else "N/A")
     with col3:
-        if avg_posts is not None:
-            st.metric("Avg posts", f"{avg_posts:.1f}")
-        else:
-            st.metric("Avg posts", "N/A")
+        st.metric("Avg posts", f"{avg_posts:.1f}" if avg_posts is not None else "N/A")
+    with col4:
+        st.metric("Avg deadline misses", f"{avg_deadlines:.1f}" if avg_deadlines is not None else "N/A")
+
+    focus_points = insights.get("summary_points") or []
+    if focus_points:
+        st.markdown("**Focus areas**")
+        for point in focus_points:
+            st.markdown(f"- {point}")
+
+    severity_df = build_severity_dataframe(insights.get("severity_counts"))
+    if severity_df is not None:
+        st.markdown("**Watchlist mix**")
+        st.bar_chart(severity_df)
+
+    rule_counts = insights.get("rule_counts", {})
+    if rule_counts:
+        st.markdown("**Rule triggers**")
+        rule_df = (
+            pd.DataFrame([{"Rule": key, "Hits": value} for key, value in rule_counts.items()])
+            .sort_values("Hits", ascending=False)
+        )
+        st.dataframe(rule_df, use_container_width=True, hide_index=True)
 
     if insights.get("missing_columns"):
         missing = ", ".join(insights["missing_columns"])
@@ -403,11 +521,13 @@ def display_summary_section(insights):
 
 
 def display_watchlist_section(insights):
-    section_header("Students to Watch", icon="⚠️", tight=True)
+    section_header("Students to Watch", icon="??", tight=True)
     watchlist = insights.get("students_to_watch", [])
     if not watchlist:
-        info_panel("All quiet for now — no students matched the current watch conditions.", icon="✅")
+        info_panel("All quiet for now - no students matched the current watch conditions.", icon="?")
         return
+
+    render_watchlist_cards(watchlist)
 
     watch_df = format_watchlist_dataframe(watchlist)
     st.dataframe(watch_df, use_container_width=True, hide_index=True)
@@ -433,6 +553,188 @@ def display_notifications_section(insights):
         st.markdown(f"**{idx}. {note['subject']}**")
         st.markdown(f"```\n{note['body']}\n```")
 
+
+
+def get_student_metric_columns(df):
+    return {
+        "total_posts": resolve_column(df, "total_posts"),
+        "engagement_rate": resolve_column(df, "engagement_rate"),
+        "total_replies_to_professor": resolve_column(df, "total_replies_to_professor"),
+        "avg_reply_time": resolve_column(df, "avg_reply_time"),
+        "deadline_exceeded_posts_Quasi_exam_I": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_I"),
+        "deadline_exceeded_posts_Quasi_exam_II": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_II"),
+        "deadline_exceeded_posts_Quasi_exam_III": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_III"),
+    }
+
+
+def extract_student_mentions(prompt, available_names):
+    normalized = prompt.lower()
+    matched = []
+    for name in available_names:
+        lower = name.lower()
+        if lower and lower in normalized:
+            matched.append(name)
+    if matched:
+        seen = set()
+        ordered = []
+        for name in matched:
+            low = name.lower()
+            if low not in seen:
+                seen.add(low)
+                ordered.append(name)
+        return ordered
+    lower_names = [name.lower() for name in available_names]
+    chunks = re.split(r"\b(?:and|vs|versus|,|/|&|with|compare)\b", normalized)
+    guesses = []
+    for chunk in chunks:
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        best = get_close_matches(chunk, lower_names, n=1, cutoff=0.68)
+        if best:
+            idx = lower_names.index(best[0])
+            guesses.append(available_names[idx])
+    seen = set()
+    ordered = []
+    for name in guesses:
+        low = name.lower()
+        if low not in seen:
+            seen.add(low)
+            ordered.append(name)
+    return ordered
+
+
+def lookup_watchlist_entry(name, watchlist):
+    target = name.lower()
+    for entry in watchlist:
+        entry_name = (entry.get("userfullname") or "").lower()
+        if entry_name == target:
+            return entry
+    return None
+
+
+def format_metric_value(value, decimals=1):
+    if value is None:
+        return "-"
+    if isinstance(value, (float, np.floating)):
+        if np.isnan(value):
+            return "-"
+        return f"{value:.{decimals}f}"
+    if isinstance(value, (int, np.integer)):
+        return str(int(value))
+    try:
+        numeric = float(value)
+        return f"{numeric:.{decimals}f}"
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def answer_student_question(prompt, student_df, insights):
+    if student_df is None or student_df.empty:
+        return "I need the attribute matrix before answering questions."
+    if "userfullname" not in student_df.columns:
+        return "Student names are missing from the attribute matrix."
+    available_names = [n for n in student_df["userfullname"].dropna().astype(str).unique() if n.strip()]
+    if not available_names:
+        return "Student names are missing from the attribute matrix."
+    resolved_cols = get_student_metric_columns(student_df)
+    matches = extract_student_mentions(prompt, available_names)
+    normalized = prompt.lower()
+    watchlist = insights.get("students_to_watch", [])
+
+    if not matches:
+        eng_col = resolved_cols.get("engagement_rate")
+        if "top" in normalized and "engagement" in normalized and eng_col:
+            ranked = (
+                student_df.dropna(subset=[eng_col])
+                .sort_values(eng_col, ascending=False)
+                .head(3)
+            )
+            if ranked.empty:
+                return "I could not compute engagement rankings yet."
+            lines = ["Top engagement performers:"]
+            for _, row in ranked.iterrows():
+                lines.append(f"- {row.get('userfullname')} ({row.get(eng_col):.2f})")
+            return "\n".join(lines)
+        return "I couldn't find a matching student name. Try the exact spelling from the tables."
+
+    rows = []
+    for name in matches[:2]:
+        matching = student_df[student_df["userfullname"].astype(str).str.lower() == name.lower()]
+        if matching.empty:
+            continue
+        rows.append((name, matching.iloc[0]))
+    if not rows:
+        return "I couldn't resolve those names inside the attribute matrix."
+
+    if len(rows) == 1:
+        name, row = rows[0]
+        metrics = extract_metrics(row, resolved_cols)
+        watch_entry = lookup_watchlist_entry(name, watchlist)
+        lines = [f"**{name}** snapshot:"]
+        lines.append(f"- Posts: {format_metric_value(metrics.get('total_posts'), 0)}")
+        lines.append(f"- Engagement: {format_metric_value(metrics.get('engagement_rate'), 2)}")
+        lines.append(f"- Replies to professor: {format_metric_value(metrics.get('total_replies_to_professor'), 0)}")
+        lines.append(f"- Avg reply time (h): {format_metric_value(metrics.get('avg_reply_time'), 1)}")
+        deadline_i = metrics.get('deadline_exceeded_posts_Quasi_exam_I')
+        if deadline_i is not None:
+            lines.append(f"- Deadline misses (Exam I): {format_metric_value(deadline_i, 0)}")
+        deadline_ii = metrics.get('deadline_exceeded_posts_Quasi_exam_II')
+        if deadline_ii is not None:
+            lines.append(f"- Deadline misses (Exam II): {format_metric_value(deadline_ii, 0)}")
+        if watch_entry:
+            reasons = watch_entry.get("flags") or watch_entry.get("anomalies") or []
+            detail = ", ".join(reasons[:2]) if reasons else "general risk pattern"
+            lines.append(f"- Watchlist: {watch_entry.get('severity', 'medium').title()} ({detail}).")
+        return "\n".join(lines)
+
+    (name_a, row_a), (name_b, row_b) = rows[:2]
+    metrics_a = extract_metrics(row_a, resolved_cols)
+    metrics_b = extract_metrics(row_b, resolved_cols)
+    table_rows = [
+        ("Posts", format_metric_value(metrics_a.get("total_posts"), 0), format_metric_value(metrics_b.get("total_posts"), 0)),
+        ("Engagement", format_metric_value(metrics_a.get("engagement_rate"), 2), format_metric_value(metrics_b.get("engagement_rate"), 2)),
+        ("Replies to professor", format_metric_value(metrics_a.get("total_replies_to_professor"), 0), format_metric_value(metrics_b.get("total_replies_to_professor"), 0)),
+        ("Avg reply time (h)", format_metric_value(metrics_a.get("avg_reply_time"), 1), format_metric_value(metrics_b.get("avg_reply_time"), 1)),
+    ]
+    table_md = [f"| Metric | {name_a} | {name_b} |", "| --- | --- | --- |"]
+    for label, val_a, val_b in table_rows:
+        table_md.append(f"| {label} | {val_a} | {val_b} |")
+    lines = ["Comparison overview:", "\n".join(table_md)]
+    watch_a = lookup_watchlist_entry(name_a, watchlist)
+    watch_b = lookup_watchlist_entry(name_b, watchlist)
+    watch_notes = []
+    if watch_a:
+        watch_notes.append(f"{name_a}: {watch_a.get('severity', 'medium').title()} risk")
+    if watch_b:
+        watch_notes.append(f"{name_b}: {watch_b.get('severity', 'medium').title()} risk")
+    if watch_notes:
+        lines.append("Watchlist notes: " + "; ".join(watch_notes))
+    return "\n".join(lines)
+
+
+def render_student_chatbot(student_df, insights):
+    section_header("Student Copilot", icon="??", tight=True)
+    st.caption("Ask about any student or compare two learners by name.")
+    chat_key = "ai_student_chat_history"
+    if chat_key not in st.session_state:
+        st.session_state[chat_key] = []
+
+    col_clear, _ = st.columns([1, 5])
+    with col_clear:
+        if st.button("Clear chat", key="clear_ai_chat", use_container_width=True):
+            st.session_state[chat_key] = []
+            st.rerun()
+
+    for message in st.session_state[chat_key]:
+        st.chat_message(message["role"]).write(message["content"])
+
+    prompt = st.chat_input("Ask about a student or compare two")
+    if prompt:
+        st.session_state[chat_key].append({"role": "user", "content": prompt})
+        response = answer_student_question(prompt, student_df, insights)
+        st.session_state[chat_key].append({"role": "assistant", "content": response})
+        st.rerun()
 
 def main():
     page_header(
@@ -482,11 +784,18 @@ def main():
             st.caption(f"Using cached insights generated at {generated_at}.")
 
     divider()
-    display_summary_section(insights)
-    divider()
-    display_watchlist_section(insights)
-    divider()
-    display_notifications_section(insights)
+    tab_summary, tab_watchlist, tab_notifications, tab_chat = st.tabs(
+        ["Summary", "Watchlist", "Notifications", "Student Q&A"]
+    )
+
+    with tab_summary:
+        display_summary_section(insights)
+    with tab_watchlist:
+        display_watchlist_section(insights)
+    with tab_notifications:
+        display_notifications_section(insights)
+    with tab_chat:
+        render_student_chatbot(student_attributes, insights)
 
     divider()
     nav_footer(
@@ -501,3 +810,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

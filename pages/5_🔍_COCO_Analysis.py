@@ -143,7 +143,7 @@ def main():
         forward_spec = {
             "label": "📊 Explore Visualizations",
             "page": "pages/6_📊_Visualizations.py",
-            "key": "pulse",
+            "key": "nav_to_visualizations_from_coco",
             "fallback": "📊 Visualizations",
             "help": "Review charts without re-running heavy computations",
         }

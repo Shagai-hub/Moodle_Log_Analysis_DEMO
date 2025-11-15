@@ -62,7 +62,7 @@ def main():
                 label="",
                 value="\n".join(config.professors),
                 height=140,
-                placeholder="e.g.\nProf. László Pitlik\nProf. Example Name",
+                placeholder="",
                 help="These names are used to identify professor-related activities in the logs."
             )
             # Normalize + deduplicate
@@ -247,7 +247,7 @@ def main():
         forward={
             "label": "➡️ Go to Attribute Analysis",
             "page": "pages/3_📈_Attribute_Analysis.py",
-            "key": "pulse",
+            "key": "nav_to_attributes_from_config",
             "fallback": "📈 Attribute Analysis",
         },
     )

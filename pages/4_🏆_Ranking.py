@@ -4,7 +4,15 @@ import pandas as pd
 import numpy as np
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
-from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
+from assets.ui_components import (
+    apply_theme,
+    centered_page_button,
+    divider,
+    info_panel,
+    page_header,
+    section_header,
+    nav_footer,
+)
 from utils.ui_steps import render_steps
 # Safe initialization
 if 'data_manager' not in st.session_state:
@@ -149,7 +157,7 @@ def main():
         forward_spec = {
             "label": "🔍 Proceed to COCO Analysis",
             "page": "pages/5_🔍_COCO_Analysis.py",
-            "key": "pulse",
+            "key": "nav_to_coco_from_ranking",
             "fallback": "🔍 COCO Analysis",
             "help": "Navigate to the COCO Analysis page with ranked data",
         }
@@ -270,27 +278,16 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
 
     # Export options
     divider()
-    st.subheader("💾 Export")
-    
-        # Download ranked data
+    st.subheader("Export")
     csv_data = ranked_df.to_csv(index=False)
     st.download_button(
-        "📥 Download Ranking Data (CSV)",
+        "Download Ranking Data (CSV)",
         csv_data,
         f"student_ranking_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
         "text/csv",
-        use_container_width=True
+        use_container_width=True,
     )
-        # Export options
-    divider()
-    col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
-    with col_center:
-        if st.button(
-            "Visualizations",
-            key="VISUAL",
-            icon="📊",
-            ):
-             st.switch_page("pages/6_📊_Visualizations.py")
+
 
 if __name__ == "__main__":
     main()

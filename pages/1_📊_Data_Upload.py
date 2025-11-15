@@ -5,7 +5,14 @@ import pathlib
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.ui_steps import render_steps
-from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header
+from assets.ui_components import (
+    apply_theme,
+    centered_page_button,
+    divider,
+    info_panel,
+    page_header,
+    section_header,
+)
 
 # Safe init if this page is opened directly
 if 'data_manager' not in st.session_state:
@@ -62,7 +69,6 @@ def main():
                 )
         except FileNotFoundError:
             st.warning("Demo CSV not found at sample_data/discussion_demo.csv")
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with col_demo_xlsx:
         sample_xlsx_path = os.path.join("sample_data", "discussion_demo.xlsx")
@@ -105,29 +111,26 @@ def main():
                 st.dataframe(df.head(10), use_container_width=True)
 
             # Actions
-          
-            act1, act2 = st.columns(2)
-            with act1:
-                csv_data = df.to_csv(index=False)
-                st.download_button(
-                    "⬇️ Download processed data",
-                    csv_data,
-                    f"processed_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
-                    "text/csv",
-                    use_container_width=True,
-                    key="dl_processed"
-                )
-            with act2:
-                if st.button(
-                    "⚙️ Go to Configuration",
-                    use_container_width=True,
-                    key="pulse",
-                    type="primary",
-                ):
-                    try:
-                        st.switch_page("pages/2_⚙️_Configuration.py")
-                    except Exception:
-                        st.warning("Can’t auto-navigate. Open “⚙️ Configuration” from the sidebar.")
+
+            csv_data = df.to_csv(index=False)
+            st.download_button(
+                "Download processed data",
+                csv_data,
+                f"processed_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+                "text/csv",
+                use_container_width=True,
+                key="dl_processed",
+            )
+
+            divider()
+            centered_page_button(
+                "Configure thresholds & roles",
+                "pages/2_⚙️_Configuration.py",
+                key="go_to_configuration_cta",
+                icon="⚙️",
+                help="Update professors, deadlines, and AI insight thresholds.",
+                fallback="⚙️ Configuration",
+            )
 
 def process_uploaded_file(uploaded_file):
     file_ext = os.path.splitext(uploaded_file.name)[1].lower()

@@ -162,3 +162,38 @@ def nav_footer(
         cols[1].empty()
 
     _render_button(forward, cols[2], kind="forward")
+
+
+def centered_page_button(
+    label: str,
+    target_page: Optional[str],
+    *,
+    key: str,
+    icon: Optional[str] = None,
+    help: Optional[str] = None,
+    fallback: Optional[str] = None,
+    button_type: str = "primary",
+    disabled: bool = False,
+) -> bool:
+    """Render a prominent CTA button centered on the page."""
+    fallback = fallback or label or target_page or "target page"
+
+    cols = st.columns([1, 2, 1])
+    button_kwargs = {
+        "label": label,
+        "use_container_width": True,
+        "key": key,
+        "type": button_type,
+        "help": help,
+        "disabled": disabled or not bool(target_page),
+    }
+    if icon:
+        button_kwargs["icon"] = icon
+
+    clicked = cols[1].button(**button_kwargs)
+    if clicked and target_page:
+        try:
+            st.switch_page(target_page)
+        except Exception:
+            st.warning(f"Unable to auto-navigate. Please open `{fallback}` from the sidebar.")
+    return clicked

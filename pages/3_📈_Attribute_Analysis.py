@@ -9,7 +9,15 @@ from utils.attribute_calculations import (
     content_attrs, exam_attrs, available_attributes,
     to_dt
 )
-from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
+from assets.ui_components import (
+    apply_theme,
+    centered_page_button,
+    divider,
+    info_panel,
+    page_header,
+    section_header,
+    nav_footer,
+)
 from utils.ui_steps import render_steps
 # ---------- Safe initialization ----------
 if 'data_manager' not in st.session_state:
@@ -90,22 +98,23 @@ def main():
     student_attributes = data_manager.get_student_attributes()
     if student_attributes is not None:
         display_hybrid_layout(student_attributes)
+        centered_page_button(
+            "Visualizations",
+            "pages/6_📊_Visualizations.py",
+            key="pulse",
+            icon="📊",
+            help="Open interactive dashboards built from the computed attributes.",
+            fallback="📊 Visualizations",
+            button_type="secondary",
+        )
 
-        col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
-        with col_center:
-            if st.button(
-                "Visualizations",
-                key="VISUAL",
-                icon="📊",
-                ):
-                 st.switch_page("pages/6_📊_Visualizations.py")
 
     forward_spec = None
     if data_manager.get_student_attributes() is not None:
         forward_spec = {
             "label": "🏆 Proceed to Ranking",
             "page": "pages/4_🏆_Ranking.py",
-            "key": "pulse",
+            "key": "nav_to_ranking_from_attributes",
             "fallback": "🏆 Ranking",
             "help": "Navigate to the ranking page with computed attributes",
         }
@@ -340,3 +349,5 @@ def display_hybrid_layout(oam_combined):
 
 if __name__ == "__main__":
     main()
+
+
