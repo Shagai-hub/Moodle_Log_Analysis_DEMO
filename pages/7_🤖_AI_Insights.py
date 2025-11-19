@@ -114,6 +114,113 @@ def compute_metrics_snapshot(df):
     return snapshot
 
 
+def compute_social_connectedness(df):
+    """Classify isolated vs highly connected students using interaction metrics."""
+    result = {
+        "available": False,
+        "isolated": [],
+        "connected": [],
+        "thresholds": {},
+        "missing_columns": ["unique_discussions", "unique_interactions", "total_posts", "engagement_rate"],
+        "summary": {"total": 0, "isolated": 0, "connected": 0},
+    }
+    if df is None or df.empty:
+        return result
+
+    resolved = {
+        "unique_discussions": resolve_column(df, "unique_discussions"),
+        "unique_interactions": resolve_column(df, "unique_interactions"),
+        "total_posts": resolve_column(df, "total_posts"),
+        "engagement_rate": resolve_column(df, "engagement_rate"),
+    }
+    missing = [slug for slug, col in resolved.items() if not col]
+    active_cols = {slug: col for slug, col in resolved.items() if col}
+    if not active_cols:
+        result["missing_columns"] = missing
+        return result
+
+    numeric_df = df[["userid", "userfullname"] + list(active_cols.values())].copy()
+    for col in active_cols.values():
+        numeric_df[col] = pd.to_numeric(numeric_df[col], errors="coerce")
+
+    thresholds = {slug: float(numeric_df[col].median()) for slug, col in active_cols.items()}
+    weights = {
+        "unique_discussions": 1.6,
+        "unique_interactions": 1.6,
+        "total_posts": 1.0,
+        "engagement_rate": 1.0,
+    }
+    available_weight = sum(weights.get(slug, 1.0) for slug in active_cols)
+    connected_cutoff = max(2.4, available_weight * 0.55)
+    isolated_cutoff = max(1.2, available_weight * 0.3)
+    labels = {
+        "unique_discussions": "unique discussions",
+        "unique_interactions": "peer interactions",
+        "total_posts": "posts",
+        "engagement_rate": "engagement rate",
+    }
+
+    isolated_entries = []
+    connected_entries = []
+
+    for _, row in numeric_df.iterrows():
+        warnings = []
+        highlights = []
+        metrics = {}
+        network_score = 0.0
+
+        for slug, col in active_cols.items():
+            value = row.get(col)
+            metrics[slug] = value
+            weight = weights.get(slug, 1.0)
+            threshold = thresholds.get(slug)
+            if threshold is None or pd.isna(threshold) or pd.isna(value):
+                continue
+            if value >= threshold:
+                network_score += weight
+                if slug in {"unique_discussions", "unique_interactions"}:
+                    highlights.append(f"strong {labels[slug]}")
+            else:
+                label = labels.get(slug, slug.replace("_", " "))
+                if slug in {"unique_discussions", "unique_interactions"}:
+                    count_repr = format_metric_value(value, 0)
+                    warnings.append(f"only {count_repr} {label}")
+                elif slug == "engagement_rate":
+                    warnings.append("engagement below cohort median")
+                elif slug == "total_posts":
+                    warnings.append("low post volume")
+
+        entry = {
+            "userfullname": row.get("userfullname") or (f"ID {int(row['userid'])}" if row.get("userid") else "Unknown"),
+            "userid": row.get("userid"),
+            "metrics": metrics,
+            "network_score": round(network_score, 2),
+        }
+
+        if network_score >= connected_cutoff:
+            entry["highlights"] = highlights or ["Consistent participation footprint"]
+            connected_entries.append(entry)
+        elif network_score <= isolated_cutoff or len(warnings) >= 2:
+            entry["warnings"] = warnings or ["Sparse participation signals"]
+            isolated_entries.append(entry)
+
+    connected_entries = sorted(connected_entries, key=lambda row: row["network_score"], reverse=True)[:20]
+    isolated_entries = sorted(isolated_entries, key=lambda row: row["network_score"])[:20]
+
+    result.update({
+        "available": True,
+        "connected": connected_entries,
+        "isolated": isolated_entries,
+        "thresholds": thresholds,
+        "missing_columns": missing,
+        "summary": {
+            "total": int(len(numeric_df)),
+            "isolated": len(isolated_entries),
+            "connected": len(connected_entries),
+        },
+    })
+    return result
+
 def detect_anomalies(df, settings):
     anomalies = []
     missing_columns = set()
@@ -326,7 +433,7 @@ def format_watchlist_dataframe(watchlist):
 
 
 
-def build_focus_points(metrics_snapshot, watchlist, anomalies):
+def build_focus_points(metrics_snapshot, watchlist, anomalies, social_graph=None):
     points = []
     total = metrics_snapshot.get("total_students") or 0
     watch_count = len(watchlist)
@@ -356,6 +463,10 @@ def build_focus_points(metrics_snapshot, watchlist, anomalies):
         if labels:
             joined = ", ".join(labels[:2])
             points.append(f"Outliers detected for {joined}.")
+    if social_graph:
+        iso_count = len(social_graph.get("isolated", []))
+        if iso_count:
+            points.append(f"{iso_count} learners show isolation risk (limited peer touchpoints).")
     if not points:
         points.append("No major risks detected—use the chat below to inspect particular learners.")
     return points[:3]
@@ -433,6 +544,8 @@ def generate_ai_insights(student_df, config, data_manager):
     ]
     watchlist = assemble_watchlist(student_df, rule_results, anomalies, metric_columns)
     metrics_snapshot = compute_metrics_snapshot(student_df)
+    social_graph = compute_social_connectedness(student_df)
+    metrics_snapshot["isolated_count"] = len(social_graph.get("isolated", []))
 
     prompt = build_summary_prompt(metrics_snapshot, watchlist, anomalies)
     prompt_trimmed = prompt[:1800]
@@ -446,7 +559,7 @@ def generate_ai_insights(student_df, config, data_manager):
 
     notifications = generate_sample_notifications(watchlist, metrics_snapshot)
     severity_counts = Counter(entry.get("severity", "medium") for entry in watchlist if entry)
-    focus_points = build_focus_points(metrics_snapshot, watchlist, anomalies)
+    focus_points = build_focus_points(metrics_snapshot, watchlist, anomalies, social_graph)
 
     return {
         "generated_at": datetime.utcnow().isoformat(),
@@ -464,6 +577,7 @@ def generate_ai_insights(student_df, config, data_manager):
         "summary_prompt": prompt_trimmed,
         "severity_counts": dict(severity_counts),
         "summary_points": focus_points,
+        "social_graph": social_graph,
     }
 
 
@@ -519,6 +633,11 @@ def display_summary_section(insights):
         missing = ", ".join(insights["missing_columns"])
         st.warning(f"Some rules or detectors skipped missing columns: {missing}")
 
+    social_graph = insights.get("social_graph") or {}
+    isolated_count = len(social_graph.get("isolated", []))
+    if isolated_count:
+        st.warning(f"{isolated_count} students show isolation risk. Review the Connectivity tab for outreach ideas.")
+
 
 def display_watchlist_section(insights):
     section_header("Students to Watch", icon="⚠️", tight=True)
@@ -556,6 +675,85 @@ def display_notifications_section(insights):
         st.markdown(f"```\n{note['body']}\n```")
 
 
+def build_social_table(entries, positive=False):
+    if not entries:
+        return None
+    rows = []
+    note_key = "highlights" if positive else "warnings"
+    fallback_note = "Consistent participation" if positive else "Needs nudges to participate"
+    for entry in entries:
+        metrics = entry.get("metrics", {})
+        rows.append(
+            {
+                "Student": entry.get("userfullname") or (f"ID {entry.get('userid')}" if entry.get("userid") else "Unknown"),
+                "Network score": entry.get("network_score"),
+                "Unique discussions": format_metric_value(metrics.get("unique_discussions"), 0),
+                "Peer interactions": format_metric_value(metrics.get("unique_interactions"), 0),
+                "Posts": format_metric_value(metrics.get("total_posts"), 0),
+                "Engagement": format_metric_value(metrics.get("engagement_rate"), 2),
+                "Notes": ", ".join(entry.get(note_key, [])[:2]) or fallback_note,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def display_social_connectedness_section(insights):
+    section_header("Isolation & Connectedness", icon="🧩", tight=True)
+    social_graph = insights.get("social_graph") or {}
+    if not social_graph.get("available"):
+        missing = ", ".join(social_graph.get("missing_columns", []))
+        info_panel(
+            "Need the unique discussion, interaction, post, or engagement columns to compute connectivity."
+            + (f" Missing: {missing}" if missing else ""),
+            icon="ℹ️",
+        )
+        return
+
+    summary = social_graph.get("summary", {})
+    isolated = social_graph.get("isolated", [])
+    connected = social_graph.get("connected", [])
+
+    col_total, col_isolated, col_connected = st.columns(3)
+    with col_total:
+        st.metric("Students analysed", summary.get("total", 0))
+    with col_isolated:
+        st.metric(
+            "Isolation risks",
+            len(isolated),
+            help="Flagged when unique discussions, peer interactions, and engagement trail the cohort median.",
+        )
+    with col_connected:
+        st.metric("Highly connected", len(connected))
+
+    if isolated:
+        sample_names = ", ".join(entry.get("userfullname") for entry in isolated[:4])
+        st.warning(f"{len(isolated)} students show isolation risk: {sample_names}")
+    else:
+        st.success("No isolation warnings at the moment—peer interactions look balanced.")
+
+    iso_df = build_social_table(isolated, positive=False)
+    if iso_df is not None:
+        st.markdown("**Isolated students (needs outreach)**")
+        st.dataframe(iso_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("Everyone currently meets the minimum peer interaction thresholds.")
+
+    if connected:
+        st.markdown("**Highly connected students (potential ambassadors)**")
+        conn_df = build_social_table(connected, positive=True)
+        st.dataframe(conn_df, use_container_width=True, hide_index=True)
+
+    thresholds = social_graph.get("thresholds", {})
+    threshold_bits = []
+    for slug, value in thresholds.items():
+        if value is None or pd.isna(value):
+            continue
+        label = slug.replace("_", " ").title()
+        threshold_bits.append(f"{label}: {value:.2f}")
+    if threshold_bits:
+        st.caption("Median thresholds used for the classification → " + " · ".join(threshold_bits))
+
+
 
 def get_student_metric_columns(df):
     return {
@@ -566,7 +764,115 @@ def get_student_metric_columns(df):
         "deadline_exceeded_posts_Quasi_exam_I": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_I"),
         "deadline_exceeded_posts_Quasi_exam_II": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_II"),
         "deadline_exceeded_posts_Quasi_exam_III": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_III"),
+        "unique_discussions": resolve_column(df, "unique_discussions"),
+        "unique_interactions": resolve_column(df, "unique_interactions"),
     }
+
+
+def handle_general_chat_request(prompt, normalized, student_df, insights, resolved_cols):
+    social_graph = insights.get("social_graph") or {}
+    if ("isolat" in normalized) or ("disconnected" in normalized):
+        isolated = social_graph.get("isolated") or []
+        if not isolated:
+            return "No isolated students are flagged at the moment."
+        lines = [f"{len(isolated)} students show isolation risk:"]
+        for entry in isolated[:5]:
+            metrics = entry.get("metrics", {})
+            discussions = format_metric_value(metrics.get("unique_discussions"), 0)
+            peers = format_metric_value(metrics.get("unique_interactions"), 0)
+            lines.append(f"- {entry.get('userfullname')}: {discussions} discussions · {peers} peer interactions")
+        return "\n".join(lines)
+
+    if "connected" in normalized and "disconnected" not in normalized:
+        connected = social_graph.get("connected") or []
+        if not connected:
+            return "I need more interaction metrics before highlighting well-connected students."
+        lines = ["Highly connected students:"]
+        for entry in connected[:5]:
+            metrics = entry.get("metrics", {})
+            discussions = format_metric_value(metrics.get("unique_discussions"), 0)
+            peers = format_metric_value(metrics.get("unique_interactions"), 0)
+            lines.append(f"- {entry.get('userfullname')}: {discussions} discussions · {peers} peer interactions")
+        return "\n".join(lines)
+
+    if any(word in normalized for word in ["watchlist", "alert", "warning"]):
+        watchlist = insights.get("students_to_watch", [])
+        if not watchlist:
+            return "The watchlist is empty right now."
+        lines = ["Current watchlist:"]
+        for entry in watchlist[:5]:
+            label = entry.get("severity", "medium").title()
+            reason = ", ".join((entry.get("flags") or entry.get("anomalies") or [])[:2])
+            lines.append(f"- {entry.get('userfullname')}: {label} ({reason or 'general anomaly'})")
+        return "\n".join(lines)
+
+    ranking_response = describe_metric_ranking_from_prompt(normalized, student_df, resolved_cols)
+    if ranking_response:
+        return ranking_response
+    return None
+
+
+def describe_metric_ranking_from_prompt(normalized, student_df, resolved_cols):
+    wants_high = any(
+        token in normalized
+        for token in ["top", "best", "high", "highest", "most", "above average", "strong", "star", "excellent"]
+    )
+    wants_low = any(
+        token in normalized
+        for token in ["low", "lowest", "least", "fewest", "below average", "underperform", "struggling", "bottom"]
+    )
+    if not wants_high and not wants_low:
+        return None
+    ascending = wants_low and not wants_high
+
+    metric_map = [
+        (["engagement", "motivation"], resolved_cols.get("engagement_rate"), "engagement rate", 2),
+        (["post", "activity", "contribution"], resolved_cols.get("total_posts"), "total posts", 0),
+        (["reply", "response"], resolved_cols.get("total_replies_to_professor"), "replies to the professor", 0),
+        (["discussion", "thread"], resolved_cols.get("unique_discussions"), "unique discussions", 0),
+        (["interaction", "peer"], resolved_cols.get("unique_interactions"), "peer interactions", 0),
+    ]
+
+    for keywords, column_name, label, decimals in metric_map:
+        if column_name and any(keyword in normalized for keyword in keywords):
+            return describe_metric_ranking(student_df, column_name, label, ascending=ascending, decimals=decimals)
+
+    # Handle deadline-specific queries separately
+    if "deadline" in normalized or "late" in normalized or "overdue" in normalized:
+        deadline_cols = [
+            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_I"),
+            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_II"),
+            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_III"),
+        ]
+        deadline_cols = [col for col in deadline_cols if col]
+        if deadline_cols:
+            deadline_df = student_df.copy()
+            totals = deadline_df[deadline_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1)
+            deadline_df["_deadline_total"] = totals
+            return describe_metric_ranking(
+                deadline_df,
+                "_deadline_total",
+                "deadline misses",
+                ascending=ascending,
+                decimals=0,
+            )
+    return None
+
+
+def describe_metric_ranking(df, column_name, label, ascending=True, decimals=2):
+    if column_name not in df.columns:
+        return None
+    working = df[["userfullname", column_name]].copy()
+    working[column_name] = pd.to_numeric(working[column_name], errors="coerce")
+    ranked = working.dropna(subset=[column_name]).sort_values(column_name, ascending=ascending).head(5)
+    if ranked.empty:
+        return None
+    direction_label = "lowest" if ascending else "highest"
+    lines = [f"{label.title()} ({direction_label}):"]
+    for _, row in ranked.iterrows():
+        value = row[column_name]
+        lines.append(f"- {row['userfullname']}: {format_metric_value(value, decimals)}")
+    return "\n".join(lines)
 
 
 def extract_student_mentions(prompt, available_names):
@@ -644,22 +950,6 @@ def answer_student_question(prompt, student_df, insights):
     normalized = prompt.lower()
     watchlist = insights.get("students_to_watch", [])
 
-    if not matches:
-        eng_col = resolved_cols.get("engagement_rate")
-        if "top" in normalized and "engagement" in normalized and eng_col:
-            ranked = (
-                student_df.dropna(subset=[eng_col])
-                .sort_values(eng_col, ascending=False)
-                .head(3)
-            )
-            if ranked.empty:
-                return "I could not compute engagement rankings yet."
-            lines = ["Top engagement performers:"]
-            for _, row in ranked.iterrows():
-                lines.append(f"- {row.get('userfullname')} ({row.get(eng_col):.2f})")
-            return "\n".join(lines)
-        return "I couldn't find a matching student name. Try the exact spelling from the tables."
-
     rows = []
     for name in matches[:2]:
         matching = student_df[student_df["userfullname"].astype(str).str.lower() == name.lower()]
@@ -667,6 +957,9 @@ def answer_student_question(prompt, student_df, insights):
             continue
         rows.append((name, matching.iloc[0]))
     if not rows:
+        general_response = handle_general_chat_request(prompt, normalized, student_df, insights, resolved_cols)
+        if general_response:
+            return general_response
         return "I couldn't resolve those names inside the attribute matrix."
 
     if len(rows) == 1:
@@ -717,7 +1010,7 @@ def answer_student_question(prompt, student_df, insights):
 
 def render_student_chatbot(student_df, insights):
     section_header("Student Copilot", icon="✨", tight=True)
-    st.caption("Ask about any student or compare two learners by name.")
+    st.caption("Ask about any student, compare two learners, or type prompts like 'isolated students' or 'top engagement'.")
     chat_key = "ai_student_chat_history"
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
@@ -783,14 +1076,16 @@ def main():
 
 
     divider()
-    tab_summary, tab_watchlist, tab_notifications, tab_chat = st.tabs(
-        ["Summary", "Watchlist", "Notifications", "Student Q&A"]
+    tab_summary, tab_watchlist, tab_network, tab_notifications, tab_chat = st.tabs(
+        ["Summary", "Watchlist", "Connectivity", "Notifications", "Student Q&A"]
     )
 
     with tab_summary:
         display_summary_section(insights)
     with tab_watchlist:
         display_watchlist_section(insights)
+    with tab_network:
+        display_social_connectedness_section(insights)
     with tab_notifications:
         display_notifications_section(insights)
     with tab_chat:

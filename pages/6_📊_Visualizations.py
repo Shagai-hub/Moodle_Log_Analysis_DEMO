@@ -79,6 +79,8 @@ def main():
         divider()
         render_student_comparison(student_attributes, attribute_cols)
         divider()
+        render_above_below_matrix(student_attributes, attribute_cols)
+        divider()
         render_top_performers(student_attributes, attribute_cols)
         divider()
         render_category_analysis(student_attributes)
@@ -137,6 +139,7 @@ def render_attribute_distribution(oam_combined, attribute_cols):
             "Select attribute",
             attribute_cols,
             key="viz_attr_dist_select",
+            
         )
 
         if selected_attribute:
@@ -150,7 +153,7 @@ def render_attribute_distribution(oam_combined, attribute_cols):
             hist_fig = px.histogram(
                 oam_combined,
                 x=selected_attribute,
-                nbins=20,
+                nbins=50,
                 title=f"Distribution of {selected_attribute.replace('_', ' ').title()}",
             )
             hist_fig.update_layout(
@@ -198,6 +201,49 @@ def render_student_comparison(oam_combined, attribute_cols):
 
         bar_fig = create_attribute_comparison_bar(comparison_data, selected_students, selected_attributes)
         st.plotly_chart(bar_fig, use_container_width=True)
+        st.caption("Use the heatmap below to spot who sits above or below the cohort averages.")
+
+
+def render_above_below_matrix(oam_combined, attribute_cols):
+    section_header("Above vs Below Cohort Average", icon="🎯")
+    if not attribute_cols:
+        st.info("Compute attributes to compare students against cohort averages.")
+        return
+
+    default_attrs = attribute_cols[:6] if len(attribute_cols) >= 6 else attribute_cols
+    selected_attrs = st.multiselect(
+        "Attributes to highlight",
+        options=attribute_cols,
+        default=default_attrs,
+        key="viz_above_below_select",
+    )
+    if not selected_attrs:
+        st.info("Pick at least one attribute to render the heatmap.")
+        return
+
+    subset = oam_combined[["userfullname"] + selected_attrs].copy()
+    cohort_means = oam_combined[selected_attrs].mean()
+
+    def _style_column(series):
+        mean_val = cohort_means.get(series.name)
+        styled = []
+        for value in series:
+            if pd.isna(value) or mean_val is None or pd.isna(mean_val):
+                styled.append("")
+                continue
+            if value >= mean_val:
+                styled.append("background-color:#dcfce7;color:#14532d;font-weight:600;")
+            else:
+                styled.append("background-color:#fee2e2;color:#991b1b;font-weight:600;")
+        return styled
+
+    styled = (
+        subset.set_index("userfullname")
+        .style.format("{:.2f}")
+        .apply(_style_column, axis=0)
+    )
+    st.dataframe(styled, use_container_width=True, height=min(600, 40 * len(subset) + 120))
+    st.caption("Green cells = above cohort average · Red cells = below cohort average.")
 
 
 def create_radar_chart(comparison_data, students, attributes):
@@ -305,7 +351,7 @@ def render_student_profile(oam_combined, attribute_cols):
                     "Attribute": attr.replace("_", " ").title(),
                     "Score": student_row[attr],
                     "Class Average": oam_combined[attr].mean(),
-                    "Status": "✅ Above Avg" if student_row[attr] > oam_combined[attr].mean() else "📊 Below Avg",
+                    "Status": "✅ Above Avg" if student_row[attr] > oam_combined[attr].mean() else "⚠️ Below Avg",
                 }
             )
 
