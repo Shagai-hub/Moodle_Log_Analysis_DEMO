@@ -21,7 +21,7 @@ def main():
 
     page_header(
         "Upload Discussion Data",
-        "Bring in your Moodle discussion logs to kick off analysis and downstream insights.",
+        "Bring in your Moodle discussion logs to analysis and downstream insights.",
         icon="📥",
     )
 
@@ -117,9 +117,9 @@ def main():
 
             divider()
             centered_page_button(
-                "Configure thresholds & roles",
+                "Configure",
                 "pages/2_⚙️_Configuration.py",
-                key="go_to_configuration_cta",
+                key="pulse",
                 icon="⚙️",
                 help="Update professors, deadlines, and AI insight thresholds.",
                 fallback="⚙️ Configuration",

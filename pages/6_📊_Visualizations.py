@@ -121,9 +121,9 @@ def main():
             "fallback": "🏆 Ranking",
         },
         forward={
-            "label": "🤖 Go to AI Insights",
+            "label": "✨ Go to AI Insights",
             "page": "pages/7_🤖_AI_Insights.py",
-            "key": "viz_forward_to_ai",
+            "key": "pulse",
             "fallback": "🤖 AI Insights",
         },
         message="Visualisations use cached data—re-run computation pages to refresh the figures.",
@@ -506,9 +506,8 @@ def render_ranking_insights(ranked_results):
     ranking_copy = ranked_results.copy()
     ranking_copy["Average_Rank"] = ranking_copy[rank_cols].mean(axis=1)
     ranking_copy["Overall_Rank"] = ranking_copy["Average_Rank"].rank(method="min").astype(int)
-    ranking_copy = ranking_copy.sort_values("Overall_Rank")
 
-    max_students = min(20, len(ranking_copy))
+    max_students = min(50, len(ranking_copy))
     top_n = st.slider(
         "Number of students to display",
         5,
@@ -575,7 +574,7 @@ def render_coco_overview(coco_results, validation_results):
         info_panel("Could not identify a score table in the COCO output.", icon="ℹ️")
         return
 
-    top_scores = score_table.nlargest(15, "Becslés_numeric")
+    top_scores = score_table.nlargest(30, "Becslés_numeric")
     if "Alternatives" in top_scores.columns:
         name_col = "Alternatives"
     elif "userfullname" in top_scores.columns:

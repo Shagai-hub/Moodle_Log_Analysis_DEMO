@@ -58,7 +58,7 @@ def main():
         section_header("Analysis Parameters", icon="📐", tight=True)
         job_name = st.text_input(
             "Analysis Name:",
-            value="StudentRanking",
+            value="COCO_YO",
             help="Name for this COCO analysis run"
         )
         
@@ -109,14 +109,6 @@ def main():
 
     if coco_tables:
         display_coco_results(coco_tables)
-        col_left, col_center, col_right = st.columns([1.3, 0.9, 0.9])
-        with col_center:
-            if st.button(
-                "Visualizations",
-                key="VISUAL",
-                icon="📊",
-                ):
-                 st.switch_page("pages/6_📊_Visualizations.py")
         if not has_validation_requirements(coco_tables):
             info_panel(
                 "Validation metrics require the COCO output table containing the columns "
@@ -143,7 +135,7 @@ def main():
         forward_spec = {
             "label": "📊 Explore Visualizations",
             "page": "pages/6_📊_Visualizations.py",
-            "key": "nav_to_visualizations_from_coco",
+            "key": "pulse1",
             "fallback": "📊 Visualizations",
             "help": "Review charts without re-running heavy computations",
         }
@@ -273,21 +265,6 @@ def display_coco_results(tables):
     display_key_tables(tables)
     display_export_options(tables)
 
-    if "last_coco_html" in st.session_state:
-        with st.expander("🔎 Raw COCO HTML (from last run)", expanded=False):
-            st.text_area(
-                "Raw COCO HTML",
-                st.session_state.last_coco_html,
-                height=600,
-                key="raw_coco_html",
-            )
-            st.download_button(
-                "⬇ Download last COCO HTML",
-                st.session_state.last_coco_html,
-                "coco_last_response.html",
-                "text/html",
-                use_container_width=True,
-            )
 
 
 def display_key_tables(tables):

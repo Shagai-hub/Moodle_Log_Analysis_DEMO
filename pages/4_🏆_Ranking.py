@@ -157,7 +157,7 @@ def main():
         forward_spec = {
             "label": "🔍 Proceed to COCO Analysis",
             "page": "pages/5_🔍_COCO_Analysis.py",
-            "key": "nav_to_coco_from_ranking",
+            "key": "pulse1",
             "fallback": "🔍 COCO Analysis",
             "help": "Navigate to the COCO Analysis page with ranked data",
         }
@@ -268,12 +268,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     st.subheader("🏆 Ranked Students")
     st.dataframe(display_df, use_container_width=True)
     
-    # Show top performers
-    st.subheader("🎯 Top Performers")
-    top_5 = display_df.head(5)
-    for idx, row in top_5.iterrows():
-        rank_icon = "🥇" if row["Overall Rank"] == 1 else "🥈" if row["Overall Rank"] == 2 else "🥉" if row["Overall Rank"] == 3 else "🏅"
-        st.write(f"{rank_icon} **{row['Overall Rank']}.** {row['Student Name']} (Avg Rank: {row['Average Rank']:.1f})")
+   
 
 
     # Export options

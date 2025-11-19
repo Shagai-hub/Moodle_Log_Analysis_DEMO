@@ -468,11 +468,11 @@ def generate_ai_insights(student_df, config, data_manager):
 
 
 def display_summary_section(insights):
-    section_header("Summary / Risk Overview", icon="??", tight=True)
-    info_panel(insights.get("summary", "No summary available."), icon="??")
+    section_header("Summary / Risk Overview", tight=True)
+    info_panel(insights.get("summary", "No summary available."), icon="📌")
 
     if insights.get("model_summary") is None and insights.get("model_error"):
-        st.caption(f"Model summary unavailable ({insights['model_error']}). Showing heuristic overview.")
+        st.caption("Showing heuristic overview.")
     elif insights.get("model_summary"):
         st.caption("Summary generated with {model}.".format(model=insights["settings"].get("summary_model", "")))
         st.caption(f"Heuristic snapshot: {insights.get('fallback_summary', '')}")
@@ -521,16 +521,18 @@ def display_summary_section(insights):
 
 
 def display_watchlist_section(insights):
-    section_header("Students to Watch", icon="??", tight=True)
+    section_header("Students to Watch", icon="⚠️", tight=True)
     watchlist = insights.get("students_to_watch", [])
     if not watchlist:
-        info_panel("All quiet for now - no students matched the current watch conditions.", icon="?")
+        info_panel("All quiet for now - no students matched the current watch conditions.")
         return
-
+    st.write("---")
     render_watchlist_cards(watchlist)
-
+    st.write("---")
     watch_df = format_watchlist_dataframe(watchlist)
     st.dataframe(watch_df, use_container_width=True, hide_index=True)
+    
+    st.write("---")
 
     unique_playbooks = []
     for entry in watchlist:
@@ -714,17 +716,12 @@ def answer_student_question(prompt, student_df, insights):
 
 
 def render_student_chatbot(student_df, insights):
-    section_header("Student Copilot", icon="??", tight=True)
+    section_header("Student Copilot", icon="✨", tight=True)
     st.caption("Ask about any student or compare two learners by name.")
     chat_key = "ai_student_chat_history"
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    col_clear, _ = st.columns([1, 5])
-    with col_clear:
-        if st.button("Clear chat", key="clear_ai_chat", use_container_width=True):
-            st.session_state[chat_key] = []
-            st.rerun()
 
     for message in st.session_state[chat_key]:
         st.chat_message(message["role"]).write(message["content"])
@@ -735,12 +732,17 @@ def render_student_chatbot(student_df, insights):
         response = answer_student_question(prompt, student_df, insights)
         st.session_state[chat_key].append({"role": "assistant", "content": response})
         st.rerun()
+        
+    col_clear, _ = st.columns([1, 5])
+    with col_clear:
+        if st.button("Clear chat", key="clear_ai_chat", use_container_width=True):
+            st.session_state[chat_key] = []
+            st.rerun()
 
 def main():
     page_header(
         "AI Insights",
-        "Leverage local-friendly intelligence to surface risks and suggested interventions.",
-        icon="🤖",
+        icon="✨",
         align="left",
         compact=True,
     )
@@ -778,10 +780,7 @@ def main():
             insights = generate_ai_insights(student_attributes, config, data_manager)
         data_manager.store_ai_insights(insights)
         st.success("AI insights updated.")
-    else:
-        generated_at = insights.get("generated_at")
-        if generated_at:
-            st.caption(f"Using cached insights generated at {generated_at}.")
+
 
     divider()
     tab_summary, tab_watchlist, tab_notifications, tab_chat = st.tabs(
@@ -806,6 +805,7 @@ def main():
             "fallback": "📊 Visualizations",
         }
     )
+    
 
 
 if __name__ == "__main__":

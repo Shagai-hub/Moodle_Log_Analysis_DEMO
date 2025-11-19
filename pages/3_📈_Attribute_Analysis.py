@@ -114,7 +114,7 @@ def main():
         forward_spec = {
             "label": "🏆 Proceed to Ranking",
             "page": "pages/4_🏆_Ranking.py",
-            "key": "nav_to_ranking_from_attributes",
+            "key": "pulse1",
             "fallback": "🏆 Ranking",
             "help": "Navigate to the ranking page with computed attributes",
         }
