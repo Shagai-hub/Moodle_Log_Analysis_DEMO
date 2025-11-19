@@ -5,6 +5,10 @@ from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
 from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header, subtle_text
 
+PROFESSOR_TEXT_KEY = "config_professors_text_buffer"
+PROFESSOR_SELECT_KEY = "config_detected_professor_select"
+PROFESSOR_SELECT_PLACEHOLDER = "— select —"
+
 
 # ---------- Safe initialization ----------
 if 'config' not in st.session_state:
@@ -16,6 +20,11 @@ config: ConfigManager = st.session_state.config
 data_manager: SessionDataManager = st.session_state.data_manager
 
 apply_theme()
+
+
+def _sync_professor_text_input(cfg: ConfigManager) -> None:
+    """Ensure the professor textarea mirrors the current config."""
+    st.session_state[PROFESSOR_TEXT_KEY] = "\n".join(cfg.professors)
 
 
 def main():
@@ -47,6 +56,11 @@ def main():
     with tab1:
         section_header("Professor Settings", tight=True, icon="👨‍🏫")
 
+        if PROFESSOR_TEXT_KEY not in st.session_state:
+            _sync_professor_text_input(config)
+        if PROFESSOR_SELECT_KEY not in st.session_state:
+            st.session_state[PROFESSOR_SELECT_KEY] = PROFESSOR_SELECT_PLACEHOLDER
+
         # Suggestions from data
         candidate_names = []
         if has_data and "userfullname" in raw_df.columns:
@@ -58,32 +72,18 @@ def main():
 
         with colp1:
             st.markdown("**Professor names (one per line)**")
-            prof_input = st.text_area(
+            st.text_area(
                 label="",
-                value="\n".join(config.professors),
+                key=PROFESSOR_TEXT_KEY,
                 height=140,
                 placeholder="",
                 help="These names are used to identify professor-related activities in the logs."
             )
             # Normalize + deduplicate
-            profs = [p.strip() for p in prof_input.split("\n") if p.strip()]
+            profs = [p.strip() for p in st.session_state.get(PROFESSOR_TEXT_KEY, "").split("\n") if p.strip()]
             config.professors = list(dict.fromkeys(profs))  # de-duplicate, keep order
 
-        with colp2:
-            if candidate_names:
-                st.markdown("**Quick insert from detected users**")
-                add_prof = st.selectbox(
-                    "Add from data",
-                    options=["— select —"] + candidate_names,
-                    index=0
-                )
-                if add_prof != "— select —":
-                    if add_prof not in config.professors:
-                        config.professors.append(add_prof)
-                        st.success(f"Added professor: {add_prof}")
-                        st.rerun()
-            else:
-                st.info("Load data to get suggested professor names.")
+
 
         st.markdown("---")
         section_header("Exam Deadline Settings", icon="🧪", tight=True)
@@ -224,6 +224,7 @@ def main():
                     import json
                     imported = json.load(up)
                     config.from_dict(imported)
+                    _sync_professor_text_input(config)
                     st.success("Configuration imported successfully.")
                     st.rerun()
                 except Exception as e:
@@ -231,6 +232,7 @@ def main():
 
             if st.button("🔄 Reset to Defaults", use_container_width=True):
                 config.load_defaults()
+                _sync_professor_text_input(config)
                 st.success("Reset to defaults.")
                 st.rerun()
 

@@ -81,8 +81,6 @@ def main():
         divider()
         render_top_performers(student_attributes, attribute_cols)
         divider()
-        render_correlation_heatmap(student_attributes, attribute_cols)
-        divider()
         render_category_analysis(student_attributes)
         divider()
         render_exam_focus(student_attributes)
@@ -316,38 +314,6 @@ def render_student_profile(oam_combined, attribute_cols):
 
         above_avg = sum(student_row[attr] > oam_combined[attr].mean() for attr in attribute_cols)
         st.info(f"**Summary:** {above_avg} of {len(attribute_cols)} attributes are above the cohort average.")
-
-
-def render_correlation_heatmap(oam_combined, attribute_cols):
-    section_header("Attribute Correlation Heatmap", icon="🌐")
-
-    if len(attribute_cols) < 2:
-        st.warning("Need at least two attributes for correlation analysis.")
-        return
-
-    corr_matrix = oam_combined[attribute_cols].corr()
-    fig = px.imshow(
-        corr_matrix,
-        text_auto=True,
-        aspect="auto",
-        color_continuous_scale="RdBu_r",
-        title="Attribute Correlation Heatmap",
-    )
-    fig.update_layout(xaxis_title="Attributes", yaxis_title="Attributes", height=600)
-    st.plotly_chart(fig, use_container_width=True)
-
-    with st.expander("Correlation interpretation guide"):
-        st.markdown(
-            """
-            **Correlation values guide**
-            - **+1.0**: Perfect positive correlation  
-            - **+0.7 to +1.0**: Strong positive correlation  
-            - **+0.3 to +0.7**: Moderate positive correlation  
-            - **-0.3 to +0.3**: Weak or no correlation  
-            - **-0.7 to -0.3**: Moderate negative correlation  
-            - **-1.0**: Perfect negative correlation
-            """
-        )
 
 
 def render_category_analysis(oam_combined):
