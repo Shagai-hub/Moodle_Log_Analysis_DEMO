@@ -86,6 +86,7 @@ def main():
         if df is not None:
             data_manager.store_raw_data(df, source_info=uploaded_file.name)
             st.toast(f"✅ Loaded '{uploaded_file.name}'")
+            st.snow()
 
 
             # Overview
