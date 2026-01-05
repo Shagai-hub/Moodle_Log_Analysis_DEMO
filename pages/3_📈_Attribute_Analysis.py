@@ -307,7 +307,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
             except Exception as e:
                 st.error(f"Error computing {attr}: {e}")
                 oam_combined[attr] = 0
-
+    st.snow()
     st.toast("✅ All attributes have been computed successfully!")
 
     # Fill NaN values and sort
