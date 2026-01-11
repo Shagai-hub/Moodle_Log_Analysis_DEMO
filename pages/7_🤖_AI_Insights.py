@@ -58,6 +58,15 @@ def resolve_column(df, column_name):
     return lower_map.get(column_name.lower())
 
 
+DEADLINE_PREFIX = "deadline_exceeded_posts_"
+
+
+def get_deadline_columns(df):
+    if df is None or df.empty:
+        return []
+    return [col for col in df.columns if str(col).startswith(DEADLINE_PREFIX)]
+
+
 def build_student_key(userid, userfullname, fallback=None):
     if userid is not None and not (isinstance(userid, float) and np.isnan(userid)):
         return f"id::{userid}"
@@ -95,15 +104,10 @@ def compute_metrics_snapshot(df):
         engagement = pd.to_numeric(df[col_eng], errors="coerce")
         snapshot["avg_engagement"] = engagement.mean()
         snapshot["low_engagement_count"] = int((engagement < 0.2).sum())
-    deadline_cols = [
-        resolve_column(df, "deadline_exceeded_posts_Quasi_exam_I"),
-        resolve_column(df, "deadline_exceeded_posts_Quasi_exam_II"),
-        resolve_column(df, "deadline_exceeded_posts_Quasi_exam_III"),
+    deadline_cols = get_deadline_columns(df)
+    deadline_counts = [
+        pd.to_numeric(df[col], errors="coerce").fillna(0) for col in deadline_cols
     ]
-    deadline_counts = []
-    for col in deadline_cols:
-        if col:
-            deadline_counts.append(pd.to_numeric(df[col], errors="coerce").fillna(0))
     if deadline_counts:
         combined = sum(deadline_counts)
         snapshot["avg_deadline_misses"] = combined.mean()
@@ -233,9 +237,11 @@ def detect_anomalies(df, settings):
     columns_to_check = [
         {"column": "engagement_rate", "label": "Engagement rate", "direction": "low"},
         {"column": "total_posts", "label": "Total posts", "direction": "low"},
-        {"column": "deadline_exceeded_posts_Quasi_exam_I", "label": "Deadline misses (Exam I)", "direction": "high"},
-        {"column": "deadline_exceeded_posts_Quasi_exam_II", "label": "Deadline misses (Exam II)", "direction": "high"},
     ]
+    for col in get_deadline_columns(df):
+        suffix = col.replace(DEADLINE_PREFIX, "").replace("_", " ").title()
+        label = f"Deadline misses ({suffix})" if suffix else "Deadline misses"
+        columns_to_check.append({"column": col, "label": label, "direction": "high"})
 
     for item in columns_to_check:
         resolved = resolve_column(df, item["column"])
@@ -417,14 +423,22 @@ def format_watchlist_dataframe(watchlist):
     rows = []
     for entry in watchlist:
         metrics = entry.get("metrics", {})
+        deadline_values = []
+        for key, value in metrics.items():
+            if not str(key).startswith(DEADLINE_PREFIX):
+                continue
+            numeric = pd.to_numeric(value, errors="coerce")
+            if pd.notna(numeric):
+                deadline_values.append(float(numeric))
+        deadline_total = sum(deadline_values) if deadline_values else None
         rows.append({
             "Student": entry["userfullname"] or (f"ID {entry['userid']}" if entry.get("userid") else "Unknown"),
             "Severity": entry.get("severity", "medium").title(),
-            "Flags": ", ".join(entry["flags"]) if entry["flags"] else "—",
-            "Anomalies": ", ".join(entry["anomalies"]) if entry["anomalies"] else "—",
+            "Flags": ", ".join(entry["flags"]) if entry["flags"] else "-",
+            "Anomalies": ", ".join(entry["anomalies"]) if entry["anomalies"] else "-",
             "Posts": metrics.get("total_posts"),
             "Engagement": f"{float(metrics['engagement_rate']):.2f}" if metrics.get("engagement_rate") is not None else None,
-            "Deadline Misses": metrics.get("deadline_exceeded_posts_Quasi_exam_I"),
+            "Deadline Misses": deadline_total,
             "Replies to Prof": metrics.get("total_replies_to_professor"),
             "Avg Reply (h)": metrics.get("avg_reply_time"),
         })
@@ -509,9 +523,15 @@ def render_watchlist_cards(watchlist):
         engagement = metrics.get("engagement_rate")
         if engagement is not None:
             stat_bits.append(f"{float(engagement):.2f} engagement")
-        misses = metrics.get("deadline_exceeded_posts_Quasi_exam_I")
-        if misses:
-            stat_bits.append(f"{misses} deadline misses")
+        misses_total = 0
+        for key, value in metrics.items():
+            if not str(key).startswith(DEADLINE_PREFIX):
+                continue
+            numeric = pd.to_numeric(value, errors="coerce")
+            if pd.notna(numeric):
+                misses_total += float(numeric)
+        if misses_total:
+            stat_bits.append(f"{int(misses_total)} deadline misses")
         stats_line = " · ".join(stat_bits) if stat_bits else "Limited metrics"
         reason_block = "<br>".join(reasons[:2]) if reasons else "General anomaly trigger"
         col.markdown(
@@ -538,10 +558,8 @@ def generate_ai_insights(student_df, config, data_manager):
         "engagement_rate",
         "total_replies_to_professor",
         "avg_reply_time",
-        "deadline_exceeded_posts_Quasi_exam_I",
-        "deadline_exceeded_posts_Quasi_exam_II",
-        "deadline_exceeded_posts_Quasi_exam_III",
     ]
+    metric_columns += get_deadline_columns(student_df)
     watchlist = assemble_watchlist(student_df, rule_results, anomalies, metric_columns)
     metrics_snapshot = compute_metrics_snapshot(student_df)
     social_graph = compute_social_connectedness(student_df)
@@ -756,17 +774,17 @@ def display_social_connectedness_section(insights):
 
 
 def get_student_metric_columns(df):
-    return {
+    resolved = {
         "total_posts": resolve_column(df, "total_posts"),
         "engagement_rate": resolve_column(df, "engagement_rate"),
         "total_replies_to_professor": resolve_column(df, "total_replies_to_professor"),
         "avg_reply_time": resolve_column(df, "avg_reply_time"),
-        "deadline_exceeded_posts_Quasi_exam_I": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_I"),
-        "deadline_exceeded_posts_Quasi_exam_II": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_II"),
-        "deadline_exceeded_posts_Quasi_exam_III": resolve_column(df, "deadline_exceeded_posts_Quasi_exam_III"),
         "unique_discussions": resolve_column(df, "unique_discussions"),
         "unique_interactions": resolve_column(df, "unique_interactions"),
     }
+    for col in get_deadline_columns(df):
+        resolved[col] = resolve_column(df, col)
+    return resolved
 
 
 def handle_general_chat_request(prompt, normalized, student_df, insights, resolved_cols):
@@ -839,12 +857,7 @@ def describe_metric_ranking_from_prompt(normalized, student_df, resolved_cols):
 
     # Handle deadline-specific queries separately
     if "deadline" in normalized or "late" in normalized or "overdue" in normalized:
-        deadline_cols = [
-            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_I"),
-            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_II"),
-            resolved_cols.get("deadline_exceeded_posts_Quasi_exam_III"),
-        ]
-        deadline_cols = [col for col in deadline_cols if col]
+        deadline_cols = get_deadline_columns(student_df)
         if deadline_cols:
             deadline_df = student_df.copy()
             totals = deadline_df[deadline_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1)
@@ -971,12 +984,16 @@ def answer_student_question(prompt, student_df, insights):
         lines.append(f"- Engagement: {format_metric_value(metrics.get('engagement_rate'), 2)}")
         lines.append(f"- Replies to professor: {format_metric_value(metrics.get('total_replies_to_professor'), 0)}")
         lines.append(f"- Avg reply time (h): {format_metric_value(metrics.get('avg_reply_time'), 1)}")
-        deadline_i = metrics.get('deadline_exceeded_posts_Quasi_exam_I')
-        if deadline_i is not None:
-            lines.append(f"- Deadline misses (Exam I): {format_metric_value(deadline_i, 0)}")
-        deadline_ii = metrics.get('deadline_exceeded_posts_Quasi_exam_II')
-        if deadline_ii is not None:
-            lines.append(f"- Deadline misses (Exam II): {format_metric_value(deadline_ii, 0)}")
+        deadline_values = []
+        for key, value in metrics.items():
+            if not str(key).startswith(DEADLINE_PREFIX):
+                continue
+            numeric = pd.to_numeric(value, errors="coerce")
+            if pd.notna(numeric):
+                deadline_values.append(float(numeric))
+        if deadline_values:
+            deadline_total = sum(deadline_values)
+            lines.append(f"- Deadline misses (total): {format_metric_value(deadline_total, 0)}")
         if watch_entry:
             reasons = watch_entry.get("flags") or watch_entry.get("anomalies") or []
             detail = ", ".join(reasons[:2]) if reasons else "general risk pattern"

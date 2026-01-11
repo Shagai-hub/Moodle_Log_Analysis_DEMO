@@ -6,8 +6,6 @@ from utils.session_data_manager import SessionDataManager
 from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header, subtle_text
 
 PROFESSOR_TEXT_KEY = "config_professors_text_buffer"
-PROFESSOR_SELECT_KEY = "config_detected_professor_select"
-PROFESSOR_SELECT_PLACEHOLDER = "— select —"
 
 
 # ---------- Safe initialization ----------
@@ -58,72 +56,76 @@ def main():
 
         if PROFESSOR_TEXT_KEY not in st.session_state:
             _sync_professor_text_input(config)
-        if PROFESSOR_SELECT_KEY not in st.session_state:
-            st.session_state[PROFESSOR_SELECT_KEY] = PROFESSOR_SELECT_PLACEHOLDER
 
         # Suggestions from data
         candidate_names = []
         if has_data and "userfullname" in raw_df.columns:
             candidate_names = (
-                raw_df["userfullname"].dropna().astype(str).value_counts().head(30).index.tolist()
+                raw_df["userfullname"].dropna().astype(str).value_counts().index.tolist()
             )
 
-        colp1, colp2 = st.columns([2, 1])
+        selected_professors = st.multiselect(
+            "Select professors from detected names",
+            options=candidate_names,
+            default=[name for name in config.professors if name in candidate_names],
+            help="Select one or more professor names found in the uploaded data.",
+        )
 
-        with colp1:
-            st.markdown("**Professor names (one per line)**")
-            st.text_area(
-                label="",
-                key=PROFESSOR_TEXT_KEY,
-                height=140,
-                placeholder="",
-                help="These names are used to identify professor-related activities in the logs."
-            )
-            # Normalize + deduplicate
-            profs = [p.strip() for p in st.session_state.get(PROFESSOR_TEXT_KEY, "").split("\n") if p.strip()]
-            config.professors = list(dict.fromkeys(profs))  # de-duplicate, keep order
+        st.markdown("**Additional professor names (one per line)**")
+        st.text_area(
+            label="",
+            key=PROFESSOR_TEXT_KEY,
+            height=120,
+            placeholder="",
+            help="Add any professor names that are not present in the detected list.",
+        )
+        manual_names = [
+            name.strip()
+            for name in st.session_state.get(PROFESSOR_TEXT_KEY, "").split("\n")
+            if name.strip()
+        ]
+        config.professors = list(dict.fromkeys(selected_professors + manual_names))
 
 
 
         st.markdown("---")
         section_header("Exam Deadline Settings", icon="🧪", tight=True)
         subtle_text("Set deadlines for each exam. Posts after these dates will be flagged.")
-
-        # Helper: detect exam-like subjects from data
-        detected_exams = []
+        # Detect subjects from data
+        detected_subjects = []
         if has_data and "subject" in raw_df.columns:
-            subj = raw_df["subject"].dropna().astype(str)
-            detected_exams = (
-                subj[subj.str.contains("exam", case=False, na=False)]
-                .value_counts()
-                .head(10)
-                .index.tolist()
-            )
+            subjects = raw_df["subject"].dropna().astype(str).str.strip()
+            subjects = subjects[subjects != ""]
+            detected_subjects = subjects.value_counts().index.tolist()
 
-        # Add exam UI (manual or from detected)
-        cole1, cole2 = st.columns([2, 2])
-        with cole1:
-            new_exam = st.text_input("➕ Add exam (custom name)", placeholder="e.g., Quasi Exam IV")
-            if st.button("Add Exam", use_container_width=True, key="add_exam_btn") and new_exam:
-                if new_exam not in config.deadlines:
-                    config.deadlines[new_exam] = pd.Timestamp.today().normalize()
-                    st.success(f"Added: {new_exam}")
+        if detected_subjects:
+            selected_subjects = st.multiselect(
+                "Detected subjects (from uploaded data)",
+                options=detected_subjects,
+                help="Select the base subject name so replies (e.g., Re:) are included.",
+            )
+            if st.button("Add selected exams", use_container_width=True, key="add_detected_exams_btn"):
+                added = 0
+                for exam_name in selected_subjects:
+                    if exam_name not in config.deadlines:
+                        config.deadlines[exam_name] = pd.Timestamp.today().normalize()
+                        added += 1
+                if added:
+                    st.success(f"Added {added} exam(s).")
                     st.rerun()
                 else:
-                    st.warning(f"'{new_exam}' already exists.")
+                    st.info("No new exams to add from the selected subjects.")
+        else:
+            st.info("No subjects detected yet. Upload data to see subject-based exam suggestions.")
 
-        with cole2:
-            if detected_exams:
-                add_det = st.selectbox("➕ Add from detected subjects", ["— select —"] + detected_exams)
-                if add_det != "— select —":
-                    if add_det not in config.deadlines:
-                        config.deadlines[add_det] = pd.Timestamp.today().normalize()
-                        st.success(f"Added: {add_det}")
-                        st.rerun()
-                    else:
-                        st.warning(f"'{add_det}' already exists.")
+        new_exam = st.text_input("? Add exam (custom name)", placeholder="e.g., Midterm Exam")
+        if st.button("Add custom exam", use_container_width=True, key="add_exam_btn") and new_exam:
+            if new_exam not in config.deadlines:
+                config.deadlines[new_exam] = pd.Timestamp.today().normalize()
+                st.success(f"Added: {new_exam}")
+                st.rerun()
             else:
-                st.info("No exam-like subjects detected. Load data first to auto-suggest.")
+                st.warning(f"'{new_exam}' already exists.")
 
         # Editable deadline table
         if config.deadlines:
@@ -160,30 +162,14 @@ def main():
     with tab2:
         section_header("Analysis Settings", icon="📊", tight=True)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("#### Pattern Matching")
-            pattern_str = ", ".join(map(str, config.parent_ids_pattern or []))
-            pattern_input = st.text_input(
-                "Parent IDs (comma-separated)",
-                value=pattern_str,
-                help="Used for the Pattern_followed attribute."
-            )
-            try:
-                parsed = [int(x.strip()) for x in pattern_input.split(",") if x.strip()]
-                config.parent_ids_pattern = parsed
-            except ValueError:
-                st.error("Please enter only integers separated by commas, e.g., 163483, 163486")
-
-        with col2:
-            st.markdown("#### COCO Analysis")
-            config.analysis_settings['y_value'] = st.number_input(
-                "Y reference value",
-                value=config.analysis_settings.get('y_value', 0),
-                min_value=0,
-                max_value=100000,
-                help="Reference value used in ranking and COCO analysis."
-            )
+        st.markdown("#### COCO Analysis")
+        config.analysis_settings['y_value'] = st.number_input(
+            "Y reference value",
+            value=config.analysis_settings.get('y_value', 0),
+            min_value=0,
+            max_value=100000,
+            help="Reference value used in ranking and COCO analysis."
+        )
 
         divider()
         st.markdown("#### Presets (optional)")

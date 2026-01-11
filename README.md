@@ -6,8 +6,8 @@ This is a DEMONSTRATION VERSION of the Moodle Log Analyzer. Operate with sample 
 This demo Streamlit application processes Moodle discussion forum exports to compute various student engagement attributes, rank students based on their performance as well as on the direction-rules/codes defined by the particular users, and perform antidiscriminative optimization based on similarity analysis using COCO(component-based object comparison for objectivity) analysis. It's particularly useful for educational researchers and instructors who want to analyze student participation patterns in online discussions in an objective way across different course structures and cohort types.
 
 ---Demo Version---
--Sample professor names ("professor_1", "professor_2") pre-configured
--Limited to predefined exam patterns and deadlines
+-Professor names are selectable from detected user names (or manual entry)
+-Exam names and deadlines are configured from detected subject values
 -Maximum dataset size restrictions may apply
 -Some advanced ML features may operate with reduced accuracy
 
@@ -24,33 +24,31 @@ Features
 
 
 ---attribute Analysis---
-Compute 19 different engagement metrics across four categories:
+Compute core engagement metrics across four categories (plus per-exam deadline metrics):
   1. Activity Metrics
-1.total_posts
-2.active_days
-3.total_characters
-4.total_words
-5.unique_discussions
-6.max streak
+-total_posts
+-active_days
+-average_posts_per_day
+-max_streak
+-modification_count
 
   2. Engagement Metrics
-7.total_replies_to_professor
-8.unique_interactions
-9.engagement_rate
-10.avg_reply_time
-11.modification_count
+-total_replies_to_professor
+-unique_interactions
+-unique_discussions
+-engagement_rate
+-avg_reply_time
+-valid_response
 
   3. Content Analysis
-12.valid_response
-13.citation_count
-14.topic_relevance_score
-15.avg_AI_involvedMsg_score
+-total_characters
+-total_words
+-citation_count
+-topic_relevance_score
+-avg_AI_involvedMsg_score
 
   4. Exam Performance
-16.Pattern_followed_quasi_exam_i
-17.deadline_exceeded_posts_Quasi_exam_I
-18.deadline_exceeded_posts_Quasi_exam_II
-19.deadline_exceeded_posts_Quasi_exam_III
+-deadline_exceeded_posts_<exam_name> (generated for each configured exam)
 
 
 This VERSION is provided for demonstration purposes only.

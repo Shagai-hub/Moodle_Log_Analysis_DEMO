@@ -6,8 +6,8 @@ from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.attribute_calculations import (
     ATTRIBUTE_FUNCS, activity_attrs, engagement_attrs,
-    content_attrs, exam_attrs, available_attributes,
-    to_dt
+    content_attrs, available_attributes,
+    build_exam_attribute_name, deadline_exceeded_posts_generic
 )
 from assets.ui_components import (
     apply_theme,
@@ -60,8 +60,6 @@ def main():
 
     # Use configuration from ConfigManager
     PROFESSORS = config.professors
-    DEADLINES = config.deadlines
-    PARENT_IDS_PATTERN = config.parent_ids_pattern
 
     # Prepare data (exclude professors)
     df_all = raw_data.copy()
@@ -85,9 +83,12 @@ def main():
         """, unsafe_allow_html=True)
 
     section_header("Select attributes", icon="🎛️")
-
     # Attribute selection UI
-    render_attribute_selection_ui()
+    exam_attribute_names = [
+        build_exam_attribute_name(name) for name in config.deadlines.keys()
+    ]
+    all_attributes = list(dict.fromkeys(available_attributes + exam_attribute_names))
+    render_attribute_selection_ui(all_attributes, exam_attribute_names)
 
     # Compute attributes CTA (bright)
     # Update the compute attributes button
@@ -131,7 +132,7 @@ def main():
         forward=forward_spec,
     )
 
-def render_attribute_selection_ui():
+def render_attribute_selection_ui(all_attributes, exam_attribute_names):
     """Render the attribute selection interface"""
     if "selected_attributes" not in st.session_state:
         st.session_state.selected_attributes = []
@@ -144,13 +145,13 @@ def render_attribute_selection_ui():
         attr_key_map[attr] = f"engagement_{attr}_{i}"
     for i, attr in enumerate(content_attrs):
         attr_key_map[attr] = f"content_{attr}_{i}"
-    for i, attr in enumerate(exam_attrs):
+    for i, attr in enumerate(exam_attribute_names):
         attr_key_map[attr] = f"exam_{attr}_{i}"
 
     # Helper functions for select all/clear all
     def select_all():
-        st.session_state.selected_attributes = available_attributes.copy()
-        for attr in available_attributes:
+        st.session_state.selected_attributes = all_attributes.copy()
+        for attr in all_attributes:
             key = attr_key_map.get(attr)
             if key is not None:
                 st.session_state[key] = True
@@ -161,59 +162,60 @@ def render_attribute_selection_ui():
             st.session_state[key] = False
 
     # Attribute descriptions
-    with st.expander("ℹ️ Attribute Descriptions", expanded=False):
+    with st.expander("Attribute Descriptions", expanded=False):
         st.markdown("""
         **Activity Metrics:** Posting frequency, consistency, and engagement patterns  
         **Engagement Metrics:** Interaction quality and response patterns  
         **Content Analysis:** Content quality, length, and relevance  
         **Exam Performance:** Exam-related posting behavior and deadline compliance  
         """)
-        
+
     count = len(st.session_state.selected_attributes)
-    # Selected count card
     st.markdown(
-    f"""
-    <div style='text-align:center; font-size:2.5rem; font-weight:700; color:#ADD8E6; margin-top:0.5rem;'>
-        Selected attributes: {count}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+        f"""
+        <div style='text-align:center; font-size:2.5rem; font-weight:700; color:#ADD8E6; margin-top:0.5rem;'>
+            Selected attributes: {count}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown("")
 
     # Category expanders for attribute selection
     col1, col2 = st.columns(2)
 
     with col1:
-        with st.expander("📊 Activity Metrics", expanded=False):
+        with st.expander("Activity Metrics", expanded=False):
             for attr in activity_attrs:
-                if attr in available_attributes:
+                if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
-        with st.expander("💬 Engagement Metrics", expanded=False):
+        with st.expander("Engagement Metrics", expanded=False):
             for attr in engagement_attrs:
-                if attr in available_attributes:
+                if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
     with col2:
-        with st.expander("📝 Content Analysis", expanded=False):
-            st.info("⚠️ Some ML-based attributes may take longer to compute", icon="⚙️")
+        with st.expander("Content Analysis", expanded=False):
+            st.info("Some ML-based attributes may take longer to compute")
             for attr in content_attrs:
-                if attr in available_attributes:
+                if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
-        with st.expander("📋 Exam Performance", expanded=False):
-            for attr in exam_attrs:
-                if attr in available_attributes:
+        with st.expander("Exam Performance", expanded=False):
+            if not exam_attribute_names:
+                st.info("No exams configured yet. Add exams in Configuration to enable deadline metrics.")
+            for attr in exam_attribute_names:
+                if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
                     checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
@@ -223,9 +225,9 @@ def render_attribute_selection_ui():
     divider()
     colsa, colsb = st.columns([1, 1])
     with colsa:
-        st.button("✅ Select All", on_click=select_all, use_container_width=True, key="select_all_btn")
+        st.button("Select All", on_click=select_all, use_container_width=True, key="select_all_btn")
     with colsb:
-        st.button("❌ Clear All", on_click=clear_all, use_container_width=True, key="clear_all_btn")
+        st.button("Clear All", on_click=clear_all, use_container_width=True, key="clear_all_btn")
 
 
 def update_selected_attributes(attr, checked):
@@ -243,8 +245,9 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
         return
 
     PROFESSORS = config.professors
-    DEADLINES = config.deadlines
-    PARENT_IDS_PATTERN = config.parent_ids_pattern
+    exam_attr_map = {
+        build_exam_attribute_name(name): name for name in config.deadlines.keys()
+    }
 
     students = df[["userid", "userfullname"]].drop_duplicates().sort_values("userfullname").reset_index(drop=True)
     oam_combined = students.copy()
@@ -252,42 +255,28 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     with st.spinner("⏳ Computing selected attributes..."):
         for i, attr in enumerate(st.session_state.selected_attributes):
             try:
-                func = ATTRIBUTE_FUNCS[attr]
-
-                # Handle functions that need additional parameters
-                if attr == "total_replies_to_professor":
-                    prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
-                    result = func(df, df_all, prof_name)
-
-                elif attr == "topic_relevance_score":
-                    prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
-                    result = func(df, df_all, prof_name)
-
-                elif attr in ["engagement_rate", "avg_reply_time"]:
-                    result = func(df, df_all)
-
-                elif attr.startswith("deadline_exceeded_posts_"):
-                    exam_mapping = {
-                        "deadline_exceeded_posts_Quasi_exam_I": "Quasi_exam_I",
-                        "deadline_exceeded_posts_Quasi_exam_II": "Quasi_exam_II",
-                        "deadline_exceeded_posts_Quasi_exam_III": "Quasi_exam_III",
-                    }
-                    if attr in exam_mapping:
-                        exam_name = exam_mapping[attr]
-                        if exam_name in DEADLINES:
-                            result = func(df)
-                        else:
-                            st.warning(f"Deadline for {exam_name} not found in configuration")
-                            continue
-                    else:
-                        st.warning(f"No mapping found for attribute: {attr}")
+                if attr in exam_attr_map:
+                    result = deadline_exceeded_posts_generic(df, exam_attr_map[attr])
+                else:
+                    func = ATTRIBUTE_FUNCS.get(attr)
+                    if func is None:
+                        st.warning(f"Attribute {attr} is not available.")
                         continue
 
-                elif attr == "Pattern_followed_quasi_exam_i":
-                    result = func(df)
+                    # Handle functions that need additional parameters
+                    if attr == "total_replies_to_professor":
+                        prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
+                        result = func(df, df_all, prof_name)
 
-                else:
-                    result = func(df)
+                    elif attr == "topic_relevance_score":
+                        prof_name = PROFESSORS[0] if PROFESSORS else "professor_1"
+                        result = func(df, df_all, prof_name)
+
+                    elif attr in ["engagement_rate", "avg_reply_time"]:
+                        result = func(df, df_all)
+
+                    else:
+                        result = func(df)
 
                 # Merge results
                 if result is not None and not result.empty:

@@ -11,13 +11,8 @@ class ConfigManager:
     
     def load_defaults(self):
         """Load default configuration"""
-        self.professors = ["professor_1", "professor_2"]
-        self.deadlines = {
-            "Quasi_exam_I": pd.to_datetime("2024-11-09 00:00:00"),
-            "Quasi_exam_II": pd.to_datetime("2024-11-09 00:00:00"),
-            "Quasi_exam_III": pd.to_datetime("2024-11-16 00:00:00"),
-        }
-        self.parent_ids_pattern = [163486]
+        self.professors = []
+        self.deadlines = {}
         self.analysis_settings = {
             'enable_ml_attributes': True,
             'auto_compute_attributes': False,
@@ -34,13 +29,28 @@ class ConfigManager:
             # Professor configuration
             with st.expander("👨‍🏫 Professors", expanded=False):
                 st.markdown("Professors will be excluded from student analysis")
+                raw_info = st.session_state.get("raw_data")
+                raw_df = raw_info.get("dataframe") if isinstance(raw_info, dict) else None
+                detected_names = []
+                if raw_df is not None and "userfullname" in raw_df.columns:
+                    detected_names = (
+                        raw_df["userfullname"].dropna().astype(str).value_counts().index.tolist()
+                    )
+                selected_names = st.multiselect(
+                    "Select professor names from data",
+                    options=detected_names,
+                    default=[name for name in self.professors if name in detected_names],
+                    help="Choose from detected user names to tag professors.",
+                )
                 prof_input = st.text_area(
                     "Professor names (one per line)", 
                     value="\n".join(self.professors),
                     height=100,
                     help="Enter one professor name per line. These users will be excluded from student analysis."
                 )
-                self.professors = [p.strip() for p in prof_input.split('\n') if p.strip()]
+                manual_names = [p.strip() for p in prof_input.split('\n') if p.strip()]
+                combined = list(dict.fromkeys(selected_names + manual_names))
+                self.professors = combined
                 st.write(f"**Currently configured:** {len(self.professors)} professors")
             
             # Deadline configuration
@@ -50,7 +60,6 @@ class ConfigManager:
                 # Dynamic deadline management
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    exam_names = list(self.deadlines.keys())
                     new_exam = st.text_input("Add new exam name")
                 with col2:
                     if st.button("Add Exam") and new_exam:
@@ -74,17 +83,6 @@ class ConfigManager:
             
             # Advanced settings
             with st.expander("🔧 Advanced Settings", expanded=False):
-                st.subheader("Pattern Matching")
-                pattern_input = st.text_input(
-                    "Parent IDs for Pattern Matching",
-                    value=", ".join(map(str, self.parent_ids_pattern)),
-                    help="Comma-separated list of parent IDs used for pattern detection"
-                )
-                try:
-                    self.parent_ids_pattern = [int(x.strip()) for x in pattern_input.split(",") if x.strip()]
-                except ValueError:
-                    st.error("Please enter valid integer IDs")
-                
                 st.subheader("Analysis Settings")
                 self.analysis_settings['enable_ml_attributes'] = st.checkbox(
                     "Enable ML-based Attributes", 
@@ -238,7 +236,6 @@ class ConfigManager:
             'professors_count': len(self.professors),
             'exams_count': len(self.deadlines),
             'exam_names': list(self.deadlines.keys()),
-            'pattern_ids_count': len(self.parent_ids_pattern),
             'ml_enabled': self.analysis_settings['enable_ml_attributes'],
             'y_value': self.analysis_settings['y_value']
         }
@@ -248,7 +245,6 @@ class ConfigManager:
         return {
             'professors': self.professors,
             'deadlines': {k: v.isoformat() for k, v in self.deadlines.items()},
-            'parent_ids_pattern': self.parent_ids_pattern,
             'analysis_settings': self.analysis_settings,
             'ai_insights_settings': self.ai_insights_settings,
             'ai_insight_rules': self.ai_insight_rules,
@@ -267,7 +263,6 @@ class ConfigManager:
             else:
                 self.deadlines[k] = v
         
-        self.parent_ids_pattern = config_dict.get('parent_ids_pattern', self.parent_ids_pattern)
         self.analysis_settings = config_dict.get('analysis_settings', self.analysis_settings)
         self.ai_insights_settings = config_dict.get('ai_insights_settings', self.ai_insights_settings)
         self.ai_insight_rules = config_dict.get('ai_insight_rules', self.ai_insight_rules)
@@ -299,28 +294,6 @@ class ConfigManager:
                 "playbook": [
                     "Send a nudge summarizing missed interactions.",
                     "Offer a short 1:1 check-in slot.",
-                ],
-            },
-            {
-                "id": "deadline_misses_exam_i",
-                "label": "Deadline misses (Exam I)",
-                "severity": "high",
-                "message": "Student missed configured number of submissions for Quasi Exam I.",
-                "conditions": [
-                    {"column": "deadline_exceeded_posts_Quasi_exam_I", "op": "ge", "setting": "deadline_miss_threshold"}
-                ],
-                "playbook": [
-                    "Review Moodle logs for late submissions.",
-                    "Send supportive reminder about upcoming deadlines.",
-                ],
-            },
-            {
-                "id": "deadline_misses_exam_ii",
-                "label": "Deadline misses (Exam II)",
-                "severity": "medium",
-                "message": "Student exceeded deadline threshold for Quasi Exam II.",
-                "conditions": [
-                    {"column": "deadline_exceeded_posts_Quasi_exam_II", "op": "ge", "setting": "deadline_miss_threshold"}
                 ],
             },
             {

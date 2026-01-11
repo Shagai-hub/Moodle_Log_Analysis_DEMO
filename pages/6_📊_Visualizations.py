@@ -11,7 +11,6 @@ from utils.attribute_calculations import (
     activity_attrs,
     engagement_attrs,
     content_attrs,
-    exam_attrs,
 )
 from utils.coco_utils import clean_coco_dataframe
 from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
@@ -24,6 +23,12 @@ if "config" not in st.session_state:
 
 render_steps(active="2 Visualize")
 apply_theme()
+
+EXAM_PREFIX = "deadline_exceeded_posts_"
+
+
+def get_exam_columns(df):
+    return [col for col in df.columns if col.startswith(EXAM_PREFIX)]
 
 
 def main():
@@ -369,7 +374,7 @@ def render_category_analysis(oam_combined):
         "Activity": [col for col in oam_combined.columns if col in activity_attrs],
         "Engagement": [col for col in oam_combined.columns if col in engagement_attrs],
         "Content": [col for col in oam_combined.columns if col in content_attrs],
-        "Exam": [col for col in oam_combined.columns if col in exam_attrs],
+        "Exam": get_exam_columns(oam_combined),
     }
     categories = {key: value for key, value in categories.items() if value}
 
@@ -418,7 +423,7 @@ def render_category_analysis(oam_combined):
 def render_exam_focus(oam_combined):
     section_header("Exam Attribute Focus", icon="📝")
 
-    exam_columns = [col for col in oam_combined.columns if col in exam_attrs]
+    exam_columns = get_exam_columns(oam_combined)
     if not exam_columns:
         st.info("No exam-related attributes available.")
         return

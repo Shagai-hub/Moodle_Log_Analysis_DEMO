@@ -18,6 +18,15 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
     return text.lower()
 
+def slugify_exam_name(name):
+    """Create a safe, ASCII-friendly exam slug for column names."""
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", str(name).strip())
+    cleaned = cleaned.strip("_")
+    return cleaned.lower() if cleaned else "exam"
+
+def build_exam_attribute_name(exam_name):
+    return f"deadline_exceeded_posts_{slugify_exam_name(exam_name)}"
+
 # ---------- Attribute Functions (Configuration-Aware) ----------
 def active_days(df):
     df2 = df.copy()
@@ -190,41 +199,26 @@ def max_streak(df):
         out.append({"userid":uid, "userfullname":uname, "max_streak":int(max_st)})
     return pd.DataFrame(out)
 
-def pattern_followed(df):
-    """Pattern following using configured parent IDs"""
-    config = st.session_state.config
-    parent_ids_pattern = config.parent_ids_pattern
-    
-    df2 = df.copy()
-    dfp = df2[df2["parent"].isin(parent_ids_pattern)].copy()
-    dfp["is_pattern"] = dfp["message"].fillna("").astype(str).str.match(r'^[0-9]+$')
-    res = dfp.groupby(["userid","userfullname"], as_index=False)["is_pattern"].sum()
-    res = res.rename(columns={"is_pattern":"Pattern_followed_quasi_exam_i"})
-    return res
-
 def deadline_exceeded_posts_generic(df, exam_name):
     """Generic deadline exceeded function using configured deadlines"""
     config = st.session_state.config
     
     if exam_name not in config.deadlines:
-        return pd.DataFrame(columns=["userid", "userfullname", f"deadline_exceeded_posts_{exam_name}"])
+        return pd.DataFrame(columns=["userid", "userfullname", build_exam_attribute_name(exam_name)])
     
     deadline = config.deadlines[exam_name]
     
     # Look for posts related to this exam after the deadline
-    exam_posts = df[df["subject"].fillna("").str.contains(exam_name, na=False) & (to_dt(df["created"]) > deadline)]
+    exam_posts = df[
+        df["subject"]
+        .fillna("")
+        .astype(str)
+        .str.contains(str(exam_name), case=False, na=False, regex=False)
+        & (to_dt(df["created"]) > deadline)
+    ]
     result = exam_posts.groupby(["userid", "userfullname"], as_index=False).size()
-    result = result.rename(columns={"size": f"deadline_exceeded_posts_{exam_name.replace(' ', '_')}"})
+    result = result.rename(columns={"size": build_exam_attribute_name(exam_name)})
     return result
-
-def deadline_exceeded_posts_Quasi_exam_I(df):
-    return deadline_exceeded_posts_generic(df, "Quasi_exam_I")
-
-def deadline_exceeded_posts_Quasi_exam_II(df):
-    return deadline_exceeded_posts_generic(df, "Quasi_exam_II")
-
-def deadline_exceeded_posts_Quasi_exam_III(df):
-    return deadline_exceeded_posts_generic(df, "Quasi_exam_III")
 
 def compute_topic_relevance(df, df_all, professor_name=None):
     """
@@ -401,10 +395,6 @@ ATTRIBUTE_FUNCS = {
     "unique_interactions": unique_interactions,
     "unique_discussions": unique_discussions,
     "engagement_rate": engagement_rate,
-    "deadline_exceeded_posts_Quasi_exam_I": deadline_exceeded_posts_Quasi_exam_I,
-    "deadline_exceeded_posts_Quasi_exam_II": deadline_exceeded_posts_Quasi_exam_II,
-    "deadline_exceeded_posts_Quasi_exam_III": deadline_exceeded_posts_Quasi_exam_III,
-    "Pattern_followed_quasi_exam_i": pattern_followed,
     "avg_reply_time": avg_reply_time,
     "modification_count": modification_count,
     "valid_response": valid_response,
@@ -441,11 +431,6 @@ content_attrs = [
     "avg_AI_involvedMsg_score"
 ]
 
-exam_attrs = [
-    "deadline_exceeded_posts_Quasi_exam_I", 
-    "deadline_exceeded_posts_Quasi_exam_II", 
-    "deadline_exceeded_posts_Quasi_exam_III",
-    "Pattern_followed_quasi_exam_i"
-]
+exam_attrs = []
 
 available_attributes = list(ATTRIBUTE_FUNCS.keys())
