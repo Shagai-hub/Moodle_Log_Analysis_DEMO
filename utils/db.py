@@ -149,8 +149,14 @@ def _safe_json_value(value: Any) -> Any:
 
 
 def _resolve_sqlite_path() -> Path:
-    db_cfg = st.secrets.get("database", {})
-    configured = db_cfg.get("SQLITE_PATH") or os.environ.get("APP_SQLITE_PATH")
+    configured = None
+    try:
+        db_cfg = st.secrets.get("database", {})
+        configured = db_cfg.get("SQLITE_PATH")
+    except Exception:
+        # Streamlit raises when no secrets file exists; fallback to env/default path.
+        configured = None
+    configured = configured or os.environ.get("APP_SQLITE_PATH")
     if configured:
         db_path = Path(configured).expanduser().resolve()
     else:
