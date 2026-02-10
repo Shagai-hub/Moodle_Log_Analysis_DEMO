@@ -1,107 +1,227 @@
-#session_data_manager.py - manage session state for data storage and retrieval
+# session_data_manager.py - manage session state for data storage and retrieval
+import json
+import uuid
+from typing import Any, Dict, Iterable, Optional
+
 import pandas as pd
 import streamlit as st
-from datetime import datetime
+
+from utils.db import DatabaseManager
+
 
 class SessionDataManager:
     def __init__(self):
+        self.db = DatabaseManager()
         self.init_session_state()
-    
+
     def init_session_state(self):
-        """Initialize all data storage"""
-        if 'raw_data' not in st.session_state:
+        """Initialize all data storage."""
+        if "raw_data" not in st.session_state:
             st.session_state.raw_data = None
-        if 'student_attributes' not in st.session_state:
+        if "student_attributes" not in st.session_state:
             st.session_state.student_attributes = None
-        if 'ranked_results' not in st.session_state:
+        if "ranked_results" not in st.session_state:
             st.session_state.ranked_results = None
-        if 'coco_results' not in st.session_state:
+        if "coco_results" not in st.session_state:
             st.session_state.coco_results = {}
-        if 'validation_results' not in st.session_state:
+        if "validation_results" not in st.session_state:
             st.session_state.validation_results = None
-        if 'analysis_history' not in st.session_state:
+        if "analysis_history" not in st.session_state:
             st.session_state.analysis_history = []
-        if 'ai_insights' not in st.session_state:
+        if "ai_insights" not in st.session_state:
             st.session_state.ai_insights = None
-        if 'ai_insights_dirty' not in st.session_state:
+        if "ai_insights_dirty" not in st.session_state:
             st.session_state.ai_insights_dirty = True
-    
+        if "user_id" not in st.session_state:
+            # Demo mode uses anonymous IDs; no auth flow required.
+            st.session_state.user_id = str(uuid.uuid4())
+        if "run_id" not in st.session_state:
+            st.session_state.run_id = None
+        if "dataset_id" not in st.session_state:
+            st.session_state.dataset_id = None
+        if "last_persisted_upload_signature" not in st.session_state:
+            st.session_state.last_persisted_upload_signature = None
+        if "last_loaded_upload_signature" not in st.session_state:
+            st.session_state.last_loaded_upload_signature = None
+        if "pending_upload_signature" not in st.session_state:
+            st.session_state.pending_upload_signature = None
+
     def store_raw_data(self, df, source_info=None):
-        """Store raw data in session state"""
+        """Store raw data in session state and persist once per upload signature."""
         st.session_state.raw_data = {
-            'dataframe': df,
-            'upload_time': pd.Timestamp.now(),
-            'source': source_info,
-            'shape': df.shape,
-            'columns': list(df.columns)
+            "dataframe": df,
+            "upload_time": pd.Timestamp.now(),
+            "source": source_info,
+            "shape": df.shape,
+            "columns": list(df.columns),
         }
+        self._persist_upload(df, source_info)
         self._add_to_history("Raw data uploaded", f"Shape: {df.shape}")
-    
+
     def get_raw_data(self):
-        """Get raw data DataFrame from session state"""
-        if st.session_state.raw_data and 'dataframe' in st.session_state.raw_data:
-            return st.session_state.raw_data['dataframe']
+        """Get raw data DataFrame from session state."""
+        if st.session_state.raw_data and "dataframe" in st.session_state.raw_data:
+            return st.session_state.raw_data["dataframe"]
+        if self.db.is_available() and st.session_state.dataset_id:
+            df = self.db.load_raw_data(st.session_state.dataset_id)
+            if df is not None:
+                st.session_state.raw_data = {
+                    "dataframe": df,
+                    "upload_time": pd.Timestamp.now(),
+                    "source": None,
+                    "shape": df.shape,
+                    "columns": list(df.columns),
+                }
+                return df
         return None
-    
+
     def get_raw_data_info(self):
-        """Get raw data metadata"""
+        """Get raw data metadata."""
         return st.session_state.raw_data
-    
+
     def get_analysis_history(self):
-        """Get the analysis history"""
+        """Get the analysis history."""
         return st.session_state.analysis_history
-    
+
     def _add_to_history(self, action, details):
-        """Track analysis steps"""
-        if 'analysis_history' not in st.session_state:
+        """Track analysis steps and persist run events."""
+        if "analysis_history" not in st.session_state:
             st.session_state.analysis_history = []
-        
-        st.session_state.analysis_history.append({
-            'timestamp': pd.Timestamp.now(),
-            'action': action,
-            'details': str(details)
-        })
-    
-    # Add methods for other data types you'll need
+
+        timestamp = pd.Timestamp.now()
+        st.session_state.analysis_history.append(
+            {
+                "timestamp": timestamp,
+                "action": action,
+                "details": str(details),
+            }
+        )
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            self.db.save_run_event(
+                run_id=run_id,
+                event_name=action,
+                details=str(details),
+                payload={"timestamp": timestamp.isoformat()},
+            )
+
     def store_student_attributes(self, df):
         st.session_state.student_attributes = df
         self._add_to_history("Student attributes computed", f"Shape: {df.shape}")
         self.mark_ai_insights_dirty()
-    
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = json_payload_from_df(df)
+            self.db.save_artifact(run_id, "student_attributes", payload)
+            # GDPR note: processed metrics are stored separately from raw text payloads.
+            self.db.save_metric_observations(run_id, df)
+            self.db.update_run_status(run_id, "attributes_computed")
+
     def get_student_attributes(self):
-        return st.session_state.student_attributes
-    
+        if st.session_state.student_attributes is not None:
+            return st.session_state.student_attributes
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = self.db.load_artifact(run_id, "student_attributes")
+            df = df_from_json_payload(payload)
+            st.session_state.student_attributes = df
+            return df
+        return None
+
     def store_ranked_results(self, df):
         st.session_state.ranked_results = df
         self._add_to_history("Ranking completed", f"Shape: {df.shape}")
         self.mark_ai_insights_dirty()
-    
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = json_payload_from_df(df)
+            self.db.save_artifact(run_id, "ranked_results", payload)
+            self.db.save_ranking_observations(run_id, df)
+            self.db.update_run_status(run_id, "ranking_completed")
+
     def get_ranked_results(self):
-        return st.session_state.ranked_results
-    
+        if st.session_state.ranked_results is not None:
+            return st.session_state.ranked_results
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = self.db.load_artifact(run_id, "ranked_results")
+            df = df_from_json_payload(payload)
+            st.session_state.ranked_results = df
+            return df
+        return None
+
     def store_coco_results(self, tables):
-        """Store COCO analysis results"""
+        """Store COCO analysis results."""
         st.session_state.coco_results = tables
         self._add_to_history("COCO analysis completed", f"{len(tables)} tables generated")
-    
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = {name: json_payload_from_df(df) for name, df in (tables or {}).items()}
+            self.db.save_artifact(run_id, "coco_results", payload)
+            self.db.update_run_status(run_id, "coco_completed")
+
     def get_coco_results(self, table_name=None):
-        """Get COCO analysis results"""
+        """Get COCO analysis results."""
         if table_name:
             return st.session_state.coco_results.get(table_name)
+        if st.session_state.coco_results:
+            return st.session_state.coco_results
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = self.db.load_artifact(run_id, "coco_results") or {}
+            tables = {name: df_from_json_payload(records) for name, records in payload.items()}
+            st.session_state.coco_results = tables
+            return tables
         return st.session_state.coco_results
-    
+
     def store_validation_results(self, df):
-        """Store validation results"""
+        """Store validation results."""
         st.session_state.validation_results = df
         self._add_to_history("Validation completed", f"Results for {len(df)} students")
-    
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = json_payload_from_df(df)
+            self.db.save_artifact(run_id, "validation_results", payload)
+            self.db.update_run_status(run_id, "validation_completed")
+
     def get_validation_results(self):
-        """Get validation results"""
-        return st.session_state.validation_results
-    
+        """Get validation results."""
+        if st.session_state.validation_results is not None:
+            return st.session_state.validation_results
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = self.db.load_artifact(run_id, "validation_results")
+            df = df_from_json_payload(payload)
+            st.session_state.validation_results = df
+            return df
+        return None
+
     def clear_session(self):
-        """Clear all session data"""
-        self.init_session_state()  # Reset to initial state
+        """Clear all session data while preserving anonymous user ID."""
+        existing_user_id = st.session_state.get("user_id") or str(uuid.uuid4())
+        st.session_state.raw_data = None
+        st.session_state.student_attributes = None
+        st.session_state.ranked_results = None
+        st.session_state.coco_results = {}
+        st.session_state.validation_results = None
+        st.session_state.analysis_history = []
+        st.session_state.ai_insights = None
+        st.session_state.ai_insights_dirty = True
+        st.session_state.run_id = None
+        st.session_state.dataset_id = None
+        st.session_state.last_persisted_upload_signature = None
+        st.session_state.last_loaded_upload_signature = None
+        st.session_state.pending_upload_signature = None
+        st.session_state.user_id = existing_user_id
 
     def mark_ai_insights_dirty(self):
         st.session_state.ai_insights_dirty = True
@@ -116,8 +236,36 @@ class SessionDataManager:
         snippet = (summary[:75] + "...") if summary and len(summary) > 78 else summary
         self._add_to_history("AI insights updated", snippet)
 
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            self.db.save_artifact(run_id, "ai_insights", insights or {})
+
     def get_ai_insights(self):
+        if st.session_state.ai_insights is not None:
+            return st.session_state.ai_insights
+
+        run_id = self._current_run_id()
+        if self.db.is_available() and run_id:
+            payload = self.db.load_artifact(run_id, "ai_insights")
+            st.session_state.ai_insights = payload
+            return payload
         return st.session_state.ai_insights
+
+    def list_datasets(self):
+        if not self.db.is_available():
+            return []
+        return self.db.list_datasets(st.session_state.user_id)
+
+    def delete_dataset(self, dataset_id):
+        if not self.db.is_available():
+            return False
+
+        deleted = self.db.delete_dataset(dataset_id, st.session_state.user_id)
+        if deleted and st.session_state.dataset_id == dataset_id:
+            self.clear_session()
+            st.session_state.run_id = None
+            st.session_state.dataset_id = None
+        return deleted
 
     def evaluate_rules(self, df, rules, settings=None):
         """Evaluate configured rules against the provided dataframe."""
@@ -131,7 +279,7 @@ class SessionDataManager:
         missing_columns = set()
         rule_counts = {rule.get("id", idx): 0 for idx, rule in enumerate(rules)}
         per_student = {}
-        
+
         for idx, row in df.iterrows():
             student_key = row.get("userid")
             if pd.isna(student_key):
@@ -143,20 +291,22 @@ class SessionDataManager:
                 "rules": [],
             }
             per_student.setdefault(student_key, entry)
-            
+
             for rule_index, rule in enumerate(rules):
                 rule_id = rule.get("id", f"rule_{rule_index}")
                 resolved = self._rule_matches(row, rule, df, settings, missing_columns)
                 if resolved:
                     rule_counts[rule_id] = rule_counts.get(rule_id, 0) + 1
-                    per_student[student_key]["rules"].append({
-                        "id": rule_id,
-                        "label": rule.get("label", rule_id),
-                        "message": rule.get("message", ""),
-                        "severity": rule.get("severity", "medium"),
-                        "playbook": rule.get("playbook"),
-                    })
-        
+                    per_student[student_key]["rules"].append(
+                        {
+                            "id": rule_id,
+                            "label": rule.get("label", rule_id),
+                            "message": rule.get("message", ""),
+                            "severity": rule.get("severity", "medium"),
+                            "playbook": rule.get("playbook"),
+                        }
+                    )
+
         per_student_list = [entry for entry in per_student.values() if entry["rules"]]
         return {
             "per_student": per_student_list,
@@ -263,10 +413,9 @@ class SessionDataManager:
         if op == "contains":
             if value is None:
                 return False
-            target = threshold
-            if target is None:
+            if threshold is None:
                 return False
-            return str(target).lower() in str(value).lower()
+            return str(threshold).lower() in str(value).lower()
         return False
 
     @staticmethod
@@ -276,3 +425,57 @@ class SessionDataManager:
         if "value" in condition:
             return condition.get("value")
         return None
+
+    def _persist_upload(self, df, source_info):
+        if not self.db.is_available():
+            return
+
+        upload_signature = st.session_state.get("pending_upload_signature")
+        if (
+            upload_signature
+            and upload_signature == st.session_state.get("last_persisted_upload_signature")
+            and st.session_state.get("dataset_id")
+        ):
+            # Guard against Streamlit rerun duplicating the same upload insert.
+            return
+
+        config_snapshot = None
+        config = st.session_state.get("config")
+        if config is not None and hasattr(config, "to_dict"):
+            config_snapshot = config.to_dict()
+
+        try:
+            run_id, dataset_id = self.db.create_dataset_and_run(
+                df=df,
+                source_info=source_info,
+                user_id=st.session_state.get("user_id"),
+                config_snapshot=config_snapshot,
+            )
+        except Exception as exc:
+            st.warning(f"Database persistence failed: {exc}")
+            return
+
+        st.session_state.run_id = run_id
+        st.session_state.dataset_id = dataset_id
+        st.session_state.last_persisted_upload_signature = upload_signature
+        self.db.save_run_event(
+            run_id=run_id,
+            event_name="Run created",
+            details=f"Dataset persisted from {source_info}",
+            payload={"row_count": int(len(df))},
+        )
+
+    def _current_run_id(self):
+        return st.session_state.get("run_id")
+
+
+def json_payload_from_df(df: pd.DataFrame):
+    if df is None:
+        return []
+    return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+def df_from_json_payload(payload: Optional[Iterable[Dict[str, Any]]]):
+    if not payload:
+        return None
+    return pd.DataFrame(list(payload))

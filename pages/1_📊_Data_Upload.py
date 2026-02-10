@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import pathlib
+import hashlib
 from utils.session_data_manager import SessionDataManager
 from utils.config_manager import ConfigManager
 from utils.ui_steps import render_steps
@@ -77,53 +78,112 @@ def main():
                 )
         except FileNotFoundError:
             st.warning("Demo XLSX not found at sample_data/discussion_demo.xlsx")
+
+    divider()
+    section_header("Manage exam datasets", tight=True)
+    render_dataset_management(data_manager)
     
     # ---------- PROCESS ----------
     if uploaded_file:
-        with st.spinner("🔄 Processing your file..."):
-            df = process_uploaded_file(uploaded_file)
+        upload_signature = build_upload_signature(uploaded_file)
+        st.session_state.pending_upload_signature = upload_signature
+
+        already_loaded = (
+            st.session_state.get("last_loaded_upload_signature") == upload_signature
+            and data_manager.get_raw_data() is not None
+        )
+
+        if already_loaded:
+            df = data_manager.get_raw_data()
+        else:
+            with st.spinner("🔄 Processing your file..."):
+                df = process_uploaded_file(uploaded_file)
+            if df is not None:
+                data_manager.store_raw_data(df, source_info=uploaded_file.name)
+                st.session_state.last_loaded_upload_signature = upload_signature
+                st.toast(f"✅ Loaded '{uploaded_file.name}'")
+                st.snow()
 
         if df is not None:
-            data_manager.store_raw_data(df, source_info=uploaded_file.name)
-            st.toast(f"✅ Loaded '{uploaded_file.name}'")
-            st.snow()
+            render_uploaded_dataset(df)
 
 
-            # Overview
-            section_header("Dataset overview", tight=True)
-            c1, c2, c3 = st.columns(3)
-            with c1: st.metric("Total rows", f"{df.shape[0]:,}")
-            with c2: st.metric("Total columns", df.shape[1])
-            with c3:
-                uniq_users = df['userfullname'].nunique() if 'userfullname' in df.columns else "—"
-                st.metric("Unique users", uniq_users)
+def render_uploaded_dataset(df: pd.DataFrame) -> None:
+    section_header("Dataset overview", tight=True)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Total rows", f"{df.shape[0]:,}")
+    with c2:
+        st.metric("Total columns", df.shape[1])
+    with c3:
+        uniq_users = df["userfullname"].nunique() if "userfullname" in df.columns else "-"
+        st.metric("Unique users", uniq_users)
 
-            # Preview
-            section_header("Data preview", tight=True)
-            with st.expander("First 10 rows", expanded=True):
-                st.dataframe(df.head(10), use_container_width=True)
+    section_header("Data preview", tight=True)
+    with st.expander("First 10 rows", expanded=True):
+        st.dataframe(df.head(10), use_container_width=True)
 
-            # Actions
+    csv_data = df.to_csv(index=False)
+    st.download_button(
+        "Download processed data",
+        csv_data,
+        f"processed_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+        "text/csv",
+        use_container_width=True,
+        key="dl_processed",
+    )
 
-            csv_data = df.to_csv(index=False)
-            st.download_button(
-                "Download processed data",
-                csv_data,
-                f"processed_data_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
-                "text/csv",
-                use_container_width=True,
-                key="dl_processed",
-            )
+    divider()
+    centered_page_button(
+        "Configure",
+        "pages/2_⚙️_Configuration.py",
+        key="pulse",
+        icon="⚙️",
+        help="Update professors, deadlines, and AI insight thresholds.",
+        fallback="⚙️ Configuration",
+    )
 
-            divider()
-            centered_page_button(
-                "Configure",
-                "pages/2_⚙️_Configuration.py",
-                key="pulse",
-                icon="⚙️",
-                help="Update professors, deadlines, and AI insight thresholds.",
-                fallback="⚙️ Configuration",
-            )
+
+def build_upload_signature(uploaded_file) -> str:
+    hasher = hashlib.sha256()
+    hasher.update(str(uploaded_file.name).encode("utf-8"))
+    hasher.update(str(uploaded_file.size).encode("utf-8"))
+    hasher.update(uploaded_file.getvalue())
+    return hasher.hexdigest()
+
+
+def render_dataset_management(data_manager: SessionDataManager) -> None:
+    """Allow users to delete previously uploaded datasets (GDPR support)."""
+    datasets = data_manager.list_datasets()
+    if not datasets:
+        st.info("No stored exam datasets yet. Upload data to create one.")
+        return
+
+    label_map = {}
+    for entry in datasets:
+        uploaded_at = entry["uploaded_at"]
+        timestamp = uploaded_at.strftime("%Y-%m-%d %H:%M") if uploaded_at else "unknown time"
+        label = f"{entry['name']} - {entry['row_count']} rows - {timestamp} - {entry['id'][:8]}"
+        label_map[label] = entry["id"]
+
+    selected_label = st.selectbox(
+        "Select exam dataset to delete",
+        options=list(label_map.keys()),
+    )
+    confirm = st.checkbox(
+        "I understand this will permanently delete the dataset and its analysis results.",
+        value=False,
+    )
+    if st.button("Delete selected exam dataset", use_container_width=True):
+        if not confirm:
+            st.warning("Please confirm deletion before proceeding.")
+            return
+        deleted = data_manager.delete_dataset(label_map[selected_label])
+        if deleted:
+            st.success("Dataset deleted successfully.")
+            st.rerun()
+        else:
+            st.error("Unable to delete dataset. Please try again.")
 
 def process_uploaded_file(uploaded_file):
     file_ext = os.path.splitext(uploaded_file.name)[1].lower()
