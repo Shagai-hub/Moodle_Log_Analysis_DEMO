@@ -1,30 +1,17 @@
-"""
-Database persistence layer for the Moodle Log Analyzer.
-
-This module only persists data and does not alter existing business logic.
-"""
+"""SQLite persistence layer for the Moodle Log Analyzer demo."""
 
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, Tuple
-from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import streamlit as st
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    JSON,
-    String,
-    Text,
-    create_engine,
-)
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 Base = declarative_base()
@@ -97,7 +84,7 @@ class RawPost(Base):
     message = Column(Text, nullable=True)
     wordcount = Column(Integer, nullable=True)
     charcount = Column(Integer, nullable=True)
-    # GDPR note: raw data is stored separately from aggregated outputs.
+    # GDPR note: raw data is isolated from aggregate outputs in separate tables.
     raw_payload = Column(JSON, nullable=False)
 
     dataset = relationship("Dataset", back_populates="raw_posts")
@@ -123,7 +110,7 @@ class MetricObservation(Base):
     userid = Column(String, nullable=True)
     userfullname = Column(String, nullable=True)
     metric_name = Column(String, nullable=False)
-    # GDPR note: metrics are stored without re-adding message content.
+    # GDPR note: metrics are stored without full message content duplication.
     metric_value = Column(Float, nullable=True)
 
 
@@ -161,34 +148,36 @@ def _safe_json_value(value: Any) -> Any:
     return value
 
 
-def _normalize_url(database_url: str) -> str:
-    parsed = urlparse(database_url)
-    query = dict(parse_qsl(parsed.query))
-    if "sslmode" not in query:
-        query["sslmode"] = "require"
-    return urlunparse(parsed._replace(query=urlencode(query)))
+def _resolve_sqlite_path() -> Path:
+    db_cfg = st.secrets.get("database", {})
+    configured = db_cfg.get("SQLITE_PATH") or os.environ.get("APP_SQLITE_PATH")
+    if configured:
+        db_path = Path(configured).expanduser().resolve()
+    else:
+        base_dir = Path(__file__).resolve().parents[1]
+        db_path = base_dir / "data" / "runs.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    return db_path
 
 
-def get_database_url() -> Optional[str]:
-    database_url = st.secrets.get("DATABASE_URL")
-    if not database_url:
-        database_url = st.secrets.get("database", {}).get("DATABASE_URL")
-    if not database_url:
-        return None
-    return _normalize_url(str(database_url))
+def get_database_url() -> str:
+    db_path = _resolve_sqlite_path()
+    normalized = str(db_path).replace("\\", "/")
+    return f"sqlite:///{normalized}"
 
 
 class DatabaseManager:
-    """Thin persistence layer for PostgreSQL (Supabase)."""
+    """Thin SQLite persistence layer used for thesis run artifacts."""
 
     def __init__(self) -> None:
         self.database_url = get_database_url()
-        self.enabled = bool(self.database_url)
-        self.engine = None
-        self.Session = None
-        if not self.enabled:
-            return
-        self.engine = create_engine(self.database_url, pool_pre_ping=True, future=True)
+        self.enabled = True
+        self.engine = create_engine(
+            self.database_url,
+            future=True,
+            pool_pre_ping=True,
+            connect_args={"check_same_thread": False},
+        )
         self.Session = sessionmaker(bind=self.engine, expire_on_commit=False, future=True)
         Base.metadata.create_all(self.engine)
 
@@ -196,8 +185,6 @@ class DatabaseManager:
         return bool(self.enabled and self.engine and self.Session)
 
     def _session(self):
-        if not self.Session:
-            raise RuntimeError("Database session factory is not initialized.")
         return self.Session()
 
     def create_dataset_and_run(
@@ -327,15 +314,13 @@ class DatabaseManager:
             return False
         session = self._session()
         try:
-            dataset = (
-                session.query(Dataset)
-                .filter(Dataset.id == dataset_id)
-                .filter(Dataset.user_id == user_id)
-                .one_or_none()
-            )
+            query = session.query(Dataset).filter(Dataset.id == dataset_id)
+            if user_id:
+                query = query.filter(Dataset.user_id == user_id)
+            dataset = query.one_or_none()
             if dataset is None:
                 return False
-            # GDPR note: cascade delete removes raw posts and derived outputs together.
+            # GDPR note: cascade delete removes raw rows and all derived outputs.
             session.delete(dataset)
             session.commit()
             return True

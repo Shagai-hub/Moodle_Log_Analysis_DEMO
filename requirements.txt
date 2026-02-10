@@ -14,5 +14,3 @@ plotly
 PyYAML
 streamlit.lottie
 SQLAlchemy
-alembic
-psycopg2-binary

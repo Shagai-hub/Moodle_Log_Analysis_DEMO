@@ -13,4 +13,10 @@ venv/
 
 .devcontainer/
 
+# Local persistence artifacts
+data/
+*.db
+*.sqlite
+*.sqlite3
+
 
