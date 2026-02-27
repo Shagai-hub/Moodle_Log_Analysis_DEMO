@@ -42,6 +42,14 @@ with act2:
     ):
         st.switch_page("pages/1_📊_Data_Upload.py")
 
+    if st.button(
+        "❓ Open Help Center",
+        key="open_help_center_btn",
+        help="Open setup and troubleshooting guidance.",
+        use_container_width=True,
+    ):
+        st.switch_page("pages/9_Help.py")
+
 section_header("Capabilities")
 st.markdown(
     """
