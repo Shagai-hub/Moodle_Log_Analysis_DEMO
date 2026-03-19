@@ -9,6 +9,10 @@ from utils.coco_utils import (
     prepare_coco_matrix,
     invert_ranking,
     build_object_names_payload,
+    get_coco_rank_columns,
+    get_coco_stairs_table,
+    detect_excluded_rank_columns,
+    build_coco_rerun_frame,
 )
 from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
 
@@ -50,8 +54,12 @@ def main():
         return
     
     st.success(f"✅ Ready to analyze {len(ranked_data)} ranked students")
+    info_panel(
+        "Workflow: run COCO on the full ranked matrix, inspect `Stairs(2)` for "
+        "S1 = n - 1 candidates, rerun COCO on those flagged attributes only, then validate the active result.",
+        icon="ℹ️",
+    )
 
-    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -76,39 +84,82 @@ def main():
         st.dataframe(ranked_data.head(10), use_container_width=True)
         st.caption(f"Full dataset: {ranked_data.shape[0]} rows × {ranked_data.shape[1]} columns")
     
-    # Run COCO + Validation
+    # Run COCO + exclusion rerun + Validation
     divider()
     
     coco_tables = None
     validation_results = None
+    first_pass_tables = st.session_state.get("coco_first_pass_results", {})
+    second_pass_tables = st.session_state.get("coco_second_pass_results", {})
+    exclusion_candidates = st.session_state.get("coco_exclusion_candidates", [])
+    workflow_summary = st.session_state.get("coco_workflow_summary", {})
 
-    if st.button("🚀 Run COCO & Validation", type="primary", use_container_width=True):
-        coco_tables = run_coco_analysis(ranked_data, job_name, stair_value)
-        if coco_tables:
-            data_manager.store_coco_results(coco_tables)
-            st.session_state.coco_last_job_name = job_name
+    if st.button("🚀 Run COCO Exclusion Workflow", type="primary", use_container_width=True):
+        workflow = run_coco_exclusion_workflow(ranked_data, job_name, stair_value)
+        if workflow and workflow.get("final_tables"):
+            first_pass_tables = workflow.get("first_pass_tables") or {}
+            second_pass_tables = workflow.get("second_pass_tables") or {}
+            exclusion_candidates = workflow.get("exclusion_candidates") or []
+            workflow_summary = workflow.get("summary") or {}
+
+            st.session_state.coco_first_pass_results = first_pass_tables
+            st.session_state.coco_second_pass_results = second_pass_tables
+            st.session_state.coco_exclusion_candidates = exclusion_candidates
+            st.session_state.coco_workflow_summary = workflow_summary
+            st.session_state.coco_last_job_name = workflow_summary.get("final_job_name", job_name)
+
+            data_manager.store_coco_results(workflow["final_tables"])
             coco_tables = data_manager.get_coco_results()
 
             if has_validation_requirements(coco_tables):
-                validation_results = run_validation_analysis(ranked_data, coco_tables)
+                validation_results = run_validation_analysis(
+                    workflow["active_ranked_data"],
+                    coco_tables,
+                    job_name=workflow_summary.get("validation_job_name", "StudentRankingInverted"),
+                    source_label=workflow_summary.get("final_label", "active COCO result"),
+                )
                 if validation_results is not None and not validation_results.empty:
                     data_manager.store_validation_results(validation_results)
                     validation_results = data_manager.get_validation_results()
                 else:
-                    st.warning("Validation did not produce meaningful results. Please review the COCO output.")
+                    st.warning("Validation did not produce meaningful results. Please review the active COCO output.")
             else:
                 info_panel(
-                    "Validation skipped because the COCO output does not include the required columns.",
+                    "Validation skipped because the active COCO output does not include the required columns.",
                     icon="ℹ️",
                 )
         else:
-            st.error("COCO analysis did not return any tables. Please try again.")
+            st.error("The COCO workflow did not return any usable tables. Please try again.")
+            coco_tables = data_manager.get_coco_results()
+            validation_results = data_manager.get_validation_results()
     else:
         coco_tables = data_manager.get_coco_results()
         validation_results = data_manager.get_validation_results()
 
     if coco_tables:
-        display_coco_results(coco_tables)
+        display_coco_workflow_summary(workflow_summary, exclusion_candidates)
+        divider()
+
+        final_title = "Final COCO Analysis Result"
+        if workflow_summary.get("used_second_pass"):
+            final_title = "Final COCO Analysis Result (Excluded-Attribute Rerun)"
+        display_coco_results(
+            coco_tables,
+            title=final_title,
+            export_file_name="coco_results_final.zip",
+        )
+
+        if first_pass_tables and second_pass_tables:
+            with st.expander("🔁 Review Initial COCO Pass", expanded=False):
+                display_key_tables(first_pass_tables, show_all_expander=False)
+                display_export_options(
+                    first_pass_tables,
+                    section_title="💾 Export Initial COCO Pass",
+                    file_name="coco_results_initial_pass.zip",
+                    button_label="📦 Download Initial Pass (ZIP)",
+                    show_divider=False,
+                )
+
         if not has_validation_requirements(coco_tables):
             info_panel(
                 "Validation metrics require the COCO output table containing the columns "
@@ -128,7 +179,7 @@ def main():
         )
         
     elif coco_tables:
-        st.info("Validation results will appear automatically after a successful COCO run.")
+        st.info("Validation results will appear automatically after a successful active COCO run.")
 
     forward_spec = None
     if coco_tables:
@@ -151,30 +202,179 @@ def main():
         forward=forward_spec,
     )
 
-def run_coco_analysis(ranked_data, job_name, stair_value):
-    """Execute COCO analysis and return the parsed tables."""
 
-    with st.spinner("Preparing data for COCO analysis..."):
+def build_exclusion_candidates_df(exclusion_candidates):
+    if not exclusion_candidates:
+        return pd.DataFrame()
+    rows = []
+    for item in exclusion_candidates:
+        rows.append(
+            {
+                "Attribute": item.get("attribute_label"),
+                "Rank Column": item.get("rank_column"),
+                "COCO Column": item.get("coco_column"),
+                "Stairs(2) S1": item.get("s1_value"),
+                "Rule Match": f"S1 = n - 1 = {int(item.get('threshold', 0))}",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def display_coco_workflow_summary(workflow_summary, exclusion_candidates):
+    section_header("Exclusion Workflow Summary", icon="🧭")
+
+    if not workflow_summary:
+        st.info("Run the COCO exclusion workflow to populate the summary.")
+        return
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Initial Rank Columns", workflow_summary.get("initial_attribute_count", 0))
+    with col2:
+        st.metric("Flagged Attributes", workflow_summary.get("exclusion_candidate_count", 0))
+    with col3:
+        st.metric("Active Rank Columns", workflow_summary.get("final_attribute_count", 0))
+    with col4:
+        final_stage = "Rerun" if workflow_summary.get("used_second_pass") else "Initial Pass"
+        st.metric("Active Result", final_stage)
+
+    final_label = workflow_summary.get("final_label", "initial COCO pass")
+    if workflow_summary.get("rerun_warning"):
+        info_panel(
+            "An excluded-attribute rerun was attempted, but the initial COCO pass remains active.",
+            icon="⚠️",
+        )
+    elif workflow_summary.get("used_second_pass"):
+        info_panel(
+            f"The active COCO result comes from the excluded-attribute rerun. "
+            f"Validation is computed against the {final_label.lower()}.",
+            icon="✅",
+        )
+    elif workflow_summary.get("stairs2_found"):
+        info_panel(
+            f"No rerun was needed. The active COCO result remains the {final_label.lower()}.",
+            icon="ℹ️",
+        )
+    else:
+        info_panel(
+            "Stairs(2) could not be identified from the COCO output, so the initial pass remains active.",
+            icon="⚠️",
+        )
+
+    if workflow_summary.get("rerun_warning"):
+        st.warning(workflow_summary["rerun_warning"])
+
+    if exclusion_candidates:
+        st.markdown("**Flagged attributes from `Stairs(2)`**")
+        st.dataframe(build_exclusion_candidates_df(exclusion_candidates), use_container_width=True, hide_index=True)
+
+
+def run_coco_exclusion_workflow(ranked_data, job_name, stair_value):
+    """Run the initial COCO pass, detect exclusion candidates, and rerun on those flagged attributes only."""
+    first_pass = run_coco_analysis(
+        ranked_data,
+        job_name,
+        stair_value,
+        phase_label="Initial COCO Pass",
+        preview_label="Initial Pass",
+    )
+    if not first_pass or not first_pass.get("tables"):
+        return None
+
+    first_pass_tables = first_pass["tables"]
+    stairs2_found = not get_coco_stairs_table(first_pass_tables, 2).empty
+    exclusion_candidates = detect_excluded_rank_columns(first_pass_tables, ranked_data)
+    initial_rank_columns = get_coco_rank_columns(ranked_data)
+
+    final_tables = first_pass_tables
+    final_label = "Initial COCO Pass"
+    final_job_name = job_name
+    validation_job_name = "StudentRankingInverted"
+    active_ranked_data = ranked_data
+    second_pass_tables = {}
+    rerun_warning = None
+
+    if exclusion_candidates:
+        rerun_rank_columns = [item["rank_column"] for item in exclusion_candidates]
+        rerun_ranked_data = build_coco_rerun_frame(ranked_data, rerun_rank_columns)
+        rerun_job_name = f"{job_name}_excluded"
+
+        st.info(
+            f"🔁 Rerunning COCO on {len(rerun_rank_columns)} flagged attributes identified from `Stairs(2)`."
+        )
+        second_pass = run_coco_analysis(
+            rerun_ranked_data,
+            rerun_job_name,
+            stair_value,
+            phase_label="Excluded-Attribute COCO Rerun",
+            preview_label="Excluded-Attribute Rerun",
+        )
+        if second_pass and second_pass.get("tables"):
+            second_pass_tables = second_pass["tables"]
+            final_tables = second_pass_tables
+            final_label = "Excluded-Attribute COCO Rerun"
+            final_job_name = rerun_job_name
+            validation_job_name = "StudentRankingExcludedInverted"
+            active_ranked_data = rerun_ranked_data
+        else:
+            rerun_warning = (
+                "The excluded-attribute rerun did not complete successfully. "
+                "The initial COCO pass remains the active result."
+            )
+
+    summary = {
+        "initial_attribute_count": len(initial_rank_columns),
+        "exclusion_candidate_count": len(exclusion_candidates),
+        "final_attribute_count": len(get_coco_rank_columns(active_ranked_data)),
+        "used_second_pass": bool(second_pass_tables),
+        "stairs2_found": stairs2_found,
+        "final_label": final_label,
+        "final_job_name": final_job_name,
+        "validation_job_name": validation_job_name,
+        "rerun_warning": rerun_warning,
+    }
+
+    return {
+        "first_pass_tables": first_pass_tables,
+        "second_pass_tables": second_pass_tables,
+        "final_tables": final_tables,
+        "active_ranked_data": active_ranked_data,
+        "exclusion_candidates": exclusion_candidates,
+        "summary": summary,
+    }
+
+
+def run_coco_analysis(ranked_data, job_name, stair_value, phase_label="COCO Analysis", preview_label="COCO"):
+    """Execute a single COCO analysis pass and return parsed tables plus request metadata."""
+
+    with st.spinner(f"Preparing data for {phase_label.lower()}..."):
         matrix_data = prepare_coco_matrix(ranked_data)
         object_names = build_object_names_payload(ranked_data)
+    preview_key = str(preview_label).lower().replace(" ", "_").replace("-", "_")
 
-    with st.expander("🔍 Matrix Data Preview", expanded=False):
-        st.text_area("COCO Input Matrix (first 500 chars):", matrix_data[:500], height=150)
+    with st.expander(f"🔍 {preview_label} Matrix Preview", expanded=False):
+        st.text_area(
+            "COCO Input Matrix (first 500 chars):",
+            matrix_data[:500],
+            height=150,
+            key=f"coco_input_matrix_{preview_key}",
+        )
         st.text_area(
             "COCO Object Names (first 500 chars):",
             object_names[:500],
             height=150,
             help="Names are sent in parallel with the matrix so COCO can label objects correctly.",
+            key=f"coco_object_names_{preview_key}",
         )
 
-    st.info("🌐 Sending request to COCO service...")
+    st.info(f"🌐 Sending {phase_label.lower()} to the COCO service...")
 
     resp = None
     try:
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        status_text.text("Connecting to COCO service...")
+        status_text.text(f"Connecting to COCO service for {phase_label.lower()}...")
         progress_bar.progress(20)
 
         resp = send_coco_request(
@@ -187,24 +387,30 @@ def run_coco_analysis(ranked_data, job_name, stair_value):
             timeout=180,
         )
 
-        status_text.text("Processing COCO response...")
+        status_text.text(f"Processing {phase_label.lower()} response...")
         progress_bar.progress(60)
 
-        status_text.text("Parsing analysis results...")
+        status_text.text(f"Parsing {phase_label.lower()} results...")
         progress_bar.progress(80)
         tables = parse_coco_html(resp)
 
-        status_text.text("Finalizing results...")
+        status_text.text(f"Finalizing {phase_label.lower()}...")
         progress_bar.progress(100)
 
         if not tables:
             handle_coco_error(resp, "❌ COCO analysis returned no tables.")
             return None
 
-        st.session_state.last_coco_html = decode_coco_response(resp)
-        status_text.text("✅ COCO analysis completed!")
-        st.success("✅ COCO analysis completed!")
-        return tables
+        html = decode_coco_response(resp)
+        st.session_state.last_coco_html = html
+        status_text.text(f"✅ {phase_label} completed!")
+        st.success(f"✅ {phase_label} completed!")
+        return {
+            "tables": tables,
+            "html": html,
+            "matrix_data": matrix_data,
+            "object_names": object_names,
+        }
 
     except Exception as exc:
         handle_coco_error(resp, f"❌ COCO analysis failed: {exc}")
@@ -257,17 +463,17 @@ def has_validation_requirements(tables):
     return required.issubset(set(main_table.columns))
 
 
-def display_coco_results(tables):
+def display_coco_results(tables, title="COCO Analysis Result", export_file_name="coco_results.zip"):
     """Render COCO core results and diagnostics."""
-    section_header("COCO Analysis Result", icon="📊")
+    section_header(title, icon="📊")
     st.caption(f"Parsed {len(tables)} tables from the COCO service.")
 
     display_key_tables(tables)
-    display_export_options(tables)
+    display_export_options(tables, file_name=export_file_name)
 
 
 
-def display_key_tables(tables):
+def display_key_tables(tables, show_all_expander=True):
     """Highlight the key tables returned by COCO."""
     score_table = None
     ranking_table = None
@@ -276,7 +482,7 @@ def display_key_tables(tables):
         cols_lower = [str(col).lower() for col in df.columns]
         if any("becsl" in col for col in cols_lower) or any("score" in col for col in cols_lower):
             score_table = (name, df)
-        if any("rank" in col for col in cols_lower):
+        if any("rank" in col for col in cols_lower) or any("rangsor" in col for col in cols_lower):
             ranking_table = (name, df)
 
     if score_table:
@@ -299,16 +505,24 @@ def display_key_tables(tables):
         st.subheader(f"📋 {table_name}")
         st.dataframe(clean_coco_dataframe(df), use_container_width=True)
 
-    with st.expander("🔍 All Result Tables", expanded=False):
-        for name, df in tables.items():
-            st.markdown(f"**{name}**")
-            st.dataframe(clean_coco_dataframe(df), use_container_width=True)
+    if show_all_expander:
+        with st.expander("🔍 All Result Tables", expanded=False):
+            for name, df in tables.items():
+                st.markdown(f"**{name}**")
+                st.dataframe(clean_coco_dataframe(df), use_container_width=True)
 
 
-def display_export_options(tables):
+def display_export_options(
+    tables,
+    section_title="💾 Export Results",
+    file_name="coco_results.zip",
+    button_label="📦 Download All Results (ZIP)",
+    show_divider=True,
+):
     """Display options to export COCO results."""
-    divider()
-    st.header("💾 Export Results")
+    if show_divider:
+        divider()
+    st.header(section_title)
 
     import io
     import zipfile
@@ -320,22 +534,22 @@ def display_export_options(tables):
             zip_file.writestr(f"{table_name}.csv", csv_data)
 
     st.download_button(
-        "📦 Download All Results (ZIP)",
+        button_label,
         zip_buffer.getvalue(),
-        "coco_results.zip",
+        file_name,
         "application/zip",
         use_container_width=True,
     )
 
 
-def run_validation_analysis(ranked_data, coco_results):
+def run_validation_analysis(ranked_data, coco_results, job_name="StudentRankingInverted", source_label="active COCO result"):
     """Run the complete validation analysis with progress feedback."""
     main_table = coco_results.get("table_4")
     if main_table is None:
         st.error("Validation requires the COCO output table named 'table_4'.")
         return None
 
-    with st.status("🔄 **Running Validation Analysis...**", expanded=True) as status:
+    with st.status(f"🔄 **Running Validation Analysis for {source_label}...**", expanded=True) as status:
         try:
             matrix_df = ranked_data.drop(columns=["userid", "userfullname"], errors="ignore")
             inverted_matrix_df = invert_ranking(matrix_df)
@@ -348,7 +562,7 @@ def run_validation_analysis(ranked_data, coco_results):
             object_names = build_object_names_payload(ranked_data)
             resp = send_coco_request(
                 matrix_data=inverted_matrix_data,
-                job_name="StudentRankingInverted",
+                job_name=job_name,
                 stair=str(stair_value),
                 object_names=object_names,
                 timeout=180,

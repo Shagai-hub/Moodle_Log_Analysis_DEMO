@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 import re
 import time
+import unicodedata
 import numpy as np
 from bs4 import BeautifulSoup
 from io import StringIO
@@ -166,28 +167,63 @@ def clean_coco_dataframe(df):
     
     return df
 
+
+def _normalize_coco_label(value):
+    if value is None:
+        return ""
+    normalized = unicodedata.normalize("NFKD", str(value))
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", "", ascii_text).lower()
+
+
+def _to_float_loose(value):
+    if value is None:
+        return None
+    if isinstance(value, (int, float, np.integer, np.floating)) and not pd.isna(value):
+        return float(value)
+    txt = str(value).strip()
+    if not txt:
+        return None
+    nums = re.findall(r"[-+]?\d+(?:[.,]\d+)?", txt)
+    if not nums:
+        return None
+    token = nums[-1].replace(",", ".")
+    try:
+        return float(token)
+    except ValueError:
+        return None
+
+
+def prepare_coco_matrix_df(ranked_df):
+    """Return the dataframe slice that is actually submitted to COCO."""
+    # Keep only the ranked attribute columns and Y_value, exclude summary columns.
+    exclude_columns = ["userid", "userfullname", "Average_Rank", "Overall_Rank"]
+
+    # Also exclude any original attribute columns (keep only _rank columns).
+    original_columns = [
+        col
+        for col in ranked_df.columns
+        if not col.endswith("_rank")
+        and col not in exclude_columns
+        and col != "Y_value"
+    ]
+    exclude_columns.extend(original_columns)
+    return ranked_df.drop(columns=exclude_columns, errors="ignore")
+
+
+def get_coco_rank_columns(ranked_df):
+    """Return the ordered rank-column list used in the COCO input matrix."""
+    matrix_df = prepare_coco_matrix_df(ranked_df)
+    return [col for col in matrix_df.columns if col != "Y_value"]
+
 def prepare_coco_matrix(ranked_df):
     """Prepare ranked data for COCO analysis"""
     import streamlit as st
-    
-    # Extract just the numeric values needed for COCO
-    # Keep only the ranked attribute columns and Y_value, exclude summary columns
-    
-    # List all columns we want to EXCLUDE from COCO input
-    exclude_columns = ["userid", "userfullname", "Average_Rank", "Overall_Rank"]
-    
-    # Also exclude any original attribute columns (keep only _rank columns)
-    original_columns = [col for col in ranked_df.columns 
-                       if not col.endswith('_rank') 
-                       and col not in exclude_columns 
-                       and col != "Y_value"]
-    exclude_columns.extend(original_columns)
-    
-    # Create matrix without excluded columns
-    matrix_df = ranked_df.drop(columns=exclude_columns, errors='ignore')
+    matrix_df = prepare_coco_matrix_df(ranked_df)
     
     # Debug information
     if 'show_coco_debug' in st.session_state and st.session_state.show_coco_debug:
+        excluded_columns = [col for col in ranked_df.columns if col not in matrix_df.columns]
         st.write("🔍 **COCO Matrix Preparation Debug:**")
         st.write(f"Original columns: {list(ranked_df.columns)}")
         st.write(f"Excluded columns: {exclude_columns}")
@@ -202,6 +238,89 @@ def prepare_coco_matrix(ranked_df):
     
     matrix_data = "\n".join(matrix_lines)
     return matrix_data
+
+
+def get_coco_stairs_table(tables, stairs_number):
+    """Locate a parsed COCO stairs table by its first-column header."""
+    if not tables:
+        return pd.DataFrame()
+
+    target_keys = {
+        f"lepcsok({stairs_number})",
+        f"stairs({stairs_number})",
+    }
+    for df in tables.values():
+        if df is None or df.empty or len(df.columns) == 0:
+            continue
+        first_col = _normalize_coco_label(df.columns[0])
+        if first_col in target_keys or (
+            ("lepcsok" in first_col or "stairs" in first_col) and f"({stairs_number})" in first_col
+        ):
+            return df
+    return pd.DataFrame()
+
+
+def detect_excluded_rank_columns(tables, ranked_df):
+    """
+    Detect exclusion candidates from the Stairs(2) table.
+
+    The reference workflow flags rank columns whose S1 value equals n-1,
+    where n is the number of ranked objects submitted to COCO.
+    """
+    stairs2_df = get_coco_stairs_table(tables, 2)
+    if stairs2_df.empty:
+        return []
+
+    rank_columns = get_coco_rank_columns(ranked_df)
+    if not rank_columns:
+        return []
+
+    threshold = float(max(len(ranked_df) - 1, 0))
+    first_col = stairs2_df.columns[0]
+    row_labels = stairs2_df[first_col].astype(str).map(_normalize_coco_label)
+    s1_matches = stairs2_df.loc[row_labels == "s1"]
+    if s1_matches.empty:
+        s1_row = stairs2_df.iloc[0]
+    else:
+        s1_row = s1_matches.iloc[0]
+
+    data_columns = list(stairs2_df.columns[1:])
+    exclusion_candidates = []
+    for idx, rank_column in enumerate(rank_columns):
+        if idx >= len(data_columns):
+            break
+        coco_column = data_columns[idx]
+        s1_value = _to_float_loose(s1_row.get(coco_column))
+        if s1_value is None:
+            continue
+        if abs(float(s1_value) - threshold) < 1e-9:
+            attribute_name = rank_column[:-5] if rank_column.endswith("_rank") else rank_column
+            exclusion_candidates.append(
+                {
+                    "rank_column": rank_column,
+                    "attribute_name": attribute_name,
+                    "attribute_label": attribute_name.replace("_", " ").title(),
+                    "coco_column": str(coco_column),
+                    "s1_value": float(s1_value),
+                    "threshold": threshold,
+                    "column_index": idx + 1,
+                }
+            )
+
+    return exclusion_candidates
+
+
+def build_coco_rerun_frame(ranked_df, selected_rank_columns):
+    """Create a ranked dataframe containing only identifiers, selected ranks, and Y."""
+    selected_rank_columns = [col for col in selected_rank_columns if col in ranked_df.columns]
+    identifier_columns = [col for col in ["userid", "userfullname"] if col in ranked_df.columns]
+    tail_columns = ["Y_value"] if "Y_value" in ranked_df.columns else []
+    ordered_columns = identifier_columns + selected_rank_columns + tail_columns
+
+    if not selected_rank_columns:
+        fallback_columns = identifier_columns + tail_columns
+        return ranked_df[fallback_columns].copy() if fallback_columns else pd.DataFrame(index=ranked_df.index)
+    return ranked_df[ordered_columns].copy()
 
 
 def build_object_names_payload(ranked_df):

@@ -24,6 +24,14 @@ class SessionDataManager:
             st.session_state.ranked_results = None
         if "coco_results" not in st.session_state:
             st.session_state.coco_results = {}
+        if "coco_first_pass_results" not in st.session_state:
+            st.session_state.coco_first_pass_results = {}
+        if "coco_second_pass_results" not in st.session_state:
+            st.session_state.coco_second_pass_results = {}
+        if "coco_exclusion_candidates" not in st.session_state:
+            st.session_state.coco_exclusion_candidates = []
+        if "coco_workflow_summary" not in st.session_state:
+            st.session_state.coco_workflow_summary = {}
         if "validation_results" not in st.session_state:
             st.session_state.validation_results = None
         if "analysis_history" not in st.session_state:
@@ -212,6 +220,10 @@ class SessionDataManager:
         st.session_state.student_attributes = None
         st.session_state.ranked_results = None
         st.session_state.coco_results = {}
+        st.session_state.coco_first_pass_results = {}
+        st.session_state.coco_second_pass_results = {}
+        st.session_state.coco_exclusion_candidates = []
+        st.session_state.coco_workflow_summary = {}
         st.session_state.validation_results = None
         st.session_state.analysis_history = []
         st.session_state.ai_insights = None

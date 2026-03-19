@@ -102,7 +102,6 @@ def main():
                 data_manager.store_raw_data(df, source_info=uploaded_file.name)
                 st.session_state.last_loaded_upload_signature = upload_signature
                 st.toast(f"✅ Loaded '{uploaded_file.name}'")
-                st.snow()
 
         if df is not None:
             render_uploaded_dataset(df)
