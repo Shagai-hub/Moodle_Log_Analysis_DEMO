@@ -827,12 +827,32 @@ def render_validation_dashboard(validation_results):
             "Final_Rank": "Rank",
         }
     )
-    bar_chart = (
+    score_series = pd.to_numeric(chart_df["Score"], errors="coerce").dropna()
+    if score_series.empty:
+        y_domain = None
+        zoom_base = None
+    else:
+        score_min = float(score_series.min())
+        score_max = float(score_series.max())
+        score_range = score_max - score_min
+        padding = max(score_range * 0.1, 5.0)
+        if score_range == 0:
+            padding = max(abs(score_min) * 0.02, 5.0)
+        y_domain = [score_min - padding, score_max + padding]
+        zoom_base = y_domain[0]
+        chart_df["Zoom_Base"] = zoom_base
+
+    bars = (
         alt.Chart(chart_df)
         .mark_bar()
         .encode(
             x=alt.X("Student:N", sort=None, title="Student", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("Score:Q", title="Final Score (Becslés)"),
+            y=alt.Y(
+                "Score:Q",
+                title="Final Score (Becslés)",
+                scale=alt.Scale(domain=y_domain, zero=False, nice=False) if y_domain else alt.Undefined,
+            ),
+            y2=alt.Y2("Zoom_Base:Q") if y_domain else alt.Undefined,
             color=alt.Color(
                 "Validation:N",
                 scale=alt.Scale(domain=["Valid", "Invalid"], range=["#00ff00", "#ff0000"]),
@@ -840,8 +860,21 @@ def render_validation_dashboard(validation_results):
             ),
             tooltip=["Student", "Score", "Validation", "Rank"],
         )
-        .properties(width=700, height=400, title="Student Final Scores with Validation Results")
     )
+    if y_domain:
+        reference_line = (
+            alt.Chart(pd.DataFrame({"Reference": [1000]}))
+            .mark_rule(color="#6b7280", strokeDash=[6, 4])
+            .encode(y=alt.Y("Reference:Q"))
+        )
+        bar_chart = (bars + reference_line).properties(
+            width=700,
+            height=400,
+            title="Student Final Scores with Validation Results",
+        )
+    else:
+        bar_chart = bars.properties(width=700, height=400, title="Student Final Scores with Validation Results")
+
     st.altair_chart(bar_chart, use_container_width=True)
 
     section_header("Export Options", icon="💾", tight=True)
