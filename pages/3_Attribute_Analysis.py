@@ -1,4 +1,4 @@
-# pages/3_📈_Attribute_Analysis.py
+# pages/3_Attribute_Analysis.py
 import streamlit as st
 import pandas as pd
 
@@ -12,6 +12,7 @@ from utils.attribute_calculations import (
 from assets.ui_components import (
     apply_theme,
     centered_page_button,
+    display_label,
     divider,
     info_panel,
     page_header,
@@ -36,7 +37,6 @@ def main():
     page_header(
         "Attribute Analysis",
         "Compute and analyse student attributes. Select metrics and generate the OAM.",
-        icon="📈",
         align="left",
         compact=True,
     )
@@ -44,14 +44,14 @@ def main():
     # Check if data is available
     raw_data = data_manager.get_raw_data()
     if raw_data is None:
-        st.warning("📊 Please upload data first on the Data Upload page.")
+        st.warning("Upload data first on the Data Upload page.")
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Configuration",
-                "page": "pages/2_⚙️_Configuration.py",
+                "label": "Back to Configuration",
+                "page": "pages/2_Configuration.py",
                 "key": "nav_back_to_configuration_missing_data",
-                "fallback": "⚙️ Configuration",
+                "fallback": "Configuration",
             },
             message="Upload your discussion logs to unlock attribute analysis.",
             forward=None,
@@ -66,23 +66,23 @@ def main():
     df_all["userfullname"] = df_all["userfullname"].astype(str)
     df = df_all[~df_all["userfullname"].isin(PROFESSORS)].copy()
 
-    section_header("Dataset snapshot", icon="🗂️", tight=True)
+    section_header("Dataset snapshot", tight=True)
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
         st.markdown(f"""
         <div class="metric-box">
-            📊 Posts considered<br><span>{len(df)}</span>
+            Posts considered<br><span>{len(df)}</span>
         </div>
         """, unsafe_allow_html=True)
 
     with col_meta2:
         st.markdown(f"""
         <div class="metric-box">
-            👨‍🏫 Professors<br><span>{', '.join(PROFESSORS) if PROFESSORS else '—'}</span>
+            Professors excluded<br><span>{', '.join(PROFESSORS) if PROFESSORS else '—'}</span>
         </div>
         """, unsafe_allow_html=True)
 
-    section_header("Select attributes", icon="🎛️")
+    section_header("Select attributes")
     # Attribute selection UI
     exam_attribute_names = [
         build_exam_attribute_name(name) for name in config.deadlines.keys()
@@ -92,7 +92,7 @@ def main():
 
     # Compute attributes CTA (bright)
     # Update the compute attributes button
-    if st.button("🚀 Compute Attributes", type="primary", use_container_width=True, key="compute_attributes_btn"):
+    if st.button("Compute Attributes", type="primary", use_container_width=True, key="compute_attributes_btn"):
         compute_and_display_attributes(df, df_all, data_manager, config)
 
     # After compute
@@ -101,11 +101,10 @@ def main():
         display_hybrid_layout(student_attributes)
         centered_page_button(
             "Visualizations",
-            "pages/6_📊_Visualizations.py",
+            "pages/6_Visualizations.py",
             key="pulse",
-            icon="📊",
             help="Open interactive dashboards built from the computed attributes.",
-            fallback="📊 Visualizations",
+            fallback="Visualizations",
             button_type="secondary",
         )
 
@@ -113,20 +112,20 @@ def main():
     forward_spec = None
     if data_manager.get_student_attributes() is not None:
         forward_spec = {
-            "label": "🏆 Proceed to Ranking",
-            "page": "pages/4_🏆_Ranking.py",
+            "label": "Proceed to Ranking",
+            "page": "pages/4_Ranking.py",
             "key": "pulse1",
-            "fallback": "🏆 Ranking",
+            "fallback": "Ranking",
             "help": "Navigate to the ranking page with computed attributes",
         }
 
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Configuration",
-            "page": "pages/2_⚙️_Configuration.py",
+            "label": "Back to Configuration",
+            "page": "pages/2_Configuration.py",
             "key": "nav_back_to_configuration",
-            "fallback": "⚙️ Configuration",
+            "fallback": "Configuration",
         },
         message="Review configuration or upload settings anytime—your selections stay in session.",
         forward=forward_spec,
@@ -190,7 +189,7 @@ def render_attribute_selection_ui(all_attributes, exam_attribute_names):
                 if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
-                    checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+                    checked = st.checkbox(display_label(attr), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
         with st.expander("Engagement Metrics", expanded=False):
@@ -198,17 +197,17 @@ def render_attribute_selection_ui(all_attributes, exam_attribute_names):
                 if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
-                    checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+                    checked = st.checkbox(display_label(attr), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
     with col2:
         with st.expander("Content Analysis", expanded=False):
-            st.info("Some ML-based attributes may take longer to compute")
+            st.info("Some model-based attributes may take longer to compute.")
             for attr in content_attrs:
                 if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
-                    checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+                    checked = st.checkbox(display_label(attr), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
         with st.expander("Exam Performance", expanded=False):
@@ -218,7 +217,7 @@ def render_attribute_selection_ui(all_attributes, exam_attribute_names):
                 if attr in all_attributes:
                     key = attr_key_map[attr]
                     initial = st.session_state.get(key, attr in st.session_state.selected_attributes)
-                    checked = st.checkbox(attr.replace("_", " ").title(), key=key, value=initial)
+                    checked = st.checkbox(display_label(attr), key=key, value=initial)
                     update_selected_attributes(attr, checked)
 
     # Selection controls
@@ -241,7 +240,7 @@ def update_selected_attributes(attr, checked):
 def compute_and_display_attributes(df, df_all, data_manager, config):
     """Compute attributes and display in hybrid layout"""
     if not st.session_state.selected_attributes:
-        st.error("❌ Please select at least one attribute to compute.")
+        st.error("Select at least one attribute to compute.")
         return
 
     PROFESSORS = config.professors
@@ -252,7 +251,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
     students = df[["userid", "userfullname"]].drop_duplicates().sort_values("userfullname").reset_index(drop=True)
     oam_combined = students.copy()
 
-    with st.spinner("⏳ Computing selected attributes..."):
+    with st.spinner("Computing selected attributes..."):
         for i, attr in enumerate(st.session_state.selected_attributes):
             try:
                 if attr in exam_attr_map:
@@ -296,7 +295,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
             except Exception as e:
                 st.error(f"Error computing {attr}: {e}")
                 oam_combined[attr] = 0
-    st.toast("✅ All attributes have been computed successfully!")
+    st.toast("Attributes computed successfully.")
 
     # Fill NaN values and sort
     oam_combined = oam_combined.fillna(0)
@@ -313,7 +312,7 @@ def compute_and_display_attributes(df, df_all, data_manager, config):
 def display_hybrid_layout(oam_combined):
     """Lightweight preview of the computed attribute matrix."""
 
-    section_header("Attribute Matrix Preview", icon="🗂️", tight=True)
+    section_header("Attribute Matrix Preview", tight=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -327,7 +326,7 @@ def display_hybrid_layout(oam_combined):
 
     csv_data = oam_combined.to_csv(index=False)
     st.download_button(
-        "📥 Download Full OAM (CSV)",
+        "Download Full OAM (CSV)",
         csv_data,
         "full_oam_matrix.csv",
         "text/csv",

@@ -246,7 +246,7 @@ class SessionDataManager:
         st.session_state.ai_insights_dirty = False
         summary = (insights or {}).get("summary", "")
         snippet = (summary[:75] + "...") if summary and len(summary) > 78 else summary
-        self._add_to_history("AI insights updated", snippet)
+        self._add_to_history("Cohort insights updated", snippet)
 
         run_id = self._current_run_id()
         if self.db.is_available() and run_id:

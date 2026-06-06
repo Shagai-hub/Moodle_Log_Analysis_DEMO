@@ -601,7 +601,7 @@ def generate_ai_insights(student_df, config, data_manager):
 
 def display_summary_section(insights):
     section_header("Summary / Risk Overview", tight=True)
-    info_panel(insights.get("summary", "No summary available."), icon="📌")
+    info_panel(insights.get("summary", "No summary available."))
 
     if insights.get("model_summary") is None and insights.get("model_error"):
         st.caption("Showing heuristic overview.")
@@ -658,10 +658,10 @@ def display_summary_section(insights):
 
 
 def display_watchlist_section(insights):
-    section_header("Students to Watch", icon="⚠️", tight=True)
+    section_header("Students Requiring Review", tight=True)
     watchlist = insights.get("students_to_watch", [])
     if not watchlist:
-        info_panel("All quiet for now - no students matched the current watch conditions.")
+        info_panel("No students match the current watch conditions.")
         return
     st.write("---")
     render_watchlist_cards(watchlist)
@@ -683,10 +683,10 @@ def display_watchlist_section(insights):
 
 
 def display_notifications_section(insights):
-    section_header("Sample Notifications", icon="📬", tight=True)
+    section_header("Sample Notifications", tight=True)
     notifications = insights.get("notifications", [])
     if not notifications:
-        info_panel("No alerts generated because the watchlist is empty.", icon="ℹ️")
+        info_panel("No notifications were generated because the watchlist is empty.")
         return
     for idx, note in enumerate(notifications, start=1):
         st.markdown(f"**{idx}. {note['subject']}**")
@@ -698,7 +698,7 @@ def build_social_table(entries, positive=False):
         return None
     rows = []
     note_key = "highlights" if positive else "warnings"
-    fallback_note = "Consistent participation" if positive else "Needs nudges to participate"
+    fallback_note = "Consistent participation" if positive else "Outreach recommended"
     for entry in entries:
         metrics = entry.get("metrics", {})
         rows.append(
@@ -716,14 +716,13 @@ def build_social_table(entries, positive=False):
 
 
 def display_social_connectedness_section(insights):
-    section_header("Isolation & Connectedness", icon="🧩", tight=True)
+    section_header("Isolation and Connectedness", tight=True)
     social_graph = insights.get("social_graph") or {}
     if not social_graph.get("available"):
         missing = ", ".join(social_graph.get("missing_columns", []))
         info_panel(
             "Need the unique discussion, interaction, post, or engagement columns to compute connectivity."
             + (f" Missing: {missing}" if missing else ""),
-            icon="ℹ️",
         )
         return
 
@@ -747,17 +746,17 @@ def display_social_connectedness_section(insights):
         sample_names = ", ".join(entry.get("userfullname") for entry in isolated[:4])
         st.warning(f"{len(isolated)} students show isolation risk: {sample_names}")
     else:
-        st.success("No isolation warnings at the moment—peer interactions look balanced.")
+        st.success("No isolation warnings are currently detected; peer interactions appear balanced.")
 
     iso_df = build_social_table(isolated, positive=False)
     if iso_df is not None:
-        st.markdown("**Isolated students (needs outreach)**")
+        st.markdown("**Isolated students requiring outreach**")
         st.dataframe(iso_df, use_container_width=True, hide_index=True)
     else:
         st.info("Everyone currently meets the minimum peer interaction thresholds.")
 
     if connected:
-        st.markdown("**Highly connected students (potential ambassadors)**")
+        st.markdown("**Highly connected students for peer support**")
         conn_df = build_social_table(connected, positive=True)
         st.dataframe(conn_df, use_container_width=True, hide_index=True)
 
@@ -804,7 +803,7 @@ def handle_general_chat_request(prompt, normalized, student_df, insights, resolv
     if "connected" in normalized and "disconnected" not in normalized:
         connected = social_graph.get("connected") or []
         if not connected:
-            return "I need more interaction metrics before highlighting well-connected students."
+            return "More interaction metrics are required before highlighting well-connected students."
         lines = ["Highly connected students:"]
         for entry in connected[:5]:
             metrics = entry.get("metrics", {})
@@ -816,7 +815,7 @@ def handle_general_chat_request(prompt, normalized, student_df, insights, resolv
     if any(word in normalized for word in ["watchlist", "alert", "warning"]):
         watchlist = insights.get("students_to_watch", [])
         if not watchlist:
-            return "The watchlist is empty right now."
+            return "The watchlist is currently empty."
         lines = ["Current watchlist:"]
         for entry in watchlist[:5]:
             label = entry.get("severity", "medium").title()
@@ -1026,8 +1025,8 @@ def answer_student_question(prompt, student_df, insights):
 
 
 def render_student_chatbot(student_df, insights):
-    section_header("Student Copilot", icon="✨", tight=True)
-    st.caption("Ask about any student, compare two learners, or type prompts like 'isolated students' or 'top engagement'.")
+    section_header("Student Query Assistant", tight=True)
+    st.caption("Ask about a student, compare two learners, or use prompts such as 'isolated students' or 'top engagement'.")
     chat_key = "ai_student_chat_history"
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
@@ -1051,8 +1050,7 @@ def render_student_chatbot(student_df, insights):
 
 def main():
     page_header(
-        "AI Insights",
-        icon="✨",
+        "Cohort Insights",
         align="left",
         compact=True,
     )
@@ -1064,32 +1062,31 @@ def main():
     if student_attributes is None or student_attributes.empty:
         info_panel(
             "No attribute matrix found. Run the Attribute Analysis step to compute student features first.",
-            icon="ℹ️",
         )
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Visualizations",
-                "page": "pages/6_📊_Visualizations.py",
+                "label": "Back to Visualizations",
+                "page": "pages/6_Visualizations.py",
                 "key": "nav_back_to_visualizations_from_ai",
-                "fallback": "📊 Visualizations",
+                "fallback": "Visualizations",
             }
         )
         return
 
     col_refresh, col_placeholder = st.columns([1, 3])
     with col_refresh:
-        refresh_requested = st.button("🔁 Refresh Insights", use_container_width=True)
+        refresh_requested = st.button("Refresh Insights", use_container_width=True)
 
     if refresh_requested:
         data_manager.mark_ai_insights_dirty()
 
     insights = data_manager.get_ai_insights()
     if refresh_requested or data_manager.is_ai_insights_dirty() or not insights:
-        with st.spinner("Synthesizing AI insights..."):
+        with st.spinner("Preparing cohort insights..."):
             insights = generate_ai_insights(student_attributes, config, data_manager)
         data_manager.store_ai_insights(insights)
-        st.success("AI insights updated.")
+        st.success("Cohort insights updated.")
 
 
     divider()
@@ -1111,10 +1108,10 @@ def main():
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Visualizations",
-            "page": "pages/6_📊_Visualizations.py",
+            "label": "Back to Visualizations",
+            "page": "pages/6_Visualizations.py",
             "key": "nav_back_to_visualizations_from_ai",
-            "fallback": "📊 Visualizations",
+            "fallback": "Visualizations",
         }
     )
     

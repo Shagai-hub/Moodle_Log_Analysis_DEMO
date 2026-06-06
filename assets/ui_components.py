@@ -7,6 +7,7 @@ can stay lean and consistent while keeping business logic untouched.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -14,6 +15,42 @@ import streamlit as st
 
 _ASSETS_ROOT = Path(__file__).resolve().parent
 _THEME_KEY = "theme_css_loaded"
+_DECORATIVE_SYMBOL_RE = re.compile(
+    "["
+    "\U0001F000-\U0001FAFF"
+    "\u2600-\u27BF"
+    "\u2190-\u21FF"
+    "\uFE0F"
+    "]"
+)
+_LABEL_OVERRIDES = {
+    "avg_AI_involvedMsg_score": "Model-Based Text Score",
+}
+
+
+def _clean_label(value: Optional[str]) -> str:
+    """Remove decorative symbols from user-facing labels."""
+    if value is None:
+        return ""
+    cleaned = _DECORATIVE_SYMBOL_RE.sub("", str(value))
+    return " ".join(cleaned.split())
+
+
+def display_label(value: str) -> str:
+    """Return a professional label for technical column or attribute names."""
+    if value in _LABEL_OVERRIDES:
+        return _LABEL_OVERRIDES[value]
+
+    suffix = ""
+    base = str(value)
+    if base.endswith("_rank"):
+        base = base[:-5]
+        suffix = " Rank"
+
+    if base in _LABEL_OVERRIDES:
+        return f"{_LABEL_OVERRIDES[base]}{suffix}"
+
+    return f"{base.replace('_', ' ').title()}{suffix}"
 
 
 def apply_theme() -> None:
@@ -43,7 +80,6 @@ def page_header(
     if compact:
         classes.append("page-header--compact")
 
-    emoji_html = f"<span class='page-header__emoji'>{icon}</span>" if icon else ""
     kicker_html = f"<span class='page-header__kicker'>{kicker}</span>" if kicker else ""
     subtitle_html = f"<p class='page-header__subtitle'>{subtitle}</p>" if subtitle else ""
 
@@ -51,7 +87,7 @@ def page_header(
         f"""
         <div class="{' '.join(classes)}">
           {kicker_html}
-          <h1 class="page-header__title">{emoji_html}{title}</h1>
+          <h1 class="page-header__title">{title}</h1>
           {subtitle_html}
         </div>
         """,
@@ -71,12 +107,11 @@ def section_header(
     if tight:
         classes.append("section-title--tight")
 
-    text = f"{icon} {title}" if icon else title
     st.markdown(
         f"""
         <div class="{' '.join(classes)}">
           <span class="dot"></span>
-          <span>{text}</span>
+          <span>{title}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -98,13 +133,11 @@ def info_panel(
     if subtle:
         classes.append("panel--subtle")
 
-    icon_html = f"<div class='panel__icon'>{icon}</div>" if icon else ""
     title_html = f"<div class='panel__title'>{title}</div>" if title else ""
 
     st.markdown(
         f"""
         <div class="{' '.join(classes)}">
-          {icon_html}
           {title_html}
           <div>{body}</div>
         </div>
@@ -137,15 +170,15 @@ def nav_footer(
             col.empty()
             return
 
-        label = spec.get("label", "")
+        label = _clean_label(spec.get("label", ""))
         target = spec.get("page")
         help_text = spec.get("help")
         button_type = spec.get("type") or ("secondary" if kind == "back" else "primary")
         key = spec.get("key") or f"nav_{kind}_{(target or 'unknown').replace('/', '_')}"
-        fallback = spec.get("fallback") or label or target or "the target page"
+        fallback = _clean_label(spec.get("fallback")) or label or target or "the target page"
 
         if not target:
-            col.button(label or "•", use_container_width=True, type=button_type, help=help_text, key=key, disabled=True)
+            col.button(label or "Unavailable", use_container_width=True, type=button_type, help=help_text, key=key, disabled=True)
             return
 
         if col.button(label, use_container_width=True, type=button_type, help=help_text, key=key):
@@ -176,7 +209,8 @@ def centered_page_button(
     disabled: bool = False,
 ) -> bool:
     """Render a prominent CTA button centered on the page."""
-    fallback = fallback or label or target_page or "target page"
+    label = _clean_label(label)
+    fallback = _clean_label(fallback) or label or target_page or "target page"
 
     cols = st.columns([1, 2, 1])
     button_kwargs = {
@@ -187,9 +221,6 @@ def centered_page_button(
         "help": help,
         "disabled": disabled or not bool(target_page),
     }
-    if icon:
-        button_kwargs["icon"] = icon
-
     clicked = cols[1].button(**button_kwargs)
     if clicked and target_page:
         try:

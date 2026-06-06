@@ -22,13 +22,12 @@ def main():
 
     page_header(
         "Upload Discussion Data",
-        "Bring in your Moodle discussion logs to analysis and downstream insights.",
-        icon="📥",
+        "Import Moodle discussion logs for attribute analysis, ranking, and COCO evaluation.",
     )
 
     # ---------- UPLOAD ----------
     uploaded_file = st.file_uploader(
-        "Drop your file here or click to browse",
+        "Upload Moodle discussion log",
         type=["csv", "xlsx"],
         help="File should contain columns like userid, userfullname, message, created, etc.",
         label_visibility="visible",
@@ -41,7 +40,6 @@ def main():
         "<strong>Supported formats:</strong> CSV, XLSX<br>"
         "<span style='color:var(--muted)'>Expected columns: <code>userid</code>, <code>userfullname</code>, "
         "<code>message</code>, optional <code>created</code>, <code>modified</code></span>",
-        icon="🗂️",
     )
 
     # ---------- DEMO DATA ----------
@@ -54,7 +52,7 @@ def main():
         try:
             with open(sample_csv_path, "rb") as sample_csv:
                 st.download_button(
-                    label="📥 Download Demo CSV",
+                    label="Download Demo CSV",
                     data=sample_csv.read(),
                     file_name="discussion_demo.csv",
                     mime="text/csv",
@@ -69,7 +67,7 @@ def main():
         try:
             with open(sample_xlsx_path, "rb") as sample_xlsx:
                 st.download_button(
-                    label="📥 Download Demo XLSX",
+                    label="Download Demo XLSX",
                     data=sample_xlsx.read(),
                     file_name="discussion_demo.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -96,12 +94,12 @@ def main():
         if already_loaded:
             df = data_manager.get_raw_data()
         else:
-            with st.spinner("🔄 Processing your file..."):
+            with st.spinner("Processing uploaded file..."):
                 df = process_uploaded_file(uploaded_file)
             if df is not None:
                 data_manager.store_raw_data(df, source_info=uploaded_file.name)
                 st.session_state.last_loaded_upload_signature = upload_signature
-                st.toast(f"✅ Loaded '{uploaded_file.name}'")
+                st.toast(f"Loaded '{uploaded_file.name}'")
 
         if df is not None:
             render_uploaded_dataset(df)
@@ -135,11 +133,10 @@ def render_uploaded_dataset(df: pd.DataFrame) -> None:
     divider()
     centered_page_button(
         "Configure",
-        "pages/2_⚙️_Configuration.py",
+        "pages/2_Configuration.py",
         key="pulse",
-        icon="⚙️",
-        help="Update professors, deadlines, and AI insight thresholds.",
-        fallback="⚙️ Configuration",
+        help="Update professors, deadlines, and insight thresholds.",
+        fallback="Configuration",
     )
 
 
@@ -216,14 +213,14 @@ def process_uploaded_file(uploaded_file):
             return None
 
     if df is None:
-        st.error(f"❌ Failed to read '{uploaded_file.name}'. Check the format.")
+        st.error(f"Failed to read '{uploaded_file.name}'. Check the file format.")
         return None
 
     # Validate required columns
     required = ['userid', 'userfullname', 'message']
     missing = [c for c in required if c not in df.columns]
     if missing:
-        st.error(f"❌ Missing required columns: {missing}")
+        st.error(f"Missing required columns: {missing}")
         st.info("Columns needed: userid, userfullname, message")
         return None
 

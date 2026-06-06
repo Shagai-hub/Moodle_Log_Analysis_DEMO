@@ -24,10 +24,10 @@ class ConfigManager:
     def render_sidebar_config(self):
         """Render configuration UI in sidebar"""
         with st.sidebar:
-            st.header("⚙️ Configuration")
+            st.header("Configuration")
             
             # Professor configuration
-            with st.expander("👨‍🏫 Professors", expanded=False):
+            with st.expander("Professors", expanded=False):
                 st.markdown("Professors will be excluded from student analysis")
                 raw_info = st.session_state.get("raw_data")
                 raw_df = raw_info.get("dataframe") if isinstance(raw_info, dict) else None
@@ -54,7 +54,7 @@ class ConfigManager:
                 st.write(f"**Currently configured:** {len(self.professors)} professors")
             
             # Deadline configuration
-            with st.expander("📅 Exam Deadlines", expanded=False):
+            with st.expander("Exam Deadlines", expanded=False):
                 st.markdown("Set deadlines for each exam")
                 
                 # Dynamic deadline management
@@ -77,17 +77,17 @@ class ConfigManager:
                         )
                         self.deadlines[exam_name] = pd.to_datetime(new_deadline)
                     with col2:
-                        if st.button("🗑️", key=f"del_{exam_name}") and len(self.deadlines) > 1:
+                        if st.button("Delete", key=f"del_{exam_name}") and len(self.deadlines) > 1:
                             del self.deadlines[exam_name]
                             st.rerun()
             
             # Advanced settings
-            with st.expander("🔧 Advanced Settings", expanded=False):
+            with st.expander("Advanced Settings", expanded=False):
                 st.subheader("Analysis Settings")
                 self.analysis_settings['enable_ml_attributes'] = st.checkbox(
                     "Enable ML-based Attributes", 
                     value=self.analysis_settings['enable_ml_attributes'],
-                    help="Compute topic relevance and AI detection (slower but more advanced)"
+                    help="Compute topic relevance and model-based text detection. This may take longer."
                 )
                 self.analysis_settings['y_value'] = st.number_input(
                     "Y Value for Ranking",
@@ -95,7 +95,7 @@ class ConfigManager:
                     help="Reference value for COCO analysis"
                 )
 
-            with st.expander("🤖 AI Insights", expanded=False):
+            with st.expander("Cohort Insights", expanded=False):
                 st.subheader("Model & Thresholds")
                 model_options = [
                     ("manual", "Manual narrative (fastest)"),
@@ -183,7 +183,7 @@ class ConfigManager:
                 )
 
                 st.markdown("### Rule Definitions")
-                st.caption("Edit JSON to fine-tune the AI playbooks that tag students. Each rule supports simple AND conditions.")
+                st.caption("Edit JSON to fine-tune the intervention rules that tag students. Each rule supports simple AND conditions.")
 
                 rules_editor_key = "ai_rules_text_area"
                 default_rules_text = json.dumps(self.ai_insight_rules, indent=2)
@@ -194,12 +194,12 @@ class ConfigManager:
 
                 col_rules_btn, _ = st.columns([1, 3])
                 with col_rules_btn:
-                    if st.button("↩️ Restore Default Rules"):
+                    if st.button("Restore Default Rules"):
                         self.ai_insight_rules = self._default_ai_rules()
                         st.session_state[rules_editor_key] = json.dumps(self.ai_insight_rules, indent=2)
 
                 rules_text = st.text_area(
-                    "AI Insight Rules (JSON)",
+                    "Insight Rules (JSON)",
                     value=st.session_state[rules_editor_key],
                     height=220,
                     key=rules_editor_key,
@@ -212,17 +212,17 @@ class ConfigManager:
                     else:
                         st.warning("Rules JSON should be a list. Keeping previous configuration.")
                 except json.JSONDecodeError as exc:
-                    st.error(f"Invalid JSON for AI insight rules: {exc}. Using last valid configuration.")
+                    st.error(f"Invalid JSON for insight rules: {exc}. Using last valid configuration.")
             
             # Configuration actions
             st.divider()
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("💾 Save Config", use_container_width=True):
+                if st.button("Save Config", use_container_width=True):
                     self.save_to_session()
-                    st.success("Configuration saved!")
+                    st.success("Configuration saved.")
             with col2:
-                if st.button("🔄 Reset Defaults", use_container_width=True):
+                if st.button("Reset Defaults", use_container_width=True):
                     self.load_defaults()
                     st.rerun()
     

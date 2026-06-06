@@ -15,7 +15,7 @@ def _render_quick_start() -> None:
 2. Go to **Configuration** and set professor names plus exam deadlines.
 3. Open **Attribute Analysis**, select metrics, and click **Compute Attributes**.
 4. Continue to **Ranking** and run student ranking.
-5. Run **COCO Analysis** and review **Visualizations** and **AI Insights**.
+5. Run **COCO Analysis** and review **Visualizations** and **Cohort Insights**.
         """
     )
 
@@ -55,7 +55,7 @@ def _render_common_issues() -> None:
             """
         )
 
-    with st.expander("AI Insights shows missing-columns warnings"):
+    with st.expander("Cohort Insights shows missing-column warnings"):
         st.markdown(
             """
 - Rules may reference fields not present in your computed dataset.
@@ -70,7 +70,7 @@ def _render_user_guide_download() -> None:
     if guide_path.exists():
         with guide_path.open("rb") as f:
             st.download_button(
-                "📥 Download Full User Guide (DOCX)",
+                "Download Full User Guide (DOCX)",
                 data=f.read(),
                 file_name=guide_path.name,
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -85,7 +85,6 @@ def main() -> None:
     page_header(
         "Help Center",
         "Simple guidance for using the Moodle Log Analyzer end-to-end.",
-        icon="❓",
         align="left",
         compact=True,
     )
@@ -110,7 +109,7 @@ def main() -> None:
     _render_user_guide_download()
 
     divider()
-    section_header("Need More Help?", icon="✉️")
+    section_header("Need More Help?")
     st.markdown(
         """
 - Capture a screenshot of the page and the error message.
@@ -123,17 +122,17 @@ def main() -> None:
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Home",
+            "label": "Back to Home",
             "page": "Analysis.py",
             "key": "nav_back_home_from_help",
             "fallback": "Home",
         },
         message="This help page summarizes the official guide for quick in-app support.",
         forward={
-            "label": "➡️ Go to Data Upload",
-            "page": "pages/1_📊_Data_Upload.py",
+            "label": "Go to Data Upload",
+            "page": "pages/1_Data_Upload.py",
             "key": "nav_to_upload_from_help",
-            "fallback": "📊 Data Upload",
+            "fallback": "Data Upload",
         },
     )
 

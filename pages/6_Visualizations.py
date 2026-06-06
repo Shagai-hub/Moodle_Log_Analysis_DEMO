@@ -13,7 +13,7 @@ from utils.attribute_calculations import (
     content_attrs,
 )
 from utils.coco_utils import clean_coco_dataframe
-from assets.ui_components import apply_theme, divider, info_panel, page_header, section_header, nav_footer
+from assets.ui_components import apply_theme, display_label, divider, info_panel, page_header, section_header, nav_footer
 from utils.ui_steps import render_steps
 # Safe initialization
 if "data_manager" not in st.session_state:
@@ -38,7 +38,6 @@ def main():
     page_header(
         "Visual Analytics",
         "Explore computed metrics and rankings without re-running the heavy pipelines.",
-        icon="📊",
         align="left",
         compact=True,
     )
@@ -53,10 +52,10 @@ def main():
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Attribute Analysis",
-                "page": "pages/3_📈_Attribute_Analysis.py",
+                "label": "Back to Attribute Analysis",
+                "page": "pages/3_Attribute_Analysis.py",
                 "key": "viz_back_to_attributes",
-                "fallback": "📈 Attribute Analysis",
+                "fallback": "Attribute Analysis",
             },
             message="Visualisations become available once attributes are computed.",
         )
@@ -68,15 +67,15 @@ def main():
         return
 
     status_lines = [
-        f"Attributes: {'✅ Ready' if student_attributes is not None else '⚠️ Missing'}",
-        f"Ranking: {'✅ Ready' if ranked_results is not None else '⚠️ Run the Ranking page'}",
-        f"COCO: {'✅ Ready' if coco_results else '⚠️ Run the COCO analysis'}",
-        f"Validation: {'✅ Ready' if validation_results is not None else '⚠️ Available after COCO run'}",
+        f"Attributes: {'Available' if student_attributes is not None else 'Missing'}",
+        f"Ranking: {'Available' if ranked_results is not None else 'Run the Ranking page'}",
+        f"COCO: {'Available' if coco_results else 'Run the COCO analysis'}",
+        f"Validation: {'Available' if validation_results is not None else 'Available after COCO run'}",
     ]
-    info_panel("<br>".join(status_lines), icon="ℹ️")
+    info_panel("<br>".join(status_lines))
 
     attr_tab, student_tab, ranking_tab, coco_tab = st.tabs(
-        ["📊 Attribute Insights", "🧭 Student Explorer", "🏆 Ranking Insights", "🔍 COCO & Validation"]
+        ["Attribute Analysis", "Student Explorer", "Ranking Analysis", "COCO and Validation"]
     )
 
     with attr_tab:
@@ -101,42 +100,41 @@ def main():
         if ranked_results is None:
             info_panel(
                 "Ranking results are not available yet. Run the Ranking page to populate this section.",
-                icon="⚠️",
             )
         else:
             render_ranking_insights(ranked_results)
 
     with coco_tab:
         if not coco_results:
-            info_panel("COCO results are not available yet. Run the COCO analysis to view this section.", icon="⚠️")
+            info_panel("COCO results are not available yet. Run the COCO analysis to view this section.")
         else:
             render_coco_overview(coco_results, validation_results)
             divider()
             if validation_results is not None and not validation_results.empty:
                 render_validation_dashboard(validation_results)
             else:
-                info_panel("Validation results will appear automatically after the combined COCO + validation run.", icon="ℹ️")
+                info_panel("Validation results will appear automatically after the combined COCO and validation run.")
 
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Ranking",
-            "page": "pages/4_🏆_Ranking.py",
+            "label": "Back to Ranking",
+            "page": "pages/4_Ranking.py",
             "key": "viz_back_to_ranking",
-            "fallback": "🏆 Ranking",
+            "fallback": "Ranking",
         },
         forward={
-            "label": "✨ Go to AI Insights",
-            "page": "pages/7_🤖_AI_Insights.py",
+            "label": "Go to Cohort Insights",
+            "page": "pages/7_Cohort_Insights.py",
             "key": "pulse",
-            "fallback": "🤖 AI Insights",
+            "fallback": "Cohort Insights",
         },
         message="Visualisations use cached data—re-run computation pages to refresh the figures.",
     )
 
 
 def render_attribute_distribution(oam_combined, attribute_cols):
-    section_header("Attribute Distribution Analysis", icon="📊")
+    section_header("Attribute Distribution Analysis")
 
     col1, col2 = st.columns([1, 2])
     with col1:
@@ -159,10 +157,10 @@ def render_attribute_distribution(oam_combined, attribute_cols):
                 oam_combined,
                 x=selected_attribute,
                 nbins=50,
-                title=f"Distribution of {selected_attribute.replace('_', ' ').title()}",
+                title=f"Distribution of {display_label(selected_attribute)}",
             )
             hist_fig.update_layout(
-                xaxis_title=selected_attribute.replace("_", " ").title(),
+                xaxis_title=display_label(selected_attribute),
                 yaxis_title="Number of Students",
                 showlegend=False,
             )
@@ -171,13 +169,13 @@ def render_attribute_distribution(oam_combined, attribute_cols):
             box_fig = px.box(
                 oam_combined,
                 y=selected_attribute,
-                title=f"Box Plot - {selected_attribute.replace('_', ' ').title()}",
+                title=f"Box Plot - {display_label(selected_attribute)}",
             )
             st.plotly_chart(box_fig, use_container_width=True)
 
 
 def render_student_comparison(oam_combined, attribute_cols):
-    section_header("Student Performance Comparison", icon="👥")
+    section_header("Student Performance Comparison")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -210,7 +208,7 @@ def render_student_comparison(oam_combined, attribute_cols):
 
 
 def render_above_below_matrix(oam_combined, attribute_cols):
-    section_header("Above vs Below Cohort Average", icon="🎯")
+    section_header("Above vs Below Cohort Average")
     if not attribute_cols:
         st.info("Compute attributes to compare students against cohort averages.")
         return
@@ -307,7 +305,7 @@ def create_attribute_comparison_bar(comparison_data, students, attributes):
 
 
 def render_top_performers(oam_combined, attribute_cols):
-    section_header("Top Performers by Attribute", icon="🔥")
+    section_header("Top Performers by Attribute")
 
     selected_attribute = st.selectbox(
         "Select attribute for ranking",
@@ -325,13 +323,13 @@ def render_top_performers(oam_combined, attribute_cols):
             y="userfullname",
             x=selected_attribute,
             orientation="h",
-            title=f"Top {top_n} Students - {selected_attribute.replace('_', ' ').title()}",
+            title=f"Top {top_n} Students - {display_label(selected_attribute)}",
             color=selected_attribute,
             color_continuous_scale="Viridis",
         )
         fig.update_layout(
             yaxis_title="Student",
-            xaxis_title=selected_attribute.replace("_", " ").title(),
+            xaxis_title=display_label(selected_attribute),
             showlegend=False,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -339,7 +337,7 @@ def render_top_performers(oam_combined, attribute_cols):
 
 
 def render_student_profile(oam_combined, attribute_cols):
-    section_header("Student Attribute Profile", icon="📈")
+    section_header("Student Attribute Profile")
 
     selected_student = st.selectbox(
         "Select student",
@@ -353,10 +351,10 @@ def render_student_profile(oam_combined, attribute_cols):
         for attr in attribute_cols:
             profile_data.append(
                 {
-                    "Attribute": attr.replace("_", " ").title(),
+                    "Attribute": display_label(attr),
                     "Score": student_row[attr],
                     "Class Average": oam_combined[attr].mean(),
-                    "Status": "✅ Above Avg" if student_row[attr] > oam_combined[attr].mean() else "⚠️ Below Avg",
+                    "Status": "Above Average" if student_row[attr] > oam_combined[attr].mean() else "Below Average",
                 }
             )
 
@@ -368,7 +366,7 @@ def render_student_profile(oam_combined, attribute_cols):
 
 
 def render_category_analysis(oam_combined):
-    section_header("Category-wise Attribute Analysis", icon="📋")
+    section_header("Category-wise Attribute Analysis")
 
     categories = {
         "Activity": [col for col in oam_combined.columns if col in activity_attrs],
@@ -393,7 +391,7 @@ def render_category_analysis(oam_combined):
         category_avg = oam_combined[category_cols].mean()
 
         fig = px.bar(
-            x=[col.replace("_", " ").title() for col in category_cols],
+            x=[display_label(col) for col in category_cols],
             y=category_avg.values,
             title=f"{selected_category} Category - Average Scores",
             labels={"x": "Attributes", "y": "Average Score"},
@@ -421,7 +419,7 @@ def render_category_analysis(oam_combined):
 
 
 def render_exam_focus(oam_combined):
-    section_header("Exam Attribute Focus", icon="📝")
+    section_header("Exam Attribute Focus")
 
     exam_columns = get_exam_columns(oam_combined)
     if not exam_columns:
@@ -447,7 +445,7 @@ def render_exam_focus(oam_combined):
                 y="userfullname",
                 x=selected_exam,
                 orientation="h",
-                title=f"Top 10 Students - {selected_exam.replace('_', ' ').title()}",
+                title=f"Top 10 Students - {display_label(selected_exam)}",
                 color=selected_exam,
                 color_continuous_scale="Blues",
             )
@@ -460,7 +458,7 @@ def render_exam_focus(oam_combined):
                 y="userfullname",
                 x=selected_exam,
                 orientation="h",
-                title=f"Needs Attention - {selected_exam.replace('_', ' ').title()}",
+                title=f"Requires Review - {display_label(selected_exam)}",
                 color=selected_exam,
                 color_continuous_scale="Reds",
             )
@@ -468,7 +466,7 @@ def render_exam_focus(oam_combined):
 
 
 def render_student_overview(oam_combined, ranked_results=None, validation_results=None):
-    section_header("Student Overview Card", icon="🧭")
+    section_header("Student Overview Card")
 
     selected_student = st.selectbox(
         "Choose a student",
@@ -513,7 +511,7 @@ def render_student_overview(oam_combined, ranked_results=None, validation_result
 
 
 def render_ranking_insights(ranked_results):
-    section_header("Ranking Insights", icon="🏆")
+    section_header("Ranking Analysis")
 
     rank_cols = [col for col in ranked_results.columns if col.endswith("_rank")]
     if not rank_cols:
@@ -571,7 +569,7 @@ def render_ranking_insights(ranked_results):
 
 
 def render_coco_overview(coco_results, validation_results):
-    section_header("COCO Result Overview", icon="🔍")
+    section_header("COCO Result Overview")
 
     score_table = None
     for name, df in coco_results.items():
@@ -588,7 +586,7 @@ def render_coco_overview(coco_results, validation_results):
             break
 
     if score_table is None or score_table.empty:
-        info_panel("Could not identify a score table in the COCO output.", icon="ℹ️")
+        info_panel("Could not identify a score table in the COCO output.")
         return
 
     top_scores = score_table.nlargest(30, "Becslés_numeric")
@@ -625,7 +623,7 @@ def render_coco_overview(coco_results, validation_results):
 
 
 def render_validation_dashboard(validation_results):
-    section_header("Validation Results Dashboard", icon="✅")
+    section_header("Validation Results Dashboard")
 
     if validation_results.empty:
         st.info("Validation results are empty.")
@@ -643,18 +641,18 @@ def render_validation_dashboard(validation_results):
         st.metric("Valid Results", f"{valid_count}", delta=f"{validity_percentage:.1f}% success rate")
     with col3:
         if validity_percentage >= 80:
-            icon = "✅"
+            status_delta = "High consistency"
             delta_color = "normal"
         elif validity_percentage >= 50:
-            icon = "⚠️"
+            status_delta = "Review recommended"
             delta_color = "off"
         else:
-            icon = "❌"
+            status_delta = "Review required"
             delta_color = "inverse"
-        st.metric("Validity Rate", f"{validity_percentage:.1f}%", delta=icon, delta_color=delta_color)
+        st.metric("Validity Rate", f"{validity_percentage:.1f}%", delta=status_delta, delta_color=delta_color)
 
     tab1, tab2, tab3, tab4 = st.tabs(
-        ["📈 Score Distribution", "🔍 Validation Analysis", "📋 Detailed Results", "⚠️ Review Cases"]
+        ["Score Distribution", "Validation Analysis", "Detailed Results", "Review Cases"]
     )
 
     with tab1:
@@ -700,16 +698,13 @@ def render_validation_dashboard(validation_results):
         )
         st.plotly_chart(scatter_fig, use_container_width=True)
 
-        section_header("Validation Insights", icon="📊", tight=True)
+        section_header("Validation Interpretation", tight=True)
         insights_col1, insights_col2 = st.columns(2)
         if validity_percentage >= 80:
-            status_icon = "✅"
             status_message = "**Strong Consistency** — results show high reliability."
         elif validity_percentage >= 50:
-            status_icon = "⚠️"
             status_message = "**Moderate Consistency** — some results need review."
         else:
-            status_icon = "❌"
             status_message = "**Low Consistency** — significant review required."
 
         with insights_col1:
@@ -717,7 +712,6 @@ def render_validation_dashboard(validation_results):
                 f"{status_message}<br><br>"
                 f"<strong>Success Rate</strong>: {validity_percentage:.1f}%<br>"
                 f"<strong>Valid Cases</strong>: {valid_count}/{total_count}",
-                icon=status_icon,
             )
 
         delta_correlation = results["Original_Delta"].corr(results["Inverted_Delta"])
@@ -730,11 +724,10 @@ def render_validation_dashboard(validation_results):
                 f"{correlation_hint}<br><br>"
                 f"<strong>Mean Delta (Original)</strong>: {results['Original_Delta'].mean():.3f}<br>"
                 f"<strong>Mean Delta (Inverted)</strong>: {results['Inverted_Delta'].mean():.3f}",
-                icon="📐",
             )
 
     with tab3:
-        section_header("Detailed Validation Results", icon="📋", tight=True)
+        section_header("Detailed Validation Results", tight=True)
         display_columns = [
             "userfullname",
             "Final_Rank",
@@ -758,7 +751,7 @@ def render_validation_dashboard(validation_results):
 
         csv_data = display_df.to_csv(index=False)
         st.download_button(
-            "📥 Download Detailed Results (CSV)",
+            "Download Detailed Results (CSV)",
             csv_data,
             f"validation_detailed_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
             "text/csv",
@@ -768,7 +761,7 @@ def render_validation_dashboard(validation_results):
     with tab4:
         invalid_cases = results[~results["Is_Valid"]]
         if not invalid_cases.empty:
-            section_header("Cases Requiring Review", icon="⚠️", tight=True)
+            section_header("Cases Requiring Review", tight=True)
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Invalid Cases", len(invalid_cases))
@@ -794,7 +787,7 @@ def render_validation_dashboard(validation_results):
             invalid_display = invalid_display.round({"Final Score": 3, "Original Delta": 3, "Inverted Delta": 3, "Product": 3})
             st.dataframe(invalid_display, use_container_width=True)
 
-            with st.expander("🔍 **Invalid Cases Analysis**"):
+            with st.expander("Invalid Cases Analysis"):
                 st.write("**Pattern Analysis:**")
                 score_bins = pd.cut(invalid_cases["Becslés"], bins=5)
                 bin_counts = score_bins.value_counts().sort_index()
@@ -815,7 +808,7 @@ def render_validation_dashboard(validation_results):
                         f"to {invalid_cases['Inverted_Delta'].max():.3f}"
                     )
         else:
-            st.success("🎉 **Excellent!** No invalid cases found requiring review.")
+            st.success("No invalid cases found requiring review.")
 
     divider()
     chart_df = results[["userfullname", "Becslés", "Validation_Result", "Final_Rank"]].copy()
@@ -877,7 +870,7 @@ def render_validation_dashboard(validation_results):
 
     st.altair_chart(bar_chart, use_container_width=True)
 
-    section_header("Export Options", icon="💾", tight=True)
+    section_header("Export Options", tight=True)
     summary_data = {
         "Metric": ["Total Students", "Valid Cases", "Invalid Cases", "Validity Rate", "Average Score"],
         "Value": [
@@ -891,7 +884,7 @@ def render_validation_dashboard(validation_results):
     summary_df = pd.DataFrame(summary_data)
     summary_csv = summary_df.to_csv(index=False)
     st.download_button(
-        "📄 Download Summary Report (CSV)",
+        "Download Summary Report (CSV)",
         summary_csv,
         f"validation_summary_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
         "text/csv",

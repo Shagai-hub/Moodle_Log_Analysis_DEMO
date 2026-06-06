@@ -9,7 +9,6 @@ if "sidebar_state" not in st.session_state:
 
 st.set_page_config(
     page_title="Moodle Log Analyzer",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state=st.session_state.sidebar_state,
 )
@@ -25,9 +24,7 @@ apply_theme()
 
 page_header(
     "Moodle Log Analyzer",
-    "Transform your Moodle discussion data into actionable insights.",
-    icon="💬",
-   
+    "A structured analysis workflow for Moodle discussion logs, student activity metrics, ranking, and COCO evaluation.",
 )
 
 act1, act2, act3 = st.columns([1, 2, 1])
@@ -35,15 +32,15 @@ act1, act2, act3 = st.columns([1, 2, 1])
 with act2:
     # Centered button inside the middle column
     if st.button(
-        "🚀 Upload your data",
+        "Upload Dataset",
         key="pulse1",
         help="Go to the Data Upload page",
         use_container_width=True,  # makes it stretch nicely in center
     ):
-        st.switch_page("pages/1_📊_Data_Upload.py")
+        st.switch_page("pages/1_Data_Upload.py")
 
     if st.button(
-        "❓ Open Help Center",
+        "Open Help Center",
         key="open_help_center_btn",
         help="Open setup and troubleshooting guidance.",
         use_container_width=True,
@@ -55,16 +52,16 @@ st.markdown(
     """
     <div class="grid-12">
       <div class="card span-4">
-        <div class="panel__icon">🧐</div>
-        <h3>Analyze Student Activity</h3>
+        <h3>Student Activity Analysis</h3>
+        <p>Compute structured attributes from discussion participation.</p>
       </div>
       <div class="card span-4">
-        <div class="panel__icon">📈</div>
-        <h3>Visual Reports</h3>
+        <h3>Ranking and Evaluation</h3>
+        <p>Prepare ranked matrices and run COCO-based evaluation.</p>
       </div>
       <div class="card span-4">
-        <div class="panel__icon">💡</div>
-        <h3>Insights</h3>
+        <h3>Cohort Interpretation</h3>
+        <p>Review watchlists, validation outputs, and presentation-ready summaries.</p>
       </div>
     </div>
     """,
@@ -77,9 +74,9 @@ section_header("At a glance")
 st.markdown(
     """
     <div class="info-band">
-      <div class="info-item"><strong> Supported Formats</strong><br><span>CSV and Excel logs</span></div>
-      <div class="info-item"><strong> Secure Processing</strong><br><span>All data stays in-session</span></div>
-      <div class="info-item"><strong> Fast Analysis</strong><br><span>Pipeline optimised for cohorts</span></div>
+      <div class="info-item"><strong>Supported Formats</strong><br><span>CSV and Excel logs</span></div>
+      <div class="info-item"><strong>Session-Based Processing</strong><br><span>Uploaded data is managed within the active session</span></div>
+      <div class="info-item"><strong>Reproducible Workflow</strong><br><span>Export configuration, attribute matrices, ranking, and COCO results</span></div>
     </div>
     """,
     unsafe_allow_html=True,

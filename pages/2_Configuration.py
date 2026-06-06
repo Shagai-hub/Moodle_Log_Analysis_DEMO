@@ -1,4 +1,4 @@
-# pages/2_⚙️_Configuration.py
+# pages/2_Configuration.py
 import streamlit as st
 import pandas as pd
 from utils.config_manager import ConfigManager
@@ -31,7 +31,6 @@ def main():
     page_header(
         "Configuration",
         "Set professors, exam deadlines, and analysis parameters before computing attributes.",
-        icon="⚙️",
         align="left",
         compact=True,
     )
@@ -41,18 +40,21 @@ def main():
     has_data = raw_df is not None and not raw_df.empty
 
     # ----------- QUICK SUMMARY -----------
-    section_header("Quick summary", tight=True, icon="🔎")
-    with st.expander("🔍 Quick Summary (current settings)", expanded=False):
-        st.json(config.to_dict())
+    section_header("Quick summary", tight=True)
+    with st.expander("Current settings", expanded=False):
+        display_config = dict(config.to_dict())
+        display_config["cohort_insights_settings"] = display_config.pop("ai_insights_settings", {})
+        display_config["insight_rules"] = display_config.pop("ai_insight_rules", [])
+        st.json(display_config)
 
     divider()
 
     # ----------- TABS -----------
-    tab1, tab2, tab3 = st.tabs(["👨‍🏫 Professors & Exams", "📊 Analysis Settings", "💾 Export / Import"])
+    tab1, tab2, tab3 = st.tabs(["Professors and Exams", "Analysis Settings", "Export and Import"])
 
     # ===================== TAB 1: Professors & Exams =====================
     with tab1:
-        section_header("Professor Settings", tight=True, icon="👨‍🏫")
+        section_header("Professor Settings", tight=True)
 
         if PROFESSOR_TEXT_KEY not in st.session_state:
             _sync_professor_text_input(config)
@@ -89,7 +91,7 @@ def main():
 
 
         st.markdown("---")
-        section_header("Exam Deadline Settings", icon="🧪", tight=True)
+        section_header("Exam Deadline Settings", tight=True)
         subtle_text("Set deadlines for each exam. Posts after these dates will be flagged.")
         # Detect subjects from data
         detected_subjects = []
@@ -118,7 +120,7 @@ def main():
         else:
             st.info("No subjects detected yet. Upload data to see subject-based exam suggestions.")
 
-        new_exam = st.text_input("? Add exam (custom name)", placeholder="e.g., Midterm Exam")
+        new_exam = st.text_input("Add exam (custom name)", placeholder="e.g., Midterm Exam")
         if st.button("Add custom exam", use_container_width=True, key="add_exam_btn") and new_exam:
             if new_exam not in config.deadlines:
                 config.deadlines[new_exam] = pd.Timestamp.today().normalize()
@@ -129,7 +131,7 @@ def main():
 
         # Editable deadline table
         if config.deadlines:
-            st.markdown("#### 🗓️ Edit deadlines")
+            st.markdown("#### Edit deadlines")
             dl_df = pd.DataFrame([
                 {"Exam": name, "Deadline": pd.to_datetime(date).date()}
                 for name, date in config.deadlines.items()
@@ -160,7 +162,7 @@ def main():
 
     # ===================== TAB 2: Analysis Settings =====================
     with tab2:
-        section_header("Analysis Settings", icon="📊", tight=True)
+        section_header("Analysis Settings", tight=True)
 
         st.markdown("#### COCO Analysis")
         config.analysis_settings['y_value'] = st.number_input(
@@ -186,7 +188,7 @@ def main():
 
     # ===================== TAB 3: Export / Import =====================
     with tab3:
-        section_header("Configuration Management", icon="💾", tight=True)
+        section_header("Configuration Management", tight=True)
         colx, coly = st.columns(2)
 
         with colx:
@@ -195,7 +197,7 @@ def main():
             cfg_dict = config.to_dict()
             cfg_json = json.dumps(cfg_dict, indent=2, default=str)
             st.download_button(
-                "📥 Export Configuration (JSON)",
+                "Export Configuration (JSON)",
                 data=cfg_json,
                 file_name="moodle_analyzer_config.json",
                 mime="application/json",
@@ -216,7 +218,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error importing: {e}")
 
-            if st.button("🔄 Reset to Defaults", use_container_width=True):
+            if st.button("Reset to Defaults", use_container_width=True):
                 config.load_defaults()
                 _sync_professor_text_input(config)
                 st.success("Reset to defaults.")
@@ -226,17 +228,17 @@ def main():
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Upload",
-            "page": "pages/1_📊_Data_Upload.py",
+            "label": "Back to Upload",
+            "page": "pages/1_Data_Upload.py",
             "key": "nav_back_to_upload",
-            "fallback": "📊 Data Upload",
+            "fallback": "Data Upload",
         },
         message="Your settings are applied immediately. You can revisit this page anytime.",
         forward={
-            "label": "➡️ Go to Attribute Analysis",
-            "page": "pages/3_📈_Attribute_Analysis.py",
+            "label": "Go to Attribute Analysis",
+            "page": "pages/3_Attribute_Analysis.py",
             "key": "nav_to_attributes_from_config",
-            "fallback": "📈 Attribute Analysis",
+            "fallback": "Attribute Analysis",
         },
     )
 

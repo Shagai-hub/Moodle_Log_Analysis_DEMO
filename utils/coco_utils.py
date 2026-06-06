@@ -224,7 +224,7 @@ def prepare_coco_matrix(ranked_df):
     # Debug information
     if 'show_coco_debug' in st.session_state and st.session_state.show_coco_debug:
         excluded_columns = [col for col in ranked_df.columns if col not in matrix_df.columns]
-        st.write("🔍 **COCO Matrix Preparation Debug:**")
+        st.write("**COCO Matrix Preparation Debug:**")
         st.write(f"Original columns: {list(ranked_df.columns)}")
         st.write(f"Excluded columns: {exclude_columns}")
         st.write(f"Final COCO columns: {list(matrix_df.columns)}")

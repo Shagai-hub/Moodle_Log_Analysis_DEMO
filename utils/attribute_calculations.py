@@ -321,7 +321,7 @@ def compute_topic_relevance(df, df_all, professor_name=None):
 
 def compute_avg_ai_involved(df):
     """
-    Compute average AI involvement score for each user.
+    Compute the average model-based text score for each user.
     Returns DataFrame with columns: ["userid", "userfullname", "avg_AI_involvedMsg_score"]
     """
     try:
@@ -346,7 +346,7 @@ def compute_avg_ai_involved(df):
 
         df_clean['repetition_score'] = df_clean['cleaned_message'].apply(repetition_score)
 
-        # Load AI detector model
+        # Load the text-origin detector model.
         try:
             tokenizer = AutoTokenizer.from_pretrained("roberta-base-openai-detector")
             model = AutoModelForSequenceClassification.from_pretrained("roberta-base-openai-detector")
@@ -362,24 +362,24 @@ def compute_avg_ai_involved(df):
 
             df_clean['ai_probability'] = df_clean['cleaned_message'].apply(detect)
         except Exception as e:
-            print(f"Error loading AI detection model: {e}")
+            print(f"Error loading text-origin detection model: {e}")
             df_clean['ai_probability'] = 0.0
 
-        # Combine metrics into a single AI score
+        # Combine metrics into a single model-based text score.
         df_clean['ai_score'] = (df_clean['normalized_readability'] + 
                                 df_clean['repetition_score'] + 
                                 df_clean['ai_probability']) / 3
 
-        # Scale AI score to a range of 1 to 10
+        # Scale the text score to a range of 1 to 10.
         df_clean['ai_rating'] = df_clean['ai_score'].apply(lambda x: max(1, min(10, round(x * 10))))
         
-        # Group by user and compute average AI rating
+        # Group by user and compute the average text rating.
         result = df_clean.groupby(['userid', 'userfullname'])['ai_rating'].mean().reset_index()
         result = result.rename(columns={'ai_rating': 'avg_AI_involvedMsg_score'})
         
         return result
     except Exception as e:
-        print(f"Error computing AI involvement: {e}")
+        print(f"Error computing model-based text score: {e}")
         return pd.DataFrame(columns=["userid", "userfullname", "avg_AI_involvedMsg_score"])
 
 def total_posts(df):

@@ -1,4 +1,4 @@
-# pages/4_🏆_Ranking.py
+# pages/4_Ranking.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,6 +7,7 @@ from utils.config_manager import ConfigManager
 from assets.ui_components import (
     apply_theme,
     centered_page_button,
+    display_label,
     divider,
     info_panel,
     page_header,
@@ -30,7 +31,6 @@ def main():
     page_header(
         "Student Ranking",
         "Rank computed attributes before moving into the COCO analysis.",
-        icon="🏆",
         align="left",
         compact=True,
     )
@@ -38,14 +38,14 @@ def main():
     # Check if attributes are computed
     student_attributes = data_manager.get_student_attributes()
     if student_attributes is None:
-        st.warning("📊 Please compute student attributes first on the Attribute Analysis page.")
+        st.warning("Compute student attributes first on the Attribute Analysis page.")
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Attribute Analysis",
-                "page": "pages/3_📈_Attribute_Analysis.py",
+                "label": "Back to Attribute Analysis",
+                "page": "pages/3_Attribute_Analysis.py",
                 "key": "nav_back_to_attributes_missing_results",
-                "fallback": "📈 Attribute Analysis",
+                "fallback": "Attribute Analysis",
             },
             message="Compute student attributes to unlock ranking.",
         )
@@ -53,14 +53,14 @@ def main():
     
     # Get selected attributes from session state
     if "selected_attributes" not in st.session_state:
-        st.warning("❌ No attributes selected for ranking. Please go back to Attribute Analysis page.")
+        st.warning("No attributes are selected for ranking. Return to the Attribute Analysis page.")
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Attribute Analysis",
-                "page": "pages/3_📈_Attribute_Analysis.py",
+                "label": "Back to Attribute Analysis",
+                "page": "pages/3_Attribute_Analysis.py",
                 "key": "nav_back_to_attributes_missing_selection",
-                "fallback": "📈 Attribute Analysis",
+                "fallback": "Attribute Analysis",
             },
             message="Select attributes to prioritise before ranking.",
         )
@@ -68,20 +68,20 @@ def main():
     
     selected_attributes = st.session_state.selected_attributes
     if not selected_attributes:
-        st.warning("❌ No attributes selected for ranking. Please select attributes first.")
+        st.warning("No attributes are selected for ranking. Select at least one attribute first.")
         divider()
         nav_footer(
             back={
-                "label": "⬅️ Back to Attribute Analysis",
-                "page": "pages/3_📈_Attribute_Analysis.py",
+                "label": "Back to Attribute Analysis",
+                "page": "pages/3_Attribute_Analysis.py",
                 "key": "nav_back_to_attributes_empty_selection",
-                "fallback": "📈 Attribute Analysis",
+                "fallback": "Attribute Analysis",
             },
             message="Pick at least one attribute to build a ranking.",
         )
         return
     
-    st.success(f"✅ Ready to rank {len(student_attributes)} students using {len(selected_attributes)} attributes")
+    st.success(f"Ranking input prepared for {len(student_attributes)} students using {len(selected_attributes)} attributes.")
     
     # Use Y-value from configuration
     y_value = config.analysis_settings.get('y_value', 1000)
@@ -91,9 +91,9 @@ def main():
     
     with col1:
         # Y-value display (read-only from configuration)
-        section_header("Reference Value (Y)", icon="🎯", tight=True)
+        section_header("Reference Value (Y)", tight=True)
         st.info(f"**Y Value:** {y_value}")
-        st.caption("💡 Configure Y value in the Configuration page")
+        st.caption("Configure the Y value in the Configuration page.")
         
         # Optional: Allow temporary override for this session
         use_custom_y = st.checkbox("Use custom Y value for this session", value=False)
@@ -108,13 +108,13 @@ def main():
             )
     
     with col2:
-        section_header("Summary", icon="📊", tight=True)
+        section_header("Summary", tight=True)
         st.metric("Students", len(student_attributes))
         st.metric("Attributes", len(selected_attributes))
         st.metric("Y Value", y_value)
     
     # Simple ranking directions
-    section_header("Ranking Directions", icon="📈", tight=True)
+    section_header("Ranking Directions", tight=True)
     
     # Create attribute directions
     attr_directions = {}
@@ -124,16 +124,16 @@ def main():
         # Set direction: 0 = Lower is better, 1 = Higher is better
         if attr.startswith("deadline_exceeded_posts_"):
             direction = 0  # Lower is better for deadline exceeded
-            direction_text = "🔻 Lower is better"
+            direction_text = "Lower is better"
         elif attr == "avg_reply_time":
             direction = 0  # Lower is better for reply time
-            direction_text = "🔻 Lower is better"
+            direction_text = "Lower is better"
         else:
             direction = 1  # Higher is better for most attributes
-            direction_text = "🔺 Higher is better"
+            direction_text = "Higher is better"
         
         attr_directions[attr] = direction
-        direction_info.append(f"**{attr.replace('_', ' ').title()}:** {direction_text}")
+        direction_info.append(f"**{display_label(attr)}:** {direction_text}")
     
     # Show directions in a compact format
     with st.expander("View Ranking Directions", expanded=False):
@@ -142,7 +142,7 @@ def main():
     
     # Run ranking
     divider()
-    if st.button("🚀 Run Student Ranking", use_container_width=True, type="primary"):
+    if st.button("Run Student Ranking", use_container_width=True, type="primary"):
         ranked_df = rank_students(student_attributes, selected_attributes, attr_directions, y_value)
         
         if ranked_df is not None:
@@ -155,20 +155,20 @@ def main():
     forward_spec = None
     if data_manager.get_ranked_results() is not None:
         forward_spec = {
-            "label": "🔍 Proceed to COCO Analysis",
-            "page": "pages/5_🔍_COCO_Analysis.py",
+            "label": "Proceed to COCO Analysis",
+            "page": "pages/5_COCO_Analysis.py",
             "key": "pulse1",
-            "fallback": "🔍 COCO Analysis",
+            "fallback": "COCO Analysis",
             "help": "Navigate to the COCO Analysis page with ranked data",
         }
 
     divider()
     nav_footer(
         back={
-            "label": "⬅️ Back to Attribute Analysis",
-            "page": "pages/3_📈_Attribute_Analysis.py",
+            "label": "Back to Attribute Analysis",
+            "page": "pages/3_Attribute_Analysis.py",
             "key": "nav_back_to_attributes_footer",
-            "fallback": "📈 Attribute Analysis",
+            "fallback": "Attribute Analysis",
         },
         forward=forward_spec,
     )
@@ -182,7 +182,7 @@ def rank_students(df_oam, selected_attrs, attr_directions, y_value):
         valid_attrs = [attr for attr in selected_attrs if attr in rdf.columns]
         
         if not valid_attrs:
-            st.error("❌ No valid attributes found for ranking.")
+            st.error("No valid attributes were found for ranking.")
             return None
         
         progress_text = st.empty()
@@ -212,11 +212,11 @@ def rank_students(df_oam, selected_attrs, attr_directions, y_value):
         if len(rdf) > 0:
             rdf.loc[rdf.index[-1], "Y_value"] = 100000
         
-        st.toast(f"✅ Successfully ranked {len(rdf)} students!")
+        st.toast(f"Ranked {len(rdf)} students.")
         return rdf
         
     except Exception as e:
-        st.error(f"❌ Error during ranking: {e}")
+        st.error(f"Error during ranking: {e}")
         return None
 
 def display_ranking_results(ranked_df, selected_attributes, data_manager, y_value):
@@ -229,7 +229,7 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
         st.error("No ranking columns found.")
         return
     
-    section_header("Ranking Results", icon="📊")
+    section_header("Ranking Results")
     
     # Summary statistics
     col1, col2, col3 = st.columns(3)
@@ -259,13 +259,13 @@ def display_ranking_results(ranked_df, selected_attributes, data_manager, y_valu
     }
     
     for col in rank_columns:
-        friendly_name = col.replace("_rank", "").replace("_", " ").title()
+        friendly_name = display_label(col)
         column_renames[col] = friendly_name
     
     display_df = display_df.rename(columns=column_renames)
     
     # Display the ranked table
-    st.subheader("🏆 Ranked Students")
+    st.subheader("Ranked Students")
     st.dataframe(display_df, use_container_width=True)
     
    
