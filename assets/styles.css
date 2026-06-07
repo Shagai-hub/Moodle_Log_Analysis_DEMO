@@ -402,7 +402,7 @@ section[data-testid="stSidebar"] div[data-testid="stCaptionContainer"] * {
 .metric-box,
 div[data-testid="stMetric"],
 div[data-testid="stAlert"],
-div[data-testid="stFileUploaderDropzone"],
+[data-testid="stFileUploaderDropzone"],
 .stExpander {
   color: var(--text) !important;
 }
@@ -416,7 +416,7 @@ div[data-testid="stFileUploaderDropzone"],
 .metric-box span,
 div[data-testid="stMetric"] *,
 div[data-testid="stAlert"] *,
-div[data-testid="stFileUploaderDropzone"] *,
+[data-testid="stFileUploaderDropzone"] *,
 .stExpander * {
   color: inherit;
 }
@@ -567,7 +567,7 @@ div[data-testid="stDownloadButton"] button svg,
 .stButton.st-key-go_to_analysis_btn > button,
 .stButton.st-key-proceed_to_ranking_btn > button,
 .st-key-pulse button,
-.st-key-pulse1 button {
+.st-key-home_upload_dataset_btn button {
   background: linear-gradient(135deg, var(--accent), #245b6d) !important;
   color: var(--on-dark) !important;
   border: 1px solid rgba(23, 63, 79, 0.92) !important;
@@ -575,6 +575,34 @@ div[data-testid="stDownloadButton"] button svg,
   font-size: 1rem !important;
   box-shadow: 0 12px 24px rgba(23, 63, 79, 0.18) !important;
   animation: none !important;
+}
+
+.st-key-home_upload_dataset_btn button {
+  background: linear-gradient(135deg, #0f4c5c 0%, #16758a 58%, #c78632 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid rgba(15, 76, 92, 0.92) !important;
+  box-shadow:
+    0 14px 30px rgba(15, 76, 92, 0.28),
+    0 6px 16px rgba(199, 134, 50, 0.22) !important;
+}
+
+.st-key-home_upload_dataset_btn button:hover {
+  background: linear-gradient(135deg, #0b3c49 0%, #126779 58%, #b97826 100%) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 38px rgba(15, 76, 92, 0.34),
+    0 8px 20px rgba(199, 134, 50, 0.26) !important;
+}
+
+.st-key-home_upload_dataset_btn button *,
+.st-key-home_upload_dataset_btn button svg,
+.st-key-home_upload_dataset_btn button svg * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 .st-key-open_help_center_btn button {
@@ -638,12 +666,59 @@ div[data-testid="stAlert"] {
   border: 1px solid var(--border-subtle);
 }
 
-div[data-testid="stFileUploaderDropzone"],
+[data-testid="stFileUploaderDropzone"],
 div[data-testid="stForm"],
 div[data-testid="stStatusWidget"],
 div[data-baseweb="popover"] {
   background: #ffffff !important;
   border-color: var(--border-subtle) !important;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+  background: linear-gradient(180deg, #ffffff, var(--surface-tint)) !important;
+  border: 1.5px dashed rgba(23, 63, 79, 0.34) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 22px rgba(43, 52, 62, 0.08) !important;
+  color: var(--text) !important;
+  min-height: 88px;
+}
+
+[data-testid="stFileUploaderDropzone"] *,
+[data-testid="stFileUploaderDropzone"] small,
+[data-testid="stFileUploaderDropzone"] span,
+[data-testid="stFileUploaderDropzone"] p {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stFileUploaderDropzone"] button {
+  background: #ffffff !important;
+  color: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.28) !important;
+  box-shadow: 0 4px 12px rgba(43, 52, 62, 0.08) !important;
+}
+
+[data-testid="stFileUploaderDropzone"] button *,
+[data-testid="stFileUploaderDropzone"] svg,
+[data-testid="stFileUploaderDropzone"] svg * {
+  color: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stTooltipIcon"],
+[data-testid="stTooltipIcon"] *,
+[data-testid="stTooltipHoverTarget"] svg,
+[data-testid="stTooltipHoverTarget"] svg *,
+button[aria-label*="tooltip" i] svg,
+button[aria-label*="tooltip" i] svg * {
+  color: var(--muted) !important;
+  stroke: var(--muted) !important;
+  fill: var(--muted) !important;
+  opacity: 1 !important;
 }
 
 div[data-baseweb="popover"] *,
@@ -740,4 +815,449 @@ div[data-baseweb="tag"] {
 
 div[data-baseweb="tag"] * {
   color: var(--accent) !important;
+}
+
+/* Final visibility guard -----------------------------------------
+   Streamlit/BaseWeb can inject nested text and SVG styles after our
+   component rules. Keep this block last so controls remain readable.
+-------------------------------------------------- */
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] *,
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] * {
+  color: var(--text-dim) !important;
+  -webkit-text-fill-color: var(--text-dim) !important;
+}
+
+.page-header [data-testid="stMarkdownContainer"],
+.page-header [data-testid="stMarkdownContainer"] *,
+.page-header,
+.page-header * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+.page-header__subtitle,
+.page-header .page-header__subtitle {
+  color: var(--text-dim) !important;
+  -webkit-text-fill-color: var(--text-dim) !important;
+}
+
+.page-header__kicker,
+.page-header .page-header__kicker {
+  color: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stDownloadButton"] button,
+[data-testid*="FileUploader"] button {
+  opacity: 1 !important;
+}
+
+div[data-testid="stButton"] button *,
+div[data-testid="stButton"] button svg,
+div[data-testid="stButton"] button svg *,
+div[data-testid="stDownloadButton"] button *,
+div[data-testid="stDownloadButton"] button svg,
+div[data-testid="stDownloadButton"] button svg * {
+  opacity: 1 !important;
+}
+
+button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-primary"] *,
+.st-key-home_upload_dataset_btn button,
+.st-key-home_upload_dataset_btn button *,
+.st-key-home_upload_dataset_btn button svg,
+.st-key-home_upload_dataset_btn button svg * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+button:not([data-testid="baseButton-primary"]),
+button:not([data-testid="baseButton-primary"]) *,
+div[data-testid="stDownloadButton"] button,
+div[data-testid="stDownloadButton"] button *,
+div[data-testid="stDownloadButton"] button svg,
+div[data-testid="stDownloadButton"] button svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+}
+
+[data-testid*="FileUploader"],
+[data-testid*="FileUploader"] *,
+[data-testid*="FileUploaderDropzone"],
+[data-testid*="FileUploaderDropzone"] * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploaderDropzone"] {
+  background: linear-gradient(180deg, #ffffff, var(--surface-tint)) !important;
+  border: 1.5px dashed rgba(23, 63, 79, 0.42) !important;
+}
+
+[data-testid*="FileUploader"] button,
+[data-testid*="FileUploaderDropzone"] button {
+  background: #ffffff !important;
+  color: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.34) !important;
+}
+
+[data-testid*="FileUploader"] button *,
+[data-testid*="FileUploaderDropzone"] button *,
+[data-testid*="FileUploader"] svg,
+[data-testid*="FileUploader"] svg *,
+[data-testid*="FileUploaderDropzone"] svg,
+[data-testid*="FileUploaderDropzone"] svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+div[data-baseweb="input"],
+div[data-baseweb="textarea"],
+div[data-baseweb="select"],
+div[data-baseweb="select"] > div,
+div[role="listbox"],
+div[data-baseweb="popover"],
+div[data-baseweb="menu"] {
+  background: #ffffff !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+div[data-baseweb="input"] *,
+div[data-baseweb="textarea"] *,
+div[data-baseweb="select"] *,
+div[role="listbox"] *,
+div[data-baseweb="popover"] *,
+div[data-baseweb="menu"] * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+div[data-baseweb="select"] svg,
+div[data-baseweb="select"] svg *,
+div[data-baseweb="input"] svg,
+div[data-baseweb="input"] svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+}
+
+.stMarkdown code,
+[data-testid="stMarkdownContainer"] code {
+  background: #edf4f4 !important;
+  color: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  border: 1px solid rgba(23, 63, 79, 0.14);
+}
+
+[data-testid="stAlert"],
+[data-testid="stAlert"] *,
+[data-testid="stMetric"],
+[data-testid="stMetric"] *,
+[data-testid="stExpander"],
+[data-testid="stExpander"] * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+}
+
+[data-testid="stTooltipIcon"],
+[data-testid="stTooltipIcon"] *,
+[data-testid="stTooltipHoverTarget"],
+[data-testid="stTooltipHoverTarget"] *,
+[data-testid="stTooltipHoverTarget"] svg,
+[data-testid="stTooltipHoverTarget"] svg * {
+  color: var(--muted) !important;
+  fill: var(--muted) !important;
+  stroke: var(--muted) !important;
+  opacity: 1 !important;
+}
+
+.st-key-home_upload_dataset_btn button,
+.st-key-home_upload_dataset_btn button *,
+.st-key-home_upload_dataset_btn button svg,
+.st-key-home_upload_dataset_btn button svg *,
+.st-key-pulse button,
+.st-key-pulse button *,
+.st-key-pulse button svg,
+.st-key-pulse button svg *,
+.st-key-pulse1 button,
+.st-key-pulse1 button *,
+.st-key-pulse1 button svg,
+.st-key-pulse1 button svg *,
+.stButton.st-key-go_to_analysis_btn button,
+.stButton.st-key-go_to_analysis_btn button *,
+.stButton.st-key-proceed_to_ranking_btn button,
+.stButton.st-key-proceed_to_ranking_btn button * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Targeted fixes for remaining Streamlit contrast edge cases ------- */
+.st-key-pulse button,
+.st-key-pulse button:hover,
+.st-key-pulse button:focus,
+.st-key-pulse button:active {
+  background: linear-gradient(135deg, var(--accent), #245b6d) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid rgba(23, 63, 79, 0.92) !important;
+  box-shadow: 0 14px 30px rgba(23, 63, 79, 0.22) !important;
+}
+
+.st-key-pulse button *,
+.st-key-pulse button svg,
+.st-key-pulse button svg * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploader"] [data-testid*="Icon"],
+[data-testid*="FileUploaderDropzone"] [data-testid*="Icon"],
+[data-testid*="FileUploader"] [class*="icon" i],
+[data-testid*="FileUploaderDropzone"] [class*="icon" i],
+[data-testid*="FileUploader"] span[data-testid="stIconMaterial"],
+[data-testid*="FileUploaderDropzone"] span[data-testid="stIconMaterial"],
+[data-testid*="FileUploader"] svg,
+[data-testid*="FileUploader"] svg *,
+[data-testid*="FileUploaderDropzone"] svg,
+[data-testid*="FileUploaderDropzone"] svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stToast"],
+[data-testid="stToast"] *,
+[data-testid="stToastContainer"] *,
+[data-baseweb="toast"],
+[data-baseweb="toast"] *,
+[data-testid*="Notification"],
+[data-testid*="Notification"] *,
+[role="status"],
+[role="status"] * {
+  color: var(--text) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stToast"],
+[data-baseweb="toast"],
+[data-testid*="Notification"],
+[role="status"] {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.18) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 14px 34px rgba(43, 52, 62, 0.16) !important;
+}
+
+[data-testid="stToast"] svg,
+[data-testid="stToast"] svg *,
+[data-baseweb="toast"] svg,
+[data-baseweb="toast"] svg *,
+[data-testid*="Notification"] svg,
+[data-testid*="Notification"] svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+}
+
+[role="tooltip"],
+[role="tooltip"] *,
+[data-baseweb="tooltip"],
+[data-baseweb="tooltip"] *,
+[data-testid*="Tooltip"],
+[data-testid*="Tooltip"] *,
+[class*="tooltip" i],
+[class*="tooltip" i] * {
+  color: var(--text) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[role="tooltip"],
+[data-baseweb="tooltip"],
+[data-testid*="Tooltip"],
+[class*="tooltip" i] {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 14px 34px rgba(43, 52, 62, 0.16) !important;
+}
+
+[role="tooltip"]::before,
+[role="tooltip"]::after,
+[data-baseweb="tooltip"]::before,
+[data-baseweb="tooltip"]::after,
+[class*="tooltip" i]::before,
+[class*="tooltip" i]::after {
+  background: #ffffff !important;
+  border-color: rgba(23, 63, 79, 0.18) !important;
+}
+
+/* Exact final CTA and upload icon fixes -------------------------- */
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button,
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button:hover,
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button:focus,
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button:active,
+div.stButton.st-key-viz_to_cohort_insights > button,
+div.stButton.st-key-viz_to_cohort_insights > button:hover,
+div.stButton.st-key-viz_to_cohort_insights > button:focus,
+div.stButton.st-key-viz_to_cohort_insights > button:active {
+  background: linear-gradient(135deg, var(--accent), #245b6d) !important;
+  border: 1px solid rgba(23, 63, 79, 0.92) !important;
+  box-shadow: 0 14px 30px rgba(23, 63, 79, 0.24) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button *,
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button svg,
+div[data-testid="stButton"].st-key-viz_to_cohort_insights > button svg *,
+div.stButton.st-key-viz_to_cohort_insights > button *,
+div.stButton.st-key-viz_to_cohort_insights > button svg,
+div.stButton.st-key-viz_to_cohort_insights > button svg * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stFileUploaderDropzone"] span[data-testid="stIconMaterial"],
+[data-testid*="FileUploaderDropzone"] span[data-testid="stIconMaterial"] {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin-right: 0.75rem !important;
+  overflow: hidden !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.28) !important;
+  border-radius: 12px !important;
+  background: #edf4f4 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stFileUploaderDropzone"] span[data-testid="stIconMaterial"]::before,
+[data-testid*="FileUploaderDropzone"] span[data-testid="stIconMaterial"]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 19px;
+  height: 14px;
+  transform: translate(-50%, -35%);
+  border: 2px solid var(--accent);
+  border-top: 0;
+  border-radius: 0 0 4px 4px;
+  background: transparent;
+}
+
+[data-testid="stFileUploaderDropzone"] span[data-testid="stIconMaterial"]::after,
+[data-testid*="FileUploaderDropzone"] span[data-testid="stIconMaterial"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-left: 2px solid var(--accent);
+  border-top: 2px solid var(--accent);
+  background: transparent;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+  position: relative !important;
+  box-sizing: border-box !important;
+  padding-left: 86px !important;
+}
+
+[data-testid="stFileUploaderDropzone"] > svg,
+[data-testid="stFileUploaderDropzone"] span[data-testid="stIconMaterial"],
+[data-testid="stFileUploaderDropzone"] [data-testid*="Icon"] {
+  display: none !important;
+}
+
+[data-testid="stFileUploaderDropzone"]::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  transform: translateY(-50%);
+  border: 1.5px solid rgba(23, 63, 79, 0.30);
+  border-radius: 12px;
+  background: #edf4f4 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v11M12 4l-4 4M12 4l4 4M5 15v4h14v-4' fill='none' stroke='%23173f4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 26px 26px no-repeat !important;
+  box-shadow: 0 6px 14px rgba(23, 63, 79, 0.10);
+}
+
+[data-testid="stFileUploaderDropzone"] [aria-hidden="true"],
+[data-testid*="FileUploaderDropzone"] [aria-hidden="true"],
+[data-testid="stFileUploaderDropzone"] [class*="icon" i],
+[data-testid*="FileUploaderDropzone"] [class*="icon" i],
+[data-testid="stFileUploaderDropzone"] [class*="material" i],
+[data-testid*="FileUploaderDropzone"] [class*="material" i],
+[data-testid="stFileUploaderDropzone"] [data-testid*="Icon"],
+[data-testid*="FileUploaderDropzone"] [data-testid*="Icon"],
+[data-testid="stFileUploaderDropzone"] button:has(svg),
+[data-testid*="FileUploaderDropzone"] button:has(svg),
+[data-testid="stFileUploaderDropzone"] button[aria-label*="upload" i],
+[data-testid*="FileUploaderDropzone"] button[aria-label*="upload" i] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  opacity: 0 !important;
 }

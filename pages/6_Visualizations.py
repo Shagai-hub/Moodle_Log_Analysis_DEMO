@@ -126,7 +126,7 @@ def main():
         forward={
             "label": "Go to Cohort Insights",
             "page": "pages/7_Cohort_Insights.py",
-            "key": "pulse",
+            "key": "viz_to_cohort_insights",
             "fallback": "Cohort Insights",
         },
         message="Visualisations use cached data—re-run computation pages to refresh the figures.",
