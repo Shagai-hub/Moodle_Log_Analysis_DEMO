@@ -1261,3 +1261,63 @@ div.stButton.st-key-viz_to_cohort_insights > button svg * {
   -webkit-text-fill-color: transparent !important;
   opacity: 0 !important;
 }
+
+/* Uploaded file item visibility on deployed Streamlit builds ------ */
+[data-testid*="FileUploader"] [data-testid*="FileUploaderFile"],
+[data-testid*="FileUploader"] [data-testid*="UploadedFile"],
+[data-testid*="FileUploader"] [class*="uploadedFile" i],
+[data-testid*="FileUploader"] [class*="fileUploaderFile" i],
+[data-testid*="FileUploader"] [class*="uploaded-file" i],
+[data-testid*="FileUploader"] [role="listitem"] {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(23, 63, 79, 0.22) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 14px rgba(43, 52, 62, 0.08) !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploader"] [data-testid*="FileUploaderFile"] *,
+[data-testid*="FileUploader"] [data-testid*="UploadedFile"] *,
+[data-testid*="FileUploader"] [class*="uploadedFile" i] *,
+[data-testid*="FileUploader"] [class*="fileUploaderFile" i] *,
+[data-testid*="FileUploader"] [class*="uploaded-file" i] *,
+[data-testid*="FileUploader"] [role="listitem"] * {
+  color: var(--text) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploader"] [data-testid*="FileUploaderFileName"],
+[data-testid*="FileUploader"] [data-testid*="FileName"],
+[data-testid*="FileUploader"] [class*="fileName" i],
+[data-testid*="FileUploader"] [title$=".csv" i],
+[data-testid*="FileUploader"] [title$=".xlsx" i] {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploader"] [data-testid*="FileUploaderFileSize"],
+[data-testid*="FileUploader"] [data-testid*="FileSize"],
+[data-testid*="FileUploader"] [class*="fileSize" i] {
+  color: var(--text-dim) !important;
+  -webkit-text-fill-color: var(--text-dim) !important;
+  opacity: 1 !important;
+}
+
+[data-testid*="FileUploader"] [data-testid*="FileUploaderFile"] button,
+[data-testid*="FileUploader"] [data-testid*="UploadedFile"] button,
+[data-testid*="FileUploader"] button[aria-label*="remove" i],
+[data-testid*="FileUploader"] button[aria-label*="delete" i],
+[data-testid*="FileUploader"] button[title*="remove" i],
+[data-testid*="FileUploader"] button[title*="delete" i] {
+  background: #f8fbfc !important;
+  border: 1px solid rgba(23, 63, 79, 0.22) !important;
+  color: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+}
