@@ -1321,3 +1321,55 @@ div.stButton.st-key-viz_to_cohort_insights > button svg * {
   color: var(--accent) !important;
   -webkit-text-fill-color: var(--accent) !important;
 }
+
+/* Number input contrast guard ------------------------------------
+   BaseWeb number inputs can keep their dark internal skin even when
+   normal text inputs are themed. Keep the value and +/- buttons readable.
+-------------------------------------------------- */
+[data-testid="stNumberInput"],
+[data-testid="stNumberInput"] *,
+.st-key-config_y_reference_value,
+.st-key-config_y_reference_value * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stNumberInput"] div[data-baseweb="input"],
+[data-testid="stNumberInput"] div[data-baseweb="base-input"],
+[data-testid="stNumberInput"] input,
+.st-key-config_y_reference_value div[data-baseweb="input"],
+.st-key-config_y_reference_value div[data-baseweb="base-input"],
+.st-key-config_y_reference_value input {
+  background: #ffffff !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--accent) !important;
+  border-color: rgba(23, 63, 79, 0.32) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stNumberInput"] input:disabled,
+.st-key-config_y_reference_value input:disabled {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stNumberInput"] button,
+[data-testid="stNumberInput"] button *,
+.st-key-config_y_reference_value button,
+.st-key-config_y_reference_value button * {
+  background: #f8fbfc !important;
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  border-color: rgba(23, 63, 79, 0.22) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stNumberInput"] button:hover,
+.st-key-config_y_reference_value button:hover {
+  background: #edf4f4 !important;
+}

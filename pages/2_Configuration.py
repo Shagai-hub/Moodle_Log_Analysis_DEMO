@@ -1,11 +1,14 @@
 # pages/2_Configuration.py
 import streamlit as st
 import pandas as pd
+import hashlib
 from utils.config_manager import ConfigManager
 from utils.session_data_manager import SessionDataManager
 from assets.ui_components import apply_theme, divider, nav_footer, page_header, section_header, subtle_text
 
 PROFESSOR_TEXT_KEY = "config_professors_text_buffer"
+PROFESSOR_TEXT_PENDING_KEY = "config_professors_text_pending"
+CONFIG_IMPORT_SIGNATURE_KEY = "config_last_import_signature"
 
 
 # ---------- Safe initialization ----------
@@ -25,8 +28,20 @@ def _sync_professor_text_input(cfg: ConfigManager) -> None:
     st.session_state[PROFESSOR_TEXT_KEY] = "\n".join(cfg.professors)
 
 
+def _queue_professor_text_sync(cfg: ConfigManager) -> None:
+    """Defer widget-backed session-state updates until the next rerun."""
+    st.session_state[PROFESSOR_TEXT_PENDING_KEY] = "\n".join(cfg.professors)
+
+
+def _apply_pending_professor_text_sync() -> None:
+    if PROFESSOR_TEXT_PENDING_KEY not in st.session_state:
+        return
+    st.session_state[PROFESSOR_TEXT_KEY] = st.session_state.pop(PROFESSOR_TEXT_PENDING_KEY)
+
+
 def main():
     # Top header + optional steps
+    _apply_pending_professor_text_sync()
 
     page_header(
         "Configuration",
@@ -170,7 +185,8 @@ def main():
             value=config.analysis_settings.get('y_value', 0),
             min_value=0,
             max_value=100000,
-            help="Reference value used in ranking and COCO analysis."
+            help="Reference value used in ranking and COCO analysis.",
+            key="config_y_reference_value",
         )
 
         divider()
@@ -210,17 +226,25 @@ def main():
             if up is not None:
                 try:
                     import json
-                    imported = json.load(up)
-                    config.from_dict(imported)
-                    _sync_professor_text_input(config)
-                    st.success("Configuration imported successfully.")
-                    st.rerun()
+                    file_bytes = up.getvalue()
+                    import_signature = hashlib.sha256(file_bytes).hexdigest()
+                    already_imported = st.session_state.get(CONFIG_IMPORT_SIGNATURE_KEY) == import_signature
+                    if already_imported:
+                        st.info("This configuration file has already been imported.")
+                    else:
+                        imported = json.loads(file_bytes.decode("utf-8-sig"))
+                        config.from_dict(imported)
+                        st.session_state[CONFIG_IMPORT_SIGNATURE_KEY] = import_signature
+                        _queue_professor_text_sync(config)
+                        st.success("Configuration imported successfully.")
+                        st.rerun()
                 except Exception as e:
                     st.error(f"Error importing: {e}")
 
             if st.button("Reset to Defaults", use_container_width=True):
                 config.load_defaults()
-                _sync_professor_text_input(config)
+                st.session_state.pop(CONFIG_IMPORT_SIGNATURE_KEY, None)
+                _queue_professor_text_sync(config)
                 st.success("Reset to defaults.")
                 st.rerun()
 
