@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 
-# Initialize session state managers ONCE
+# Initialize session state managers 
 if "data_manager" not in st.session_state:
     st.session_state.data_manager = SessionDataManager()
 if "config" not in st.session_state:
@@ -35,7 +35,7 @@ with act2:
         "Upload Dataset",
         key="home_upload_dataset_btn",
         help="Go to the Data Upload page",
-        use_container_width=True,  # makes it stretch nicely in center
+        use_container_width=True, 
     ):
         st.switch_page("pages/1_Data_Upload.py")
 
