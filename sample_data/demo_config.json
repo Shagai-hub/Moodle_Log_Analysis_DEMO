@@ -1,0 +1,77 @@
+{
+  "professors": [
+    "professor_1",
+    "professor_2"
+  ],
+  "deadlines": {
+    "Quasi Exam I.": "2024-10-25T00:00:00",
+    "Quasi Exam II.": "2024-11-10T00:00:00",
+    "Quasi Exam III": "2024-11-25T00:00:00"
+  },
+  "analysis_settings": {
+    "enable_ml_attributes": true,
+    "auto_compute_attributes": false,
+    "y_value": 1000
+  },
+  "ai_insights_settings": {
+    "summary_model": "manual",
+    "summary_temperature": 0.0,
+    "low_engagement_threshold": 0.25,
+    "low_posts_threshold": 5,
+    "deadline_miss_threshold": 1,
+    "low_professor_reply_threshold": 1,
+    "slow_reply_threshold_hours": 24,
+    "zscore_low_threshold": -1.5,
+    "zscore_high_threshold": 2.5
+  },
+  "ai_insight_rules": [
+    {
+      "id": "low_engagement_combo",
+      "label": "Low Engagement",
+      "severity": "high",
+      "message": "Engagement rate and posting activity fall below configured thresholds.",
+      "conditions": [
+        {
+          "column": "engagement_rate",
+          "op": "lt",
+          "setting": "low_engagement_threshold"
+        },
+        {
+          "column": "total_posts",
+          "op": "lt",
+          "setting": "low_posts_threshold"
+        }
+      ],
+      "playbook": [
+        "Send a nudge summarizing missed interactions.",
+        "Offer a short 1:1 check-in slot."
+      ]
+    },
+    {
+      "id": "few_professor_replies",
+      "label": "No replies to professor",
+      "severity": "medium",
+      "message": "Replies back to the professor are below the configured threshold.",
+      "conditions": [
+        {
+          "column": "total_replies_to_professor",
+          "op": "le",
+          "setting": "low_professor_reply_threshold"
+        }
+      ]
+    },
+    {
+      "id": "slow_responder",
+      "label": "Slow response times",
+      "severity": "medium",
+      "message": "Average reply time exceeds configured hours.",
+      "conditions": [
+        {
+          "column": "avg_reply_time",
+          "op": "gt",
+          "setting": "slow_reply_threshold_hours"
+        }
+      ]
+    }
+  ]
+}

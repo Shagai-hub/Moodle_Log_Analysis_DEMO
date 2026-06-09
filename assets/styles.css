@@ -1373,3 +1373,115 @@ div.stButton.st-key-viz_to_cohort_insights > button svg * {
 .st-key-config_y_reference_value button:hover {
   background: #edf4f4 !important;
 }
+
+/* Expander and JSON viewer contrast guard ------------------------
+   The Quick summary uses st.expander + st.json. Some Streamlit builds
+   render that JSON viewer with a dark internal theme, while earlier
+   global text rules keep the text dark. Force a light readable surface.
+-------------------------------------------------- */
+[data-testid="stExpander"],
+[data-testid="stExpander"] details,
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] [data-testid="stExpanderDetails"],
+.streamlit-expanderHeader {
+  background: #ffffff !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  border-color: rgba(23, 63, 79, 0.18) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stExpander"] summary *,
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] *,
+.streamlit-expanderHeader * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stJson"],
+[data-testid="stJson"] *,
+[data-testid="stJson"] > div,
+[data-testid="stJson"] pre,
+[data-testid="stJson"] code,
+[data-testid="stJson"] span,
+[data-testid="stJson"] div[class*="json" i],
+[data-testid="stJson"] div[class*="react" i] {
+  background: #ffffff !important;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stJson"] {
+  border: 1.5px solid rgba(23, 63, 79, 0.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 14px rgba(43, 52, 62, 0.06) !important;
+  overflow: auto !important;
+}
+
+[data-testid="stJson"] svg,
+[data-testid="stJson"] svg * {
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  opacity: 1 !important;
+}
+
+/* Chat input contrast guard --------------------------------------
+   Streamlit chat inputs can retain a dark internal background. Force
+   the typing area, placeholder, and send button into the light theme.
+-------------------------------------------------- */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] *,
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] input,
+[data-testid="stChatInput"] [contenteditable="true"],
+.stChatInput,
+.stChatInput * {
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] input,
+[data-testid="stChatInput"] [contenteditable="true"],
+.stChatInput,
+.stChatInput textarea,
+.stChatInput input {
+  background: #ffffff !important;
+  border-color: rgba(23, 63, 79, 0.28) !important;
+  caret-color: var(--accent) !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder,
+[data-testid="stChatInput"] input::placeholder,
+.stChatInput textarea::placeholder,
+.stChatInput input::placeholder {
+  color: var(--muted) !important;
+  -webkit-text-fill-color: var(--muted) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stChatInput"] button,
+[data-testid="stChatInput"] button *,
+.stChatInput button,
+.stChatInput button * {
+  background: #f8fbfc !important;
+  color: var(--accent) !important;
+  fill: var(--accent) !important;
+  stroke: var(--accent) !important;
+  -webkit-text-fill-color: var(--accent) !important;
+  border-color: rgba(23, 63, 79, 0.22) !important;
+  opacity: 1 !important;
+}
+
+[data-testid="stChatInput"] button:hover,
+.stChatInput button:hover {
+  background: #edf4f4 !important;
+}

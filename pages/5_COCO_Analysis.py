@@ -92,7 +92,7 @@ def main():
     exclusion_candidates = st.session_state.get("coco_exclusion_candidates", [])
     workflow_summary = st.session_state.get("coco_workflow_summary", {})
 
-    if st.button("Run COCO Exclusion Workflow", type="primary", use_container_width=True):
+    if st.button("Run COCO Workflow", type="primary", use_container_width=True):
         workflow = run_coco_exclusion_workflow(ranked_data, job_name, stair_value)
         if workflow and workflow.get("final_tables"):
             first_pass_tables = workflow.get("first_pass_tables") or {}
